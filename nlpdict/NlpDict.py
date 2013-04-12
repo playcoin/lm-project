@@ -93,6 +93,27 @@ class NlpDict(object):
 
 		return len(self.ndict)
 
+	def getunknownindex(self):
+		'''
+		@summary: 获取未知符的编号
+		'''
+
+		return self.getindex("$_UNKNOWN_$")
+
+	def getstartindex(self):
+		'''
+		@summary: 获取开始符的编号
+		'''
+
+		return self.getindex("$_START_$")
+
+	def getendindex(self):
+		'''
+		@summary: 获取结束符的编号
+		'''
+
+		return self.getindex("$_END_$")
+
 	def buildfromfile(self, text_file_path, white_space=False, freq_thres=0):
 		'''
 		@summary: 读取文本，并通过文本填充词典
