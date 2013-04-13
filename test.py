@@ -9,11 +9,12 @@ from nlpdict.NlpDict import NlpDict
 from pylm.Ngram import Ngram
 
 nlpdict = NlpDict()
-nlpdict.buildfromfile('./data/text.txt')
+nlpdict.buildfromfile('./data/pku_train.ltxt')
 
 # text
-f = file('./data/text.txt')
+f = file('./data/pku_train.ltxt')
 text = unicode(f.read(), 'utf-8')
+text.replace(" ", "")
 f.close()
 
 ngram = Ngram(nlpdict, 4)

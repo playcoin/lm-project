@@ -34,5 +34,6 @@ nosetests.xml
 .project
 .pydevproject
 
-# Generated data
+# Generated data and large size data
 *.obj
+*.ltxt
