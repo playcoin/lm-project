@@ -134,7 +134,9 @@ class NlpDict(object):
 		if not white_space:
 			text = re.sub(r'\t| ', '', text)
 		# 清除换行符，并转化为unicode
-		text = unicode(re.sub(r'\n', '', text), 'utf-8')
+		# 暂时先不清楚换行符
+		# text = unicode(re.sub(r'\n', '', text), 'utf-8')
+		text = unicode(text, 'utf-8')	# 暂时先不清楚换行符
 		# 清理低频词
 		if freq_thres > 0:
 			# 计算词频

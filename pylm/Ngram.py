@@ -4,6 +4,8 @@ Created on 2013-04-12 19:27
 @summary: N-gram类
 @author: egg
 '''
+import cPickle
+import numpy
 
 class Ngram(object):
 	'''
@@ -22,7 +24,7 @@ class Ngram(object):
 		self.ndict = nlpdict
 		self.N = N < 1 and 1 or N
 		if ngram_file_path:
-			pass
+			self.loadmodel(ngram_file_path)
 		else:
 			self.__graminit()
 
@@ -99,7 +101,7 @@ class Ngram(object):
 		@summary: 输入一个token 列表，转化为id列表，并进行训练
 		
 		@param tokenseq: token的文本序列
-		@param add_se: 是否添加收尾符号
+		@param add_se: 是否添加首尾符号
 		'''
 
 		# 借助dict将token串，转为id串
@@ -112,19 +114,23 @@ class Ngram(object):
 		# 训练tid序列
 		self.__traintidseq(tidseq)
 
-	def traintext(self, text):
+	def traintext(self, text, seqsplit=None):
 		'''
 		@summary: 训练一段文本。文本按换行符切分
 		
 		@param text: 输入文本，默认不包含空白符，
 		'''
+		
+		print "N-gram train start!!"
+		if(seqsplit):
+			lines = text.split(seqsplit)
+			[self.traintokenseq(line) for line in lines if line != ""]
+		else:
+			self.traintokenseq(text)
 
-		lines = text.split('\n')
-		print "train start!!"
-		[self.traintokenseq(line) for line in lines if line != ""]
-
-		print "train over! Calculate prop!"
+		print "Count over! Calculate prop!"
 		self.__updateprop()
+		print "N-gram Train Over!"
 
 	def backoff(self, tids):
 		'''
@@ -151,7 +157,7 @@ class Ngram(object):
 				tids = tids[-n:]
 
 		# 如果 prop 还是 0，那么就给个最很小的值
-		prop = prop == 0. and (0.5 / self.train_token_size) or prop
+		prop = prop == 0. and (0.005 / self.train_token_size) or prop
 
 		return prop
 
@@ -162,4 +168,132 @@ class Ngram(object):
 		@param text:
 		@result: 
 		'''
-		pass
+		# text length should be large than 0
+		if(len(text) < 1):
+			return None
+
+		# last N-1 token will be enough
+		his_text = text[-self.N+1:]
+		his_tids = [self.ndict[token] for token in his_text]
+		# check whether cpmaps has the tuple
+		len_text = len(his_tids)
+		# the max prob and the corresponding token id
+		p_max, tid_max = (0, self.ndict.getunknownindex())
+		
+		while len_text > 0:
+			# get the cpmap 
+			cpmap = self.cpmaps[len_text]
+			key = tuple(his_tids)
+			if key in cpmap:
+				# iter the cpobj to get the max probability
+				cpobj = cpmap[key]
+				
+				# 再计算概率
+				for tid, pair in cpobj.viewitems():
+					if pair[1] > p_max:
+						p_max = pair[1]
+						tid_max = tid
+
+				break;
+
+			else:
+				his_tids = his_tids[-len_text+1:]
+				len_text -= 1
+
+		return tid_max, p_max
+
+	def likelihood(self, text, add_se=False):
+		'''
+		@summary: Return the likelihood of the token sequence
+		
+		@param text:
+		@param add_se:
+		@result: 
+		'''
+		# turn text sequence to token id sequence
+		tidseq = add_se and [self.ndict.getstartindex()] or []
+		tidseq.extend([self.ndict[token] for token in text])
+		add_se and tidseq.extend([self.ndict.getendindex()])
+
+		# cal the log probability
+		# cal cross-entropy first, use the equation:
+		# 	H(W) = - 1 / N * (\sum P(w_1 w_2 ... w_N))
+		prop = []
+		len_seq = len(tidseq)
+		for i in xrange(len_seq):
+			sub_seq = []
+			if i < self.N:
+				sub_seq = tidseq[:i+1]
+			else:
+				sub_seq = tidseq[i-self.N+1:i+1]
+
+			prop.append(self.backoff(sub_seq))
+
+		return prop
+
+	def crossentropy(self, text, add_se=False):
+		'''
+		@summary: Return the cross-entropy of the text
+		
+		@param text:
+		@result: cross entropy
+		'''
+		# turn text sequence to token id sequence
+		tidseq = add_se and [self.ndict.getstartindex()] or []
+		tidseq.extend([self.ndict[token] for token in text])
+		add_se and tidseq.extend([self.ndict.getendindex()])
+
+		# cal the log probability
+		# cal cross-entropy first, use the equation:
+		# 	H(W) = - 1 / N * (\sum P(w_1 w_2 ... w_N))
+		log_prob = []
+		len_seq = len(tidseq)
+		for i in xrange(len_seq):
+			sub_seq = []
+			if i < self.N:
+				sub_seq = tidseq[:i+1]
+			else:
+				sub_seq = tidseq[i-self.N+1:i+1]
+
+			log_prob.append(numpy.log(self.backoff(sub_seq)))
+
+		crossentropy = - numpy.sum(log_prob) / len_seq
+
+		return crossentropy, log_prob
+
+	def perplexity(self, text, add_se=False):
+		'''
+		@summary: Return the perplexity of the text
+		
+		@result: perplexity
+		'''
+		return numpy.exp2(self.crossentropy(text, add_se)[0])
+
+	def savemodel(self, filepath="./data/ngram.model.obj"):
+		'''
+		@summary: Save model to file
+		
+		@param filepath: back up file path
+		'''
+
+		backupfile = open(filepath, 'w')
+		cPickle.dump((self.cpmaps, self.train_token_size), backupfile)
+		backupfile.close()
+
+	def loadmodel(self, filepath="./data/ngram.model.obj"):
+		'''
+		@summary: Load model from file
+		
+		@param filepath:
+		'''
+
+		backupfile = open(filepath)
+		self.cpmaps, self.train_token_size = cPickle.load(backupfile)
+		backupfile.close()
+		print "Load model complete!"
+
+
+
+
+
+
