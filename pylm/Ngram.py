@@ -23,6 +23,7 @@ class Ngram(object):
 
 		self.ndict = nlpdict
 		self.N = N < 1 and 1 or N
+		self.SMOOTH_COEF = 0.005
 		if ngram_file_path:
 			self.loadmodel(ngram_file_path)
 		else:
@@ -96,6 +97,37 @@ class Ngram(object):
 				for tid, pair in cpobj.viewitems():
 					cpobj[tid][1] = pair[0] / csum
 
+	def __updatelambdas(self):
+		'''
+		@summary: update the lambdas corresponding to each n-gram,
+				  count the times n-gram occur, then normalize.
+		'''
+
+		# count occur times for each n-gram
+		clambdas = [0 for i in range(self.N)]
+		# only check the N-gram
+		cpmap = self.cpmaps[self.N-1];
+		for key, cpobj in cpmap.viewitems():
+			for tid, pair in cpobj.viewitems():
+				# get N prob of each n-gram
+				n_probs = []
+				for i in xrange(self.N):
+					if i == 0:
+						n_probs.append(self.cpmaps[0][(-1,)][tid][1])
+					else:
+						n_probs.append(self.cpmaps[i][key[-i:]][tid][1])
+
+				# get the index of max value 
+				# print n_probs
+				i_lambda = numpy.argmax(n_probs)
+				clambdas[i_lambda] += 1
+
+		# normalize
+		total = numpy.sum(clambdas)
+
+		self.lambdas = [(float(lam) / total) for lam in clambdas]
+		print self.lambdas
+
 	def traintokenseq(self, tokenseq, add_se=True):
 		'''
 		@summary: 输入一个token 列表，转化为id列表，并进行训练
@@ -130,6 +162,7 @@ class Ngram(object):
 
 		print "Count over! Calculate prop!"
 		self.__updateprop()
+		self.__updatelambdas()
 		print "N-gram Train Over!"
 
 	def backoff(self, tids):
@@ -144,22 +177,63 @@ class Ngram(object):
 		tids = tids[-self.N:]
 		n = len(tids)
 		ctid = tids[-1]
-		prop = 0.
+		prob = 0.
 		# print tids
-		while n > 0 and prop == 0.:
+		while n > 0 and prob == 0.:
 			cpmap = self.cpmaps[n-1]
 			key = tuple((n > 1 and tids[:-1] or [-1]))
 			# print key, cpmap[key]
 			if key in cpmap and ctid in cpmap[key]:
-				prop = cpmap[key][ctid][1]
+				prob = cpmap[key][ctid][1]
 			else:
 				n -= 1
 				tids = tids[-n:]
 
-		# 如果 prop 还是 0，那么就给个最很小的值
-		prop = prop == 0. and (0.005 / self.train_token_size) or prop
+		# 如果 prob 还是 0，那么就给个最很小的值
+		prob = prob == 0. and (self.SMOOTH_COEF / self.train_token_size) or prob
 
-		return prop
+		return prob
+
+	def interpolation(self, tids):
+		'''
+		@summary: Calculate the iterpolation smooth value
+		
+		@param tids:
+		'''
+		# get the last N tokens
+		tids = tids[-self.N:]
+		n = len(tids)
+		ctid = tids[-1]
+
+		# get the n-gram probablities
+		n_probs = []
+		while n > 0:
+			cpmap = self.cpmaps[n-1]
+			key = tuple((n > 1 and tids[:-1] or [-1]))
+			prob = 0.0
+			# print key, cpmap[key]
+			if key in cpmap and ctid in cpmap[key]:
+				prob = cpmap[key][ctid][1]
+				
+			n -= 1
+			tids = tids[-n:]
+			n_probs.append(prob)
+
+		# reverse the probs
+		n_probs.reverse()
+		# print n_probs
+
+		# cal prob by for loop
+		f_prob = 0.0
+		for i in range(len(n_probs)):
+			f_prob += n_probs[i] * self.lambdas[i]
+			# print n_probs[i], self.lambdas[i]
+
+		# 如果 prob 还是 0，那么就给个最很小的值
+		f_prob = f_prob == 0. and (self.SMOOTH_COEF / self.train_token_size) or f_prob
+
+		return f_prob
+
 
 	def predict(self, text):
 		'''
@@ -202,7 +276,7 @@ class Ngram(object):
 
 		return tid_max, p_max
 
-	def likelihood(self, text, add_se=False):
+	def likelihood(self, text, add_se=False, smoothfuncname = "interpolation"):
 		'''
 		@summary: Return the likelihood of the token sequence
 		
@@ -214,6 +288,11 @@ class Ngram(object):
 		tidseq = add_se and [self.ndict.getstartindex()] or []
 		tidseq.extend([self.ndict[token] for token in text])
 		add_se and tidseq.extend([self.ndict.getendindex()])
+
+		# choose smooth function
+		smoothfunc = self.interpolation
+		if smoothfuncname == 'backoff':
+			smoothfunc = self.backoff
 
 		# cal the log probability
 		# cal cross-entropy first, use the equation:
@@ -227,7 +306,7 @@ class Ngram(object):
 			else:
 				sub_seq = tidseq[i-self.N+1:i+1]
 
-			prop.append(self.backoff(sub_seq))
+			prop.append(smoothfunc(sub_seq))
 
 		return prop
 
@@ -255,7 +334,7 @@ class Ngram(object):
 			else:
 				sub_seq = tidseq[i-self.N+1:i+1]
 
-			log_prob.append(numpy.log(self.backoff(sub_seq)))
+			log_prob.append(numpy.log(self.interpolation(sub_seq)))
 
 		crossentropy = - numpy.sum(log_prob) / len_seq
 
@@ -277,7 +356,7 @@ class Ngram(object):
 		'''
 
 		backupfile = open(filepath, 'w')
-		cPickle.dump((self.cpmaps, self.train_token_size), backupfile)
+		cPickle.dump((self.cpmaps, self.train_token_size, self.lambdas), backupfile)
 		backupfile.close()
 
 	def loadmodel(self, filepath="./data/ngram.model.obj"):
@@ -288,7 +367,7 @@ class Ngram(object):
 		'''
 
 		backupfile = open(filepath)
-		self.cpmaps, self.train_token_size = cPickle.load(backupfile)
+		self.cpmaps, self.train_token_size, self.lambdas = cPickle.load(backupfile)
 		backupfile.close()
 		print "Load model complete!"
 
