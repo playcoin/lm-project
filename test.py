@@ -23,7 +23,7 @@ len_text = len(text)
 print "Train size is: %s" % len_text
 
 # ngram_file_path = "./data/ngram.model.obj"
-ngram = Ngram(nlpdict, 4)
+ngram = Ngram(nlpdict, 3)
 ngram.traintext(text)
 
 # print "Save N-gram model"
@@ -34,13 +34,13 @@ ngram.traintext(text)
 # ngram.traintokenseq(text)
 
 # cal likelihood
-prob_list = ngram.likelihood(u"国家主席", False)
+prob_list = ngram.likelihood(u"国家主席江", False)
 print "Likelihood of test sentence is:", prob_list
 cet = - numpy.sum(numpy.log(prob_list)) / len(prob_list)
 print "Cross-entropy of the test sentence is (interpolation):", cet
 
 # cal likelihood
-prob_list = ngram.likelihood(u"国家主席", False, "backoff")
+prob_list = ngram.likelihood(u"国家主席江", False, "backoff")
 print "Likelihood of test sentence is:", prob_list
 cet = - numpy.sum(numpy.log(prob_list)) / len(prob_list)
 print "Cross-entropy of the test sentence is (backoff):", cet
@@ -53,3 +53,4 @@ f.close()
 print "Test size is: %s" % len(test_text)
 ce, logs = ngram.crossentropy(test_text)
 print "Cross-entropy is:", ce
+print "Perplexity is:", numpy.exp2(ce)
