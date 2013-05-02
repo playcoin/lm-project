@@ -10,10 +10,10 @@ from pylm.MlpBigram import MlpBigram
 import numpy
 
 nlpdict = NlpDict()
-nlpdict.buildfromfile('./data/pku_train_nw.ltxt')
+nlpdict.buildfromfile('./data/pku_train_s.ltxt')
 
 # text
-f = file('./data/pku_train_nw.ltxt')
+f = file('./data/pku_train_s.ltxt')
 text = unicode(f.read(), 'utf-8')
 text = text.replace(" ", "")
 f.close()
@@ -22,6 +22,15 @@ len_text = len(text)
 
 print "Train size is: %s" % len_text
 
-mlp_bigram = MlpBigram(nlpdict)
+mlp_bigram = MlpBigram(nlpdict, n_hidden=10, lr=0.05)
 
-mlp_bigram.traintokenseq(text[:100])
+train_text = text[:]
+test_text = text[0:10]
+
+print "MlpBigram train start!!"
+for i in xrange(500):
+	mlp_bigram.traintext(train_text, batch_size=10, add_se=False)
+	print "Error rate for test after epoch %s is %s" % (i+1, mlp_bigram.testtext(train_text)[0])
+	# print "Params: ", mlp_bigram.mlp.params[2].get_value()
+
+print "MlpBigram train over!!"
