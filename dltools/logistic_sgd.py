@@ -292,7 +292,8 @@ def sgd_optimization_mnist(learning_rate=0.13, n_epochs=1000,
             updates=updates,
             givens={
                 x: train_set_x[index * batch_size:(index + 1) * batch_size],
-                y: train_set_y[index * batch_size:(index + 1) * batch_size]})
+                y: train_set_y[index * batch_size:(index + 1) * batch_size]},
+            mode='ProfileMode')
 
     ###############
     # TRAIN MODEL #

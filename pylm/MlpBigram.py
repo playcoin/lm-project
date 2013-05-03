@@ -61,7 +61,7 @@ class MlpBigram(object):
 
 		error = classifier.errors(y)
 		# test model function
-		self.test_model = theano.function(inputs=[x, y], outputs=[error, classifier.logRegressionLayer.y_pred])
+		self.test_model = theano.function(inputs=[x, y], outputs=error)
 		print "Compile test function complete!"
 
 		# NLL cost
@@ -85,13 +85,13 @@ class MlpBigram(object):
 
 		# train model function
 		self.train_batch = theano.function(inputs=[index], 
-									outputs=Out(cost, borrow=True), 
+									# outputs=cost, 
 									updates=updates,
 									givens={
 										x : self.train_data[index * self.batch_size : (index+1) * self.batch_size],
 										y : self.label_data[index * self.batch_size : (index+1) * self.batch_size]
-									},
-									mode='ProfileMode')
+									})
+
 		print "Compile training function complete!"		
 		
 	def __tokens2ids(self, tokenseq, add_se=False):
@@ -142,7 +142,7 @@ class MlpBigram(object):
 
 		self.train_batch(mat_in, mat_out)
 
-	def traintext(self, text, add_se=False, data_slice_size=20000):
+	def traintext(self, text, add_se=False, data_slice_size=40000):
 		'''
 		@summary: Train text, split token sequence to slice with user-designed batch_size
 		
@@ -178,8 +178,6 @@ class MlpBigram(object):
 
 		# get input data
 		mat_in, mat_out = self.__tids2nndata(self.__tokens2ids(text))
-
-		# print mat_in, mat_out
 
 		error = self.test_model(mat_in.get_value(borrow=True), mat_out.get_value(borrow=True))
 
