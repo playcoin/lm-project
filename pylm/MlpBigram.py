@@ -4,17 +4,19 @@ Created on 2013-04-28 14:40
 @summary: 
 @author: egg
 '''
+import math
 import numpy
 import theano
 import theano.tensor as T
 from dltools.mlp import MLP
+from theano import sandbox, Out
 
 class MlpBigram(object):
 	'''
 	@summary: Train Bigram by using Mlp
 	'''
 
-	def __init__(self, ndict, n_hidden=30, lr=0.05, l1_reg = 0.00, l2_reg=0.0001):
+	def __init__(self, ndict, n_hidden=30, lr=0.05, l1_reg = 0.00, l2_reg=0.0001, batch_size=40):
 		'''
 		@summary: Construct function, set some parameters.
 		
@@ -24,11 +26,12 @@ class MlpBigram(object):
 		@param l2_reg: l2 norm coef
 		'''
 
-		self.ndict = ndict;
-		self.n_hidden = n_hidden;
-		self.lr = lr;
-		self.l1_reg = l1_reg;
-		self.l2_reg = l2_reg;
+		self.ndict = ndict
+		self.n_hidden = n_hidden
+		self.lr = lr
+		self.l1_reg = l1_reg
+		self.l2_reg = l2_reg
+		self.batch_size = batch_size
 
 		# mlp obj
 		self.mlp = None
@@ -44,8 +47,9 @@ class MlpBigram(object):
 
 		print "Init theano symbol expressions!"
 
+		index = T.lscalar()
 		x = T.matrix('x')  
-		y = T.vector('y', dtype="int64")  # the labels are presented as 1D vector of [int] labels
+		y = T.ivector('y')  # the labels are presented as 1D vector of [int] labels
 
 		rng = numpy.random.RandomState(1234)
 
@@ -80,7 +84,14 @@ class MlpBigram(object):
 		# 	updates[param] = param - self.lr * gparam
 
 		# train model function
-		self.train_batch = theano.function(inputs=[x, y], outputs=[cost, classifier.logRegressionLayer.y_pred], updates=updates)
+		self.train_batch = theano.function(inputs=[index], 
+									outputs=Out(cost, borrow=True), 
+									updates=updates,
+									givens={
+										x : self.train_data[index * self.batch_size : (index+1) * self.batch_size],
+										y : self.label_data[index * self.batch_size : (index+1) * self.batch_size]
+									},
+									mode='ProfileMode')
 		print "Compile training function complete!"		
 		
 	def __tokens2ids(self, tokenseq, add_se=False):
@@ -98,19 +109,21 @@ class MlpBigram(object):
 		# print tidseq
 		return tidseq
 
-	def __tids2nndata(self, tidseq, gpu=False):
+	def __tids2nndata(self, tidseq):
 		'''
 		@summary: token ids to theano function input variables (matrix and vector)
 		'''
 		# print tidseq.shape
-		in_size = gpu and tidseq.shape[0] or len(tidseq)
-		in_size -= 1
+		in_size = len(tidseq) - 1
 
 		mat_in = numpy.zeros((in_size, self.ndict.size()), dtype=theano.config.floatX)
-		mat_out = numpy.asarray(tidseq[1:], dtype="int64")
+		mat_out = numpy.asarray(tidseq[1:], dtype="int32")
 
 		for i in xrange(in_size):
-			mat_in[i][tidseq[i]] = numpy.asarray([1.], dtype=theano.config.floatX).item(0)
+			mat_in[i][tidseq[i]] = numpy.array(1., dtype=theano.config.floatX)
+
+		mat_in = theano.shared(mat_in)
+		mat_out = theano.shared(mat_out)
 
 		return mat_in, mat_out
 
@@ -129,43 +142,29 @@ class MlpBigram(object):
 
 		self.train_batch(mat_in, mat_out)
 
-	def trainInGpu(self, text, batch_size, add_se):
-		'''
-		@summary: Train in Gpu, for faster run in GPU
-		
-		@param text:
-		@param batch_size:
-		@param add_se:
-		@result: 
-		'''
-
-		tidseq = numpy.asarray(self.__tokens2ids(text, add_se))
-		tidseq = theano.shared(tidseq)
-
-		train_size = tidseq.get_value().shape[0]
-		for i in xrange(0, train_size, batch_size):
-			# tids to theano input variables
-			tid_slice = tidseq.get_value()[i:i+batch_size+1]
-			mat_in, mat_out = self.__tids2nndata(tid_slice, True)
-
-			self.train_batch(mat_in, mat_out)
-
-
-	def traintext(self, text, batch_size=50, add_se=False, gpu=False):
+	def traintext(self, text, add_se=False, data_slice_size=20000):
 		'''
 		@summary: Train text, split token sequence to slice with user-designed batch_size
 		
 		@param text: 
 		'''
-		self.__initMlp()
+		
+		# token chars to token ids
+		tidseq = self.__tokens2ids(text, add_se)
+		tidseq = theano.shared(tidseq).get_value(borrow=True)
 
-		if gpu:
-			self.trainInGpu(text, batch_size, add_se)
-		else:
-			train_size = len(text)
-			for i in xrange(0, train_size, batch_size):
-				train_slice = text[i:i+batch_size+1]
-				self.traintokenseq(train_slice, add_se)
+		# train all slices of data. train_data and label_data will be reset to new slice
+		total_data_size = len(tidseq)
+		for i in xrange(0, total_data_size, data_slice_size):
+			data_slice = tidseq[i:i+data_slice_size+1]
+			self.train_data, self.label_data = self.__tids2nndata(data_slice)
+			# print self.train_data, self.label_data
+			# print self.train_data[1:2]
+			self.__initMlp()
+
+			n_batch = int(math.ceil(data_slice_size / self.batch_size))
+			for i in xrange(n_batch):
+				self.train_batch(i)
 
 	def testtext(self, text):
 		'''
@@ -182,7 +181,7 @@ class MlpBigram(object):
 
 		# print mat_in, mat_out
 
-		error = self.test_model(mat_in, mat_out)
+		error = self.test_model(mat_in.get_value(borrow=True), mat_out.get_value(borrow=True))
 
 		return error
 
