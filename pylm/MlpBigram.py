@@ -98,14 +98,18 @@ class MlpBigram(object):
 		# print tidseq
 		return tidseq
 
-	def __tids2nndata(self, tidseq):
+	def __tids2nndata(self, tidseq, gpu=False):
 		'''
 		@summary: token ids to theano function input variables (matrix and vector)
 		'''
-		mat_in = numpy.zeros((len(tidseq)-1, self.ndict.size()), dtype=theano.config.floatX)
+		# print tidseq.shape
+		in_size = gpu and tidseq.shape[0] or len(tidseq)
+		in_size -= 1
+
+		mat_in = numpy.zeros((in_size, self.ndict.size()), dtype=theano.config.floatX)
 		mat_out = numpy.asarray(tidseq[1:], dtype="int64")
 
-		for i in xrange(len(tidseq)-1):
+		for i in xrange(in_size):
 			mat_in[i][tidseq[i]] = numpy.asarray([1.], dtype=theano.config.floatX).item(0)
 
 		return mat_in, mat_out
@@ -135,14 +139,14 @@ class MlpBigram(object):
 		@result: 
 		'''
 
-		tidseq = self.__tokens2ids(text, add_se)
-		tidseq = T.as_tensor_variable(tidseq)
+		tidseq = numpy.asarray(self.__tokens2ids(text, add_se))
+		tidseq = theano.shared(tidseq)
 
-		train_size = len(tidseq)
+		train_size = tidseq.get_value().shape[0]
 		for i in xrange(0, train_size, batch_size):
 			# tids to theano input variables
-			tid_slice = tidseq[i:i+batch_size+1]
-			mat_in, mat_out = self.__tids2nndata(tidseq)
+			tid_slice = tidseq.get_value()[i:i+batch_size+1]
+			mat_in, mat_out = self.__tids2nndata(tid_slice, True)
 
 			self.train_batch(mat_in, mat_out)
 

@@ -29,7 +29,7 @@ test_text = text[0:10]
 
 print "MlpBigram train start!!"
 for i in xrange(500):
-	mlp_bigram.traintext(train_text, batch_size=10, add_se=False)
+	mlp_bigram.traintext(train_text, batch_size=10, add_se=False, gpu=True)
 	print "Error rate for test after epoch %s is %s" % (i+1, mlp_bigram.testtext(train_text)[0])
 	# print "Params: ", mlp_bigram.mlp.params[2].get_value()
 
