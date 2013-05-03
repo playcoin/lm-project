@@ -125,7 +125,29 @@ class MlpBigram(object):
 
 		self.train_batch(mat_in, mat_out)
 
-	def traintext(self, text, batch_size=50, add_se=False):
+	def trainInGpu(self, text, batch_size, add_se):
+		'''
+		@summary: Train in Gpu, for faster run in GPU
+		
+		@param text:
+		@param batch_size:
+		@param add_se:
+		@result: 
+		'''
+
+		tidseq = self.__tokens2ids(text, add_se)
+		tidseq = T.as_tensor_variable(tidseq)
+
+		train_size = len(tidseq)
+		for i in xrange(0, train_size, batch_size):
+			# tids to theano input variables
+			tid_slice = tidseq[i:i+batch_size+1]
+			mat_in, mat_out = self.__tids2nndata(tidseq)
+
+			self.train_batch(mat_in, mat_out)
+
+
+	def traintext(self, text, batch_size=50, add_se=False, gpu=False):
 		'''
 		@summary: Train text, split token sequence to slice with user-designed batch_size
 		
@@ -133,10 +155,13 @@ class MlpBigram(object):
 		'''
 		self.__initMlp()
 
-		train_size = len(text)
-		for i in xrange(0, train_size, batch_size):
-			train_slice = text[i:i+batch_size+1]
-			self.traintokenseq(train_slice, add_se)
+		if gpu:
+			self.trainInGpu(text, batch_size, add_se)
+		else:
+			train_size = len(text)
+			for i in xrange(0, train_size, batch_size):
+				train_slice = text[i:i+batch_size+1]
+				self.traintokenseq(train_slice, add_se)
 
 	def testtext(self, text):
 		'''
