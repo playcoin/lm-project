@@ -113,7 +113,7 @@ class MLP(object):
     class).
     """
 
-    def __init__(self, rng, input, n_in, n_hidden, n_out):
+    def __init__(self, rng, input, n_in, n_hidden, n_out, hW=None, hb=None, oW=None, ob=None):
         """Initialize the parameters for the multilayer perceptron
 
         :type rng: numpy.random.RandomState
@@ -141,7 +141,7 @@ class MLP(object):
         # layer; this can be replaced by a SigmoidalLayer, or a layer
         # implementing any other nonlinearity
         self.hiddenLayer = HiddenLayer(rng=rng, input=input,
-                                       n_in=n_in, n_out=n_hidden,
+                                       n_in=n_in, n_out=n_hidden, W=hW, b=hb,
                                        activation=T.tanh)
 
         # The logistic regression layer gets as input the hidden units
@@ -149,7 +149,9 @@ class MLP(object):
         self.logRegressionLayer = LogisticRegression(
             input=self.hiddenLayer.output,
             n_in=n_hidden,
-            n_out=n_out)
+            n_out=n_out,
+            W=oW,
+            b=ob)
 
         # L1 norm ; one regularization option is to enforce L1 norm to
         # be small

@@ -27,9 +27,9 @@ class Ngram(object):
 		if ngram_file_path:
 			self.loadmodel(ngram_file_path)
 		else:
-			self.__graminit()
+			self.__objinit()
 
-	def __graminit(self):
+	def __objinit(self):
 		'''
 		@summary: 初始化成员变量的私有函数。该函数构造N个计数概率对象（cpmap）
 			cpmap 是python的dict对象，key是n-1的token序列，value是另一个dict，

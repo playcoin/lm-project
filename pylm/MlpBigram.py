@@ -8,6 +8,7 @@ import math
 import numpy
 import theano
 import theano.tensor as T
+import cPickle
 from dltools.mlp import MLP
 from theano import sandbox, Out
 
@@ -16,7 +17,7 @@ class MlpBigram(object):
 	@summary: Train Bigram by using Mlp
 	'''
 
-	def __init__(self, ndict, n_hidden=30, lr=0.05, l1_reg = 0.00, l2_reg=0.0001, batch_size=40):
+	def __init__(self, ndict, n_hidden=30, lr=0.05, l1_reg = 0.00, l2_reg=0.0001, batch_size=40, backup_file_path=None):
 		'''
 		@summary: Construct function, set some parameters.
 		
@@ -25,16 +26,20 @@ class MlpBigram(object):
 		@param l1_reg: l1 norm coef
 		@param l2_reg: l2 norm coef
 		'''
-
 		self.ndict = ndict
-		self.n_hidden = n_hidden
-		self.lr = lr
-		self.l1_reg = l1_reg
-		self.l2_reg = l2_reg
-		self.batch_size = batch_size
+
+		if backup_file_path is None:
+			self.n_hidden = n_hidden
+			self.lr = lr
+			self.l1_reg = l1_reg
+			self.l2_reg = l2_reg
+			self.batch_size = batch_size
+		else:
+			self.loadmodel()
 
 		# mlp obj
 		self.mlp = None
+		self.mlpparams = [None, None, None, None]
 
 
 	def __initMlp(self):
@@ -55,7 +60,10 @@ class MlpBigram(object):
 
 		# construct the MLP class
 		self.mlp = MLP(rng=rng, input=x, n_in=self.ndict.size(),
-						 n_hidden=self.n_hidden, n_out=self.ndict.size())
+						 n_hidden=self.n_hidden, n_out=self.ndict.size(),
+						 hW=self.mlpparams[0],hb=self.mlpparams[1],oW=self.mlpparams[2],ob=self.mlpparams[3],)
+
+		self.mlpparams = self.mlp.params
 
 		classifier = self.mlp
 
@@ -122,8 +130,8 @@ class MlpBigram(object):
 		for i in xrange(in_size):
 			mat_in[i][tidseq[i]] = numpy.array(1., dtype=theano.config.floatX)
 
-		mat_in = theano.shared(mat_in)
-		mat_out = theano.shared(mat_out)
+		mat_in = theano.shared(mat_in, borrow=True)
+		mat_out = theano.shared(mat_out, borrow=True)
 
 		return mat_in, mat_out
 
@@ -183,6 +191,29 @@ class MlpBigram(object):
 
 		return error
 
+	def savemodel(self, filepath="./data/MlpBigram.model.obj"):
+		'''
+		@summary: Save model to file
+		
+		@param filepath: back up file path
+		'''
+
+		backupfile = open(filepath, 'w')
+		cPickle.dump((self.batch_size, self.n_hidden, self.lr, self.l1_reg, self.l2_reg, self.mlpparams), backupfile)
+		backupfile.close()
+		print "Save model complete!"
+
+	def loadmodel(self, filepath="./data/MlpBigram.model.obj"):
+		'''
+		@summary: Save model to file
+		
+		@param filepath: back up file path
+		'''
+
+		backupfile = open(filepath)
+		self.batch_size, self.n_hidden, self.lr, self.l1_reg, self.l2_reg, self.mlpparams = cPickle.load(backupfile)
+		backupfile.close()
+		print "Load model complete!"
 
 
 
