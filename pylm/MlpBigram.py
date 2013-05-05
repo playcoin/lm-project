@@ -34,20 +34,20 @@ class MlpBigram(object):
 			self.l1_reg = l1_reg
 			self.l2_reg = l2_reg
 			self.batch_size = batch_size
+			self.mlpparams = [None, None, None, None]
 		else:
-			self.loadmodel()
+			self.loadmodel(backup_file_path)
 
 		# mlp obj
 		self.mlp = None
-		self.mlpparams = [None, None, None, None]
 
 
-	def __initMlp(self):
+	def __initMlp(self, no_train=False):
 		'''
 		@summary: Init mlp, build training and test function
 		@result: 
 		'''
-		if self.mlp:
+		if self.mlp is not None:
 			return
 
 		print "Init theano symbol expressions!"
@@ -67,11 +67,21 @@ class MlpBigram(object):
 
 		classifier = self.mlp
 
+		probs = classifier.logRegressionLayer.p_y_given_x[T.arange(y.shape[0]), y]
+		self.mlp_prob = theano.function(inputs=[x, y], outputs=probs[-1])
+		print "Compile likelihood function complete!"
+
+		y_pred = classifier.logRegressionLayer.y_pred
+		self.mlp_predict = theano.function(inputs=[x], outputs=y_pred[-1])
+		print "Compile predict function complete!"
+
 		error = classifier.errors(y)
 		# test model function
 		self.test_model = theano.function(inputs=[x, y], outputs=error)
 		print "Compile test function complete!"
 
+		if no_train:
+			return
 		# NLL cost
 		cost = classifier.negative_log_likelihood(y) \
 			 + self.l1_reg * classifier.L1 \
@@ -117,23 +127,25 @@ class MlpBigram(object):
 		# print tidseq
 		return tidseq
 
-	def __tids2nndata(self, tidseq):
+	def __tids2nndata(self, tidseq, truncate_input=True):
 		'''
 		@summary: token ids to theano function input variables (matrix and vector)
 		'''
 		# print tidseq.shape
-		in_size = len(tidseq) - 1
+		in_size = len(tidseq)
+		if truncate_input:
+			in_size -= 1
 
 		mat_in = numpy.zeros((in_size, self.ndict.size()), dtype=theano.config.floatX)
-		mat_out = numpy.asarray(tidseq[1:], dtype="int32")
+		vec_out = numpy.asarray(tidseq[1:], dtype="int32")
 
 		for i in xrange(in_size):
 			mat_in[i][tidseq[i]] = numpy.array(1., dtype=theano.config.floatX)
 
 		mat_in = theano.shared(mat_in, borrow=True)
-		mat_out = theano.shared(mat_out, borrow=True)
+		vec_out = theano.shared(vec_out, borrow=True)
 
-		return mat_in, mat_out
+		return mat_in, vec_out
 
 	def traintokenseq(self, tokenseq, add_se=False):
 		'''
@@ -146,9 +158,9 @@ class MlpBigram(object):
 		tidseq = self.__tokens2ids(tokenseq, add_se)
 
 		# tids to theano input variables
-		mat_in, mat_out = self.__tids2nndata(tidseq)
+		mat_in, vec_out = self.__tids2nndata(tidseq)
 
-		self.train_batch(mat_in, mat_out)
+		self.train_batch(mat_in, vec_out)
 
 	def traintext(self, text, add_se=False, data_slice_size=40000):
 		'''
@@ -182,14 +194,70 @@ class MlpBigram(object):
 		@result: Error rate
 		'''
 
-		self.__initMlp()
+		self.__initMlp(no_train=True)
 
 		# get input data
-		mat_in, mat_out = self.__tids2nndata(self.__tokens2ids(text))
+		mat_in, vec_out = self.__tids2nndata(self.__tokens2ids(text))
 
-		error = self.test_model(mat_in.get_value(borrow=True), mat_out.get_value(borrow=True))
+		error = self.test_model(mat_in.get_value(borrow=True), vec_out.get_value(borrow=True))
 
 		return error
+
+	def predict(self, text):
+		'''
+		@summary: Predict the next token, given the history text
+		
+		@param text:
+		@result: 
+		'''
+		# text length should be large than 0
+		if(len(text) < 1):
+			return None
+
+		self.__initMlp(no_train=True)
+
+		# token to id
+		tidmat, _ = self.__tids2nndata(self.__tokens2ids(text[-1]), truncate_input=False)
+		return self.mlp_predict(tidmat.get_value(borrow=True))
+
+	def likelihood(self, text):
+		'''
+		@summary: Return the probability of the last two token of the input text
+		
+		@param text:
+		@result: 
+		'''
+		# text length should be large than 1
+		if(len(text) < 2):
+			return None
+
+		self.__initMlp(no_train=True)
+
+		# token to id
+		mat_in, vec_out = self.__tids2nndata(self.__tokens2ids(text[-2:]))
+		return self.mlp_prob(mat_in.get_value(borrow=True), vec_out.get_value(borrow=True))
+
+	def crossentropy(self, text, add_se=False):
+		'''
+		@summary: Return the cross-entropy of the text
+		
+		@param text:
+		@result: cross entropy
+		'''
+
+		# cal the log probability
+		# cal cross-entropy first, use the equation:
+		# 	H(W) = - 1 / N * (\sum P(w_1 w_2 ... w_N))
+		log_prob = []
+		len_seq = len(text)
+		for i in xrange(len_seq-1):
+			sub_seq = text[i:i+2]
+
+			log_prob.append(numpy.log(self.likelihood(sub_seq)))
+
+		crossentropy = - numpy.sum(log_prob) / len_seq
+
+		return crossentropy, log_prob
 
 	def savemodel(self, filepath="./data/MlpBigram.model.obj"):
 		'''

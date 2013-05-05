@@ -37,3 +37,7 @@ nosetests.xml
 # Generated data and large size data
 *.obj
 *.ltxt
+*.gz
+
+# Other unwant push files
+mem_test.py
