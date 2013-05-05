@@ -23,7 +23,7 @@ len_text = len(text)
 print "Train size is: %s" % len_text
 
 # ngram_file_path = "./data/ngram.model.obj"
-ngram = Ngram(nlpdict, 4)
+ngram = Ngram(nlpdict, 2)
 ngram.traintext(text)
 
 # print "Save N-gram model"

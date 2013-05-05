@@ -6,22 +6,24 @@ Created on 2013-04-12 19:27
 '''
 import cPickle
 import numpy
+from LMBase import LMBase
 
-class Ngram(object):
+class Ngram(LMBase):
 	'''
 	@summary: N-gram类，用于N-gram的训练、预测和评估 
 	'''
 
-	def __init__(self, nlpdict, N=4, ngram_file_path=None):
+	def __init__(self, ndict, N=4, ngram_file_path=None):
 		'''
 		@summary: 构造函数，如果有路径参数则直接读取
 		
-		@param nlpdict: 词典
+		@param ndict: 词典
 		@param n_size: N-gram的N值
 		@param ngram_file_path: 模型序列化文件的路径
 		'''
 
-		self.ndict = nlpdict
+		super(Ngram, self).__init__(ndict)
+
 		self.N = N < 1 and 1 or N
 		self.SMOOTH_COEF = 0.005
 		if ngram_file_path:
@@ -137,11 +139,7 @@ class Ngram(object):
 		'''
 
 		# 借助dict将token串，转为id串
-		# print tokenseq
-		tidseq = add_se and [self.ndict.getstartindex()] or []
-		tidseq.extend([self.ndict[token] for token in tokenseq])
-		add_se and tidseq.extend([self.ndict.getendindex()])
-		# print tidseq
+		tidseq = self.tokens2ids(tokenseq, add_se)
 
 		# 训练tid序列
 		self.__traintidseq(tidseq)
@@ -164,6 +162,9 @@ class Ngram(object):
 		self.__updateprop()
 		self.__updatelambdas()
 		print "N-gram Train Over!"
+
+	def testtext(self, text):
+		return
 
 	def backoff(self, tids):
 		'''
@@ -236,12 +237,7 @@ class Ngram(object):
 
 
 	def predict(self, text):
-		'''
-		@summary: 给定一段文本，预测下一个token
-		
-		@param text:
-		@result: 
-		'''
+
 		# text length should be large than 0
 		if(len(text) < 1):
 			return None
@@ -277,17 +273,9 @@ class Ngram(object):
 		return tid_max, p_max
 
 	def likelihood(self, text, add_se=False, smoothfuncname = "interpolation"):
-		'''
-		@summary: Return the likelihood of the token sequence
-		
-		@param text:
-		@param add_se:
-		@result: 
-		'''
+
 		# turn text sequence to token id sequence
-		tidseq = add_se and [self.ndict.getstartindex()] or []
-		tidseq.extend([self.ndict[token] for token in text])
-		add_se and tidseq.extend([self.ndict.getendindex()])
+		tidseq = self.tokens2ids(text)
 
 		# choose smooth function
 		smoothfunc = self.interpolation
@@ -311,16 +299,9 @@ class Ngram(object):
 		return prop
 
 	def crossentropy(self, text, add_se=False):
-		'''
-		@summary: Return the cross-entropy of the text
-		
-		@param text:
-		@result: cross entropy
-		'''
+
 		# turn text sequence to token id sequence
-		tidseq = add_se and [self.ndict.getstartindex()] or []
-		tidseq.extend([self.ndict[token] for token in text])
-		add_se and tidseq.extend([self.ndict.getendindex()])
+		tidseq = self.tokens2ids(text)
 
 		# cal the log probability
 		# cal cross-entropy first, use the equation:
@@ -340,31 +321,13 @@ class Ngram(object):
 
 		return crossentropy, log_prob
 
-	def perplexity(self, text, add_se=False):
-		'''
-		@summary: Return the perplexity of the text
-		
-		@result: perplexity
-		'''
-		return numpy.exp2(self.crossentropy(text, add_se)[0])
-
 	def savemodel(self, filepath="./data/ngram.model.obj"):
-		'''
-		@summary: Save model to file
-		
-		@param filepath: back up file path
-		'''
 
 		backupfile = open(filepath, 'w')
 		cPickle.dump((self.cpmaps, self.train_token_size, self.lambdas), backupfile)
 		backupfile.close()
 
 	def loadmodel(self, filepath="./data/ngram.model.obj"):
-		'''
-		@summary: Load model from file
-		
-		@param filepath:
-		'''
 
 		backupfile = open(filepath)
 		self.cpmaps, self.train_token_size, self.lambdas = cPickle.load(backupfile)

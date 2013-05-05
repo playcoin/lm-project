@@ -11,8 +11,9 @@ import theano.tensor as T
 import cPickle
 from dltools.mlp import MLP
 from theano import sandbox, Out
+from LMBase import LMBase
 
-class MlpBigram(object):
+class MlpBigram(LMBase):
 	'''
 	@summary: Train Bigram by using Mlp
 	'''
@@ -26,7 +27,7 @@ class MlpBigram(object):
 		@param l1_reg: l1 norm coef
 		@param l2_reg: l2 norm coef
 		'''
-		self.ndict = ndict
+		super(MlpBigram, self).__init__(ndict)
 
 		if backup_file_path is None:
 			self.n_hidden = n_hidden
@@ -61,7 +62,7 @@ class MlpBigram(object):
 		# construct the MLP class
 		self.mlp = MLP(rng=rng, input=x, n_in=self.ndict.size(),
 						 n_hidden=self.n_hidden, n_out=self.ndict.size(),
-						 hW=self.mlpparams[0],hb=self.mlpparams[1],oW=self.mlpparams[2],ob=self.mlpparams[3],)
+						 hW=self.mlpparams[0], hb=self.mlpparams[1], oW=self.mlpparams[2], ob=self.mlpparams[3])
 
 		self.mlpparams = self.mlp.params
 
@@ -112,21 +113,6 @@ class MlpBigram(object):
 
 		print "Compile training function complete!"		
 		
-	def __tokens2ids(self, tokenseq, add_se=False):
-		'''
-		@summary: Token chars to token ids
-		
-		@param tokenseq: token chars
-		@param add_se: whether add head and tail symbol
-		@result: token ids
-		'''
-		tidseq = add_se and [self.ndict.getstartindex()] or []
-		tidseq.extend([self.ndict[token] for token in tokenseq])
-		add_se and tidseq.extend([self.ndict.getendindex()])
-
-		# print tidseq
-		return tidseq
-
 	def __tids2nndata(self, tidseq, truncate_input=True):
 		'''
 		@summary: token ids to theano function input variables (matrix and vector)
@@ -147,30 +133,10 @@ class MlpBigram(object):
 
 		return mat_in, vec_out
 
-	def traintokenseq(self, tokenseq, add_se=False):
-		'''
-		@summary: Train a token sequence. Need to transform the tokens to tids
-		
-		@param tokenseq:
-		'''
-
-		# token to tids
-		tidseq = self.__tokens2ids(tokenseq, add_se)
-
-		# tids to theano input variables
-		mat_in, vec_out = self.__tids2nndata(tidseq)
-
-		self.train_batch(mat_in, vec_out)
-
 	def traintext(self, text, add_se=False, data_slice_size=40000):
-		'''
-		@summary: Train text, split token sequence to slice with user-designed batch_size
-		
-		@param text: 
-		'''
 		
 		# token chars to token ids
-		tidseq = self.__tokens2ids(text, add_se)
+		tidseq = self.tokens2ids(text, add_se)
 		tidseq = theano.shared(tidseq).get_value(borrow=True)
 
 		# train all slices of data. train_data and label_data will be reset to new slice
@@ -187,67 +153,42 @@ class MlpBigram(object):
 				self.train_batch(i)
 
 	def testtext(self, text):
-		'''
-		@summary: Test text, return the error rate of test text
-		
-		@param text:
-		@result: Error rate
-		'''
 
 		self.__initMlp(no_train=True)
 
 		# get input data
-		mat_in, vec_out = self.__tids2nndata(self.__tokens2ids(text))
+		mat_in, vec_out = self.__tids2nndata(self.tokens2ids(text))
 
 		error = self.test_model(mat_in.get_value(borrow=True), vec_out.get_value(borrow=True))
 
 		return error
 
 	def predict(self, text):
-		'''
-		@summary: Predict the next token, given the history text
-		
-		@param text:
-		@result: 
-		'''
+
 		# text length should be large than 0
 		if(len(text) < 1):
 			return None
 
 		self.__initMlp(no_train=True)
 
-		# token to id
-		tidmat, _ = self.__tids2nndata(self.__tokens2ids(text[-1]), truncate_input=False)
+		# token to NN input and label
+		tidmat, _ = self.__tids2nndata(self.tokens2ids(text[-1]), truncate_input=False)
 		return self.mlp_predict(tidmat.get_value(borrow=True))
 
 	def likelihood(self, text):
-		'''
-		@summary: Return the probability of the last two token of the input text
-		
-		@param text:
-		@result: 
-		'''
+
 		# text length should be large than 1
 		if(len(text) < 2):
 			return None
 
 		self.__initMlp(no_train=True)
 
-		# token to id
-		mat_in, vec_out = self.__tids2nndata(self.__tokens2ids(text[-2:]))
+		# token to NN input and label
+		mat_in, vec_out = self.__tids2nndata(self.tokens2ids(text[-2:]))
 		return self.mlp_prob(mat_in.get_value(borrow=True), vec_out.get_value(borrow=True))
 
 	def crossentropy(self, text, add_se=False):
-		'''
-		@summary: Return the cross-entropy of the text
-		
-		@param text:
-		@result: cross entropy
-		'''
 
-		# cal the log probability
-		# cal cross-entropy first, use the equation:
-		# 	H(W) = - 1 / N * (\sum P(w_1 w_2 ... w_N))
 		log_prob = []
 		len_seq = len(text)
 		for i in xrange(len_seq-1):
@@ -260,11 +201,6 @@ class MlpBigram(object):
 		return crossentropy, log_prob
 
 	def savemodel(self, filepath="./data/MlpBigram.model.obj"):
-		'''
-		@summary: Save model to file
-		
-		@param filepath: back up file path
-		'''
 
 		backupfile = open(filepath, 'w')
 		cPickle.dump((self.batch_size, self.n_hidden, self.lr, self.l1_reg, self.l2_reg, self.mlpparams), backupfile)
@@ -272,11 +208,6 @@ class MlpBigram(object):
 		print "Save model complete!"
 
 	def loadmodel(self, filepath="./data/MlpBigram.model.obj"):
-		'''
-		@summary: Save model to file
-		
-		@param filepath: back up file path
-		'''
 
 		backupfile = open(filepath)
 		self.batch_size, self.n_hidden, self.lr, self.l1_reg, self.l2_reg, self.mlpparams = cPickle.load(backupfile)
