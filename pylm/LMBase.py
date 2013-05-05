@@ -4,7 +4,8 @@ Created on 2013-05-05 16:26
 @summary: The Abstract Base LM Class
 @author: egg
 '''
-
+import numpy
+import theano
 from abc import ABCMeta, abstractmethod
 
 class LMBase(object):
@@ -38,6 +39,26 @@ class LMBase(object):
 		add_se and tidseq.extend([self.ndict.getendindex()])
 
 		return tidseq
+
+	def tids2nndata(self, tidseq, truncate_input=True):
+		'''
+		@summary: token ids to theano function input variables (matrix and vector)
+		'''
+		# print tidseq.shape
+		in_size = len(tidseq)
+		if truncate_input:
+			in_size -= 1
+
+		mat_in = numpy.zeros((in_size, self.ndict.size()), dtype=theano.config.floatX)
+		vec_out = numpy.asarray(tidseq[1:], dtype="int32")
+
+		for i in xrange(in_size):
+			mat_in[i][tidseq[i]] = numpy.array(1., dtype=theano.config.floatX)
+
+		mat_in = theano.shared(mat_in, borrow=True)
+		vec_out = theano.shared(vec_out, borrow=True)
+
+		return mat_in, vec_out
 
 
 	####################

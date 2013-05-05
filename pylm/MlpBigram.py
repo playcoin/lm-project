@@ -113,26 +113,6 @@ class MlpBigram(LMBase):
 
 		print "Compile training function complete!"		
 		
-	def __tids2nndata(self, tidseq, truncate_input=True):
-		'''
-		@summary: token ids to theano function input variables (matrix and vector)
-		'''
-		# print tidseq.shape
-		in_size = len(tidseq)
-		if truncate_input:
-			in_size -= 1
-
-		mat_in = numpy.zeros((in_size, self.ndict.size()), dtype=theano.config.floatX)
-		vec_out = numpy.asarray(tidseq[1:], dtype="int32")
-
-		for i in xrange(in_size):
-			mat_in[i][tidseq[i]] = numpy.array(1., dtype=theano.config.floatX)
-
-		mat_in = theano.shared(mat_in, borrow=True)
-		vec_out = theano.shared(vec_out, borrow=True)
-
-		return mat_in, vec_out
-
 	def traintext(self, text, add_se=False, data_slice_size=40000):
 		
 		# token chars to token ids
@@ -143,7 +123,7 @@ class MlpBigram(LMBase):
 		total_data_size = len(tidseq)
 		for i in xrange(0, total_data_size, data_slice_size):
 			data_slice = tidseq[i:i+data_slice_size+1]
-			self.train_data, self.label_data = self.__tids2nndata(data_slice)
+			self.train_data, self.label_data = self.tids2nndata(data_slice)
 			# print self.train_data, self.label_data
 			# print self.train_data[1:2]
 			self.__initMlp()
@@ -157,7 +137,7 @@ class MlpBigram(LMBase):
 		self.__initMlp(no_train=True)
 
 		# get input data
-		mat_in, vec_out = self.__tids2nndata(self.tokens2ids(text))
+		mat_in, vec_out = self.tids2nndata(self.tokens2ids(text))
 
 		error = self.test_model(mat_in.get_value(borrow=True), vec_out.get_value(borrow=True))
 
@@ -172,7 +152,7 @@ class MlpBigram(LMBase):
 		self.__initMlp(no_train=True)
 
 		# token to NN input and label
-		tidmat, _ = self.__tids2nndata(self.tokens2ids(text[-1]), truncate_input=False)
+		tidmat, _ = self.tids2nndata(self.tokens2ids(text[-1]), truncate_input=False)
 		return self.mlp_predict(tidmat.get_value(borrow=True))
 
 	def likelihood(self, text):
@@ -184,7 +164,7 @@ class MlpBigram(LMBase):
 		self.__initMlp(no_train=True)
 
 		# token to NN input and label
-		mat_in, vec_out = self.__tids2nndata(self.tokens2ids(text[-2:]))
+		mat_in, vec_out = self.tids2nndata(self.tokens2ids(text[-2:]))
 		return self.mlp_prob(mat_in.get_value(borrow=True), vec_out.get_value(borrow=True))
 
 	def crossentropy(self, text, add_se=False):
