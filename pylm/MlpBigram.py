@@ -68,7 +68,7 @@ class MlpBigram(object):
 		classifier = self.mlp
 
 		probs = classifier.logRegressionLayer.p_y_given_x[T.arange(y.shape[0]), y]
-		self.mlp_prob = theano.function(inputs=[x, y], outputs=probs[-1])
+		self.mlp_prob = theano.function(inputs=[x, y], outputs=probs)
 		print "Compile likelihood function complete!"
 
 		y_pred = classifier.logRegressionLayer.y_pred
