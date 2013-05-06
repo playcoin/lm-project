@@ -93,8 +93,8 @@ class RNN(object):
 			lin_h = T.dot(u_tm, self.W_in) + T.dot(h_tm, self.W_h) + self.b_h
 			h_t = activation(lin_h)
 			lin_out = T.dot(h_t, self.W_out) + self.b_out
-			y_t = T.nnet.softmax(activation(lin_out))
-			return h_t, y_t[0]
+			y_t = T.nnet.softmax(lin_out)
+			return [h_t, y_t[0]]
 
 		self.rnn_step = step
 
