@@ -43,19 +43,20 @@ class RnnLM(LMBase):
 		if self.rnn is not None:
 			return
 
-		x = T.matrix('x')
+		x = T.tensor3('x')
+		u = T.matrix('u')
 		y = T.ivector('y')
-		h_init = T.vector('h_init')
+		h_init = T.matrix('h_init')
 
 		rng = numpy.random.RandomState(213234)
-		rnn = RNN(rng, x, self.ndict.size(), self.n_hidden, self.ndict.size())
+		rnn = RNN(rng, x, self.ndict.size(), self.n_hidden, self.ndict.size(), self.batch_size)
 		self.rnn = rnn
 		print "Compile Truncate-BPTT Algorithm!"
 		rnn.build_tbptt(x, y, h_init, self.lr)
 
-		print "Comile test function"
-		error = rnn.errors(y)
-		self.test_model = theano.function([x, y], [error, rnn.y_pred])
+		print "Comile Test function"
+		error = rnn.errors(u,y)
+		self.test_model = theano.function([u, y], [error, rnn.y_pred])
 
 	def traintext(self, text, add_se=True):
 
@@ -70,7 +71,7 @@ class RnnLM(LMBase):
 
 		# train whole text
 		mat_in, label = self.tids2nndata(self.tokens2ids(text, add_se))
-		self.rnn.train_tbptt(mat_in.get_value(), label.get_value(), self.lr)
+		self.rnn.train_tbptt(mat_in.get_value(), label.get_value(), self.lr, truncate_step=5)
 
 	def testtext(self, text):
 

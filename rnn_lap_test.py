@@ -27,19 +27,20 @@ len_text = len(text)
 
 print "Train size is: %s" % len_text
 
-rnnlm = RnnLM(nlpdict, n_hidden=30, lr=0.09, batch_size=50)
+rnnlm = RnnLM(nlpdict, n_hidden=30, lr=0.1, batch_size=5)
 
 print "Rnn training start!"
 
-train_text = text[:100]
-test_text = text[:100]
+train_text = text[:101]
+test_text = text[0:100]
 
 s_time = time.clock()
-for i in xrange(1000):
-	rnnlm.traintext(train_text)
-	test_res = rnnlm.testtext(test_text)
-	print "Error rate: %.5f. Epoch: %s. Training time so far: %0.1fm" % (test_res[0], i+1, (time.clock()-s_time)/60.)
-	print ''.join(nlpdict.gettoken(i) for i in test_res[1])
+for i in xrange(200):
+	rnnlm.traintext(train_text, add_se=False)
+	# test_res = rnnlm.testtext(test_text)
+	# print "Error rate: %.5f. Epoch: %s. Training time so far: %0.1fm" % (test_res[0], i+1, (time.clock()-s_time)/60.)
+	# print ''.join(nlpdict.gettoken(i) for i in test_res[1])
+	# print test_res[1]
 
 e_time = time.clock()
 

@@ -40,7 +40,7 @@ class LMBase(object):
 
 		return tidseq
 
-	def tids2nndata(self, tidseq, truncate_input=True):
+	def tids2nndata(self, tidseq, truncate_input = True, shared = True):
 		'''
 		@summary: token ids to theano function input variables (matrix and vector)
 		'''
@@ -55,8 +55,9 @@ class LMBase(object):
 		for i in xrange(in_size):
 			mat_in[i][tidseq[i]] = numpy.array(1., dtype=theano.config.floatX)
 
-		mat_in = theano.shared(mat_in, borrow=True)
-		vec_out = theano.shared(vec_out, borrow=True)
+		if shared:
+			mat_in = theano.shared(mat_in, borrow=True)
+			vec_out = theano.shared(vec_out, borrow=True)
 
 		return mat_in, vec_out
 

@@ -21,7 +21,7 @@ class RNN(object):
 	@summary: RNN model
 	'''
 
-	def __init__(self, rng, input, n_in, n_h, n_out, params=None, activation=T.tanh):
+	def __init__(self, rng, input, n_in, n_h, n_out, batch_size, params=None, activation=T.tanh):
 		'''
 		@summary: Initial params and theano variable
 		
@@ -68,7 +68,7 @@ class RNN(object):
 			# biases and h_0 initialed by 0.
 			b_h_values = numpy.zeros((n_h,), dtype = theano.config.floatX)
 			b_out_values = numpy.zeros((n_out,), dtype = theano.config.floatX)
-			h_0_values = numpy.zeros((n_h,), dtype = theano.config.floatX)
+			h_0_values = numpy.zeros((batch_size, n_h), dtype = theano.config.floatX)
 
 			b_h = theano.shared(value = b_h_values, name='b_h', borrow=True)
 			b_out = theano.shared(value = b_out_values, name='b_out', borrow=True)
@@ -82,29 +82,33 @@ class RNN(object):
 		self.h_0 = h_0
 		self.input = input
 		self.activation = activation
+		self.batch_size = batch_size
 
-		def step(u_tm, h_tm):
-			'''
-			@summary: iter function of scan op
-			
-			@param u_tm: current input
-			@param h_tm: last output of hidden layer
-			'''
-			lin_h = T.dot(u_tm, self.W_in) + T.dot(h_tm, self.W_h) + self.b_h
-			h_t = activation(lin_h)
-			lin_out = T.dot(h_t, self.W_out) + self.b_out
-			y_t = T.nnet.softmax(lin_out)
-			return [h_t, y_t[0]]
-
-		self.rnn_step = step
-
-		[self.h, self.p_y_given_x], _ = theano.scan(step, sequences=input, outputs_info=[self.h_0, None])
-
-		self.y_pred = T.argmax(self.p_y_given_x, axis=1)
+		# self.h and self.p_y_given_x are for training function
+		self.h, _ = theano.scan(self.rnn_step, sequences=input, outputs_info=dict(initial=self.h_0, taps=[-1]))
+		self.p_y_given_x, _ = theano.scan(self.rnn_softmax, sequences=self.h)
 
 		self.params = [self.W_in, self.W_h, self.W_out, self.b_h, self.b_out, self.h_0]
 
-		# self.build_tbptt()
+	def rnn_step(self, u_tm, h_tm):
+		'''
+		@summary: iter function of scan op
+		
+		@param u_tm: current input
+		@param h_tm: last output of hidden layer
+		'''
+		lin_h = T.dot(u_tm, self.W_in) + T.dot(h_tm, self.W_h) + self.b_h
+		h_t = self.activation(lin_h)
+		return h_t
+
+	def rnn_softmax(self, h):
+		'''
+		@summary: iter function to calculate softmax of outputlayer
+		
+		@param h:
+		@result: 
+		'''
+		return T.nnet.softmax(T.dot(h, self.W_out) + self.b_out)
 
 	def loss_NLL(self, y):
 		'''
@@ -112,14 +116,20 @@ class RNN(object):
 		
 		@param y: labels
 		'''
-		return -T.mean(T.log(self.p_y_given_x)[T.arange(y.shape[0]), y])
+		y_tmp = self.p_y_given_x.reshape((self.input.shape[0] * self.input.shape[1], 10))
+		return -T.mean(T.log(y_tmp)[T.arange(y.shape[0]), y])
 
-	def errors(self, y):
+	def errors(self, u, y):
 		'''
 		@summary: Errors count
 		
+		@param u: TensorVariable, matrix
 		@param y: labels
 		'''
+		h, _ = theano.scan(self.rnn_step, sequences=u, outputs_info=self.h_0[0])
+		p_y_given_x = T.nnet.softmax(T.dot(h, self.W_out) + self.b_out)
+		self.y_pred = T.argmax(p_y_given_x, axis=1)
+
 		return T.mean(T.neq(self.y_pred, y))
 
 	def build_tbptt(self, x, y, h_init, l_rate):
@@ -134,16 +144,16 @@ class RNN(object):
 		'''
 
 		# output of hidden layer and output layer
-		[part_h, part_p_y_given_x], _ = theano.scan(self.rnn_step, sequences=x, outputs_info=[h_init, None])
-		# part_y_pred = T.argmax(part_p_y_given_x, axis=1)
+		part_h, _ = theano.scan(self.rnn_step, sequences=x, outputs_info=dict(initial=h_init, taps=[-1]))
+		part_p_y_given_x, _ = theano.scan(self.rnn_softmax, sequences=part_h)
 		
 		# apply the laster output of hidden layer as the next input 
 		out_h = part_h[-1]
 		
 		#### BPTT ####
 		# cost function
+		part_p_y_given_x = part_p_y_given_x.reshape((y.shape[0], x.shape[2]))
 		part_cost = -T.mean(T.log(part_p_y_given_x)[T.arange(y.shape[0]), y])
-		# part_errors = T.mean(T.neq(T.argmax(part_p_y_given_x, axis=1), y))
 		# update params
 		params = [self.W_in, self.W_h, self.W_out, self.b_h, self.b_out]
 
@@ -163,7 +173,7 @@ class RNN(object):
 		self.f_part_tbptt = theano.function(inputs=[x, y, h_init], outputs=[out_h, h_gparam], updates=updates)
 		return self.f_part_tbptt
 
-	def train_tbptt(self, seq_input, seq_label, learning_rate, truncate_step=4):
+	def train_tbptt(self, seq_input, seq_label, learning_rate, truncate_step=5):
 		'''
 		@summary: T-BPTT Algorithm
 		
@@ -173,12 +183,17 @@ class RNN(object):
 		@param truncate_step:
 		'''
 		h_init = self.h_0.get_value(borrow=True)
-
+		seq_input = seq_input.reshape(self.batch_size, seq_input.shape[0] / self.batch_size, seq_input.shape[1])
+		seq_input = seq_input.transpose(1,0,2)
+		# print seq_label
+		seq_label = seq_label.reshape(self.batch_size, seq_label.shape[0] / self.batch_size).T.flatten()
+		# print seq_label
 		# slice the sequence, do BPTT in each slice
-		for j in range(0, len(seq_label), truncate_step):
+		for j in range(0, len(seq_input), truncate_step):
 			# slice
 			part_in = seq_input[j:j+truncate_step]
-			part_y = seq_label[j:j+truncate_step]
+			part_y = seq_label[j*self.batch_size:(j+truncate_step)*self.batch_size]
+			# print part_in.shape, part_y.shape
 			# BPTT
 			res = self.f_part_tbptt(part_in, part_y, h_init)
 			# reset the h_init
