@@ -8,6 +8,7 @@ Created on 2013-05-05 21:46
 import math
 import numpy
 import cPickle
+import time
 
 import theano
 import theano.tensor as T
@@ -58,20 +59,32 @@ class RnnLM(LMBase):
 		error = rnn.errors(u,y)
 		self.test_model = theano.function([u, y], [error, rnn.y_pred])
 
-	def traintext(self, text, add_se=True):
+	def traintext(self, text, add_se=True, epoch=200, DEBUG = False):
 
 		self.__initRnn()
-		# # train each sentence separately
-		# sentences = text.split('\n')
 
-		# for sentence in sentences:
-		# 	# print sentence
-		# 	mat_in, label = self.tids2nndata(self.tokens2ids(sentence, add_se))
-		# 	self.rnn.train_tbptt(mat_in.get_value(), label.get_value(), self.lr)
+		test_text = text[:200]
 
 		# train whole text
-		mat_in, label = self.tids2nndata(self.tokens2ids(text, add_se))
-		self.rnn.train_tbptt(mat_in.get_value(), label.get_value(), self.lr, truncate_step=5)
+		mat_in, label = self.tids2nndata(self.tokens2ids(text, add_se), shared=False)
+
+		mat_in = mat_in.reshape(self.batch_size, mat_in.shape[0] / self.batch_size, mat_in.shape[1])
+		mat_in = mat_in.transpose(1,0,2)
+		# print seq_label
+		label = label.reshape(self.batch_size, label.shape[0] / self.batch_size).T.flatten()
+
+		mat_in, label = theano.shared(mat_in, borrow=True), theano.shared(label, borrow=True)
+
+		s_time = time.clock()
+		for i in xrange(epoch):
+			self.rnn.train_tbptt(mat_in.get_value(), label.get_value(), self.lr, truncate_step=5)
+			if DEBUG and (i + 1) % 10 == 0:
+				err = self.testtext(test_text)[0]
+				print "Error rate in epoch %s, is %.3f." % ( i+1, err)
+
+		e_time = time.clock()
+		print "RnnLM train over!! The total training time is %.2fm." % ((e_time - s_time) / 60.) 
+
 
 	def testtext(self, text):
 

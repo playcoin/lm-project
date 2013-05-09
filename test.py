@@ -10,7 +10,8 @@ from pylm.Ngram import Ngram
 import numpy
 
 nlpdict = NlpDict()
-nlpdict.buildfromfile('./data/pku_train_nw.ltxt')
+nlpdict.buildfromfile('./data/pku_train_nw.ltxt',freq_thres=0)
+print "Nlpdict size is:", nlpdict.size()
 
 # text
 f = file('./data/pku_train_nw.ltxt')
@@ -23,7 +24,7 @@ len_text = len(text)
 print "Train size is: %s" % len_text
 
 # ngram_file_path = "./data/ngram.model.obj"
-ngram = Ngram(nlpdict, 2)
+ngram = Ngram(nlpdict, 4)
 ngram.traintext(text)
 
 # print "Save N-gram model"
@@ -34,16 +35,16 @@ ngram.traintext(text)
 # ngram.traintokenseq(text)
 
 # cal likelihood
-prob_list = ngram.likelihood(u"国家主席江", False)
-print "Likelihood of test sentence is:", prob_list
-cet = - numpy.sum(numpy.log(prob_list)) / len(prob_list)
-print "Cross-entropy of the test sentence is (interpolation):", cet
+# prob_list = ngram.likelihood(u"国家主席江", False)
+# print "Likelihood of test sentence is:", prob_list
+# cet = - numpy.sum(numpy.log(prob_list)) / len(prob_list)
+# print "Cross-entropy of the test sentence is (interpolation):", cet
 
-# cal likelihood
-prob_list = ngram.likelihood(u"国家主席江", False, "backoff")
-print "Likelihood of test sentence is:", prob_list
-cet = - numpy.sum(numpy.log(prob_list)) / len(prob_list)
-print "Cross-entropy of the test sentence is (backoff):", cet
+# # cal likelihood
+# prob_list = ngram.likelihood(u"国家主席江", False, "backoff")
+# print "Likelihood of test sentence is:", prob_list
+# cet = - numpy.sum(numpy.log(prob_list)) / len(prob_list)
+# print "Cross-entropy of the test sentence is (backoff):", cet
 
 # test text
 f = file('./data/pku_test.txt')
@@ -55,7 +56,7 @@ ce, logs = ngram.crossentropy(test_text)
 print "Cross-entropy is:", ce
 print "Perplexity is:", numpy.exp2(ce)
 
-s_prefix = u"国家"
+s_prefix = u"囧家"
 prob = 0.
 for char in nlpdict.ndict_inv:
 	prob += ngram.likelihood(s_prefix+char, False, "interpolation")[-1]
