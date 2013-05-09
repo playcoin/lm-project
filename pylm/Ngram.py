@@ -25,7 +25,7 @@ class Ngram(LMBase):
 		super(Ngram, self).__init__(ndict)
 
 		self.N = N < 1 and 1 or N
-		self.SMOOTH_COEF = 0.005
+		self.SMOOTH_COEF = 1.
 		if ngram_file_path:
 			self.loadmodel(ngram_file_path)
 		else:

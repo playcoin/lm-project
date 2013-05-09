@@ -183,17 +183,11 @@ class RNN(object):
 		@param truncate_step:
 		'''
 		h_init = self.h_0.get_value(borrow=True)
-		seq_input = seq_input.reshape(self.batch_size, seq_input.shape[0] / self.batch_size, seq_input.shape[1])
-		seq_input = seq_input.transpose(1,0,2)
-		# print seq_label
-		seq_label = seq_label.reshape(self.batch_size, seq_label.shape[0] / self.batch_size).T.flatten()
-		# print seq_label
 		# slice the sequence, do BPTT in each slice
 		for j in range(0, len(seq_input), truncate_step):
 			# slice
 			part_in = seq_input[j:j+truncate_step]
 			part_y = seq_label[j*self.batch_size:(j+truncate_step)*self.batch_size]
-			# print part_in.shape, part_y.shape
 			# BPTT
 			res = self.f_part_tbptt(part_in, part_y, h_init)
 			# reset the h_init

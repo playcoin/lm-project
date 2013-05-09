@@ -148,7 +148,7 @@ class NlpDict(object):
 					ndict[char] = 1
 			# 再删掉词少的
 			for char, count in ndict.items():
-				if count < freq_thres:
+				if count <= freq_thres:
 					del ndict[char]
 			# 添加到词典
 			for char in ndict:
