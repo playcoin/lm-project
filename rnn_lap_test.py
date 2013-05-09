@@ -36,18 +36,11 @@ test_text = text[0:100]
 
 s_time = time.clock()
 for i in xrange(200):
-<<<<<<< HEAD
-	rnnlm.traintext(train_text)
-	test_res = rnnlm.testtext(test_text)
-	# print "Error rate: %.5f. Epoch: %s. Training time so far: %0.1fm" % (test_res[0], i+1, (time.clock()-s_time)/60.)
-	# print ''.join(nlpdict.gettoken(i) for i in test_res[1])
-=======
 	rnnlm.traintext(train_text, add_se=False)
 	# test_res = rnnlm.testtext(test_text)
 	# print "Error rate: %.5f. Epoch: %s. Training time so far: %0.1fm" % (test_res[0], i+1, (time.clock()-s_time)/60.)
 	# print ''.join(nlpdict.gettoken(i) for i in test_res[1])
 	# print test_res[1]
->>>>>>> 30e9af50732f82af126fb1358b0ee2884316b345
 
 e_time = time.clock()
 
