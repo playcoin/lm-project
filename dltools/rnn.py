@@ -92,13 +92,12 @@ class RNN(object):
 			'''
 			lin_h = T.dot(u_tm, self.W_in) + T.dot(h_tm, self.W_h) + self.b_h
 			h_t = activation(lin_h)
-			lin_out = T.dot(h_t, self.W_out) + self.b_out
-			y_t = T.nnet.softmax(lin_out)
-			return [h_t, y_t[0]]
+			return h_t
 
 		self.rnn_step = step
 
-		[self.h, self.p_y_given_x], _ = theano.scan(step, sequences=input, outputs_info=[self.h_0, None])
+		self.h, _ = theano.scan(step, sequences=input, outputs_info=self.h_0)
+		self.p_y_given_x = T.nnet.softmax(T.dot(self.h, self.W_out) + self.b_out)
 
 		self.y_pred = T.argmax(self.p_y_given_x, axis=1)
 
@@ -134,7 +133,8 @@ class RNN(object):
 		'''
 
 		# output of hidden layer and output layer
-		[part_h, part_p_y_given_x], _ = theano.scan(self.rnn_step, sequences=x, outputs_info=[h_init, None])
+		part_h, _ = theano.scan(self.rnn_step, sequences=x, outputs_info=h_init)
+		part_p_y_given_x = T.nnet.softmax(T.dot(part_h, self.W_out) + self.b_out)
 		# part_y_pred = T.argmax(part_p_y_given_x, axis=1)
 		
 		# apply the laster output of hidden layer as the next input 
