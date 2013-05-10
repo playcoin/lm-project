@@ -22,7 +22,7 @@ class RnnLM(LMBase):
 	@summary: RNN Langeuage Model
 	'''
 
-	def __init__(self, ndict, n_hidden, lr, batch_size, backup_file_path=None):
+	def __init__(self, ndict, n_hidden, lr, batch_size, backup_file_path=None, truncate_step=5):
 		'''
 		@summary: Construct function, initiate some attribute
 		'''
@@ -32,6 +32,7 @@ class RnnLM(LMBase):
 		self.n_hidden = n_hidden
 		self.lr = lr
 		self.batch_size = batch_size
+		self.truncate_step = truncate_step
 		self.rnn_params = None
 
 		self.rnn = None
@@ -53,7 +54,7 @@ class RnnLM(LMBase):
 		rnn = RNN(rng, x, self.ndict.size(), self.n_hidden, self.ndict.size(), self.batch_size)
 		self.rnn = rnn
 		print "Compile Truncate-BPTT Algorithm!"
-		rnn.build_tbptt(x, y, h_init, self.lr)
+		rnn.build_tbptt(x, y, h_init, self.lr, self.truncate_step)
 
 		print "Comile Test function"
 		error = rnn.errors(u,y)
@@ -63,7 +64,7 @@ class RnnLM(LMBase):
 
 		self.__initRnn()
 
-		test_text = text[:200]
+		test_text = text[20:200]
 
 		# train whole text
 		mat_in, label = self.tids2nndata(self.tokens2ids(text, add_se), shared=False)
@@ -77,7 +78,7 @@ class RnnLM(LMBase):
 
 		s_time = time.clock()
 		for i in xrange(epoch):
-			self.rnn.train_tbptt(mat_in.get_value(), label.get_value(), self.lr, truncate_step=5)
+			self.rnn.train_tbptt(mat_in.get_value(), label.get_value())
 			if DEBUG and (i + 1) % 10 == 0:
 				err = self.testtext(test_text)[0]
 				print "Error rate in epoch %s, is %.3f." % ( i+1, err)

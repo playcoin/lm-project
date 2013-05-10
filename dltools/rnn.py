@@ -132,7 +132,7 @@ class RNN(object):
 
 		return T.mean(T.neq(self.y_pred, y))
 
-	def build_tbptt(self, x, y, h_init, l_rate):
+	def build_tbptt(self, x, y, h_init, l_rate, truncate_step=5):
 		'''
 		@summary: Build T-BPTT training theano function.
 		
@@ -167,13 +167,22 @@ class RNN(object):
 		for param, gparam in zip(params, gparams):
 			updates.append((param, param - l_rate * gparam))
 
-		h_gparam = T.grad(part_cost, h_init)
+		# BPTT for a truncate step. 
+		self.f_part_tbptt = theano.function(inputs=[x, y, h_init], outputs=out_h, updates=updates)
+		# 
+		# def tbptt_step(index, h_tm, x, y):
+		# 	part_in = x[index: index + truncate_step]
+		# 	part_y = y[index*self.batch_size : (index+truncate_step)*self.batch_size]
+		# 	return self.f_part_tbptt(part_in, part_y, h_tm)
 
-		# 得到了单次T-BPTT的训练函数
-		self.f_part_tbptt = theano.function(inputs=[x, y, h_init], outputs=[out_h, h_gparam], updates=updates)
+		# h_end, _ = theano.scan(tbptt_step, sequences=T.arange(0, x.shape[0], truncate_step), non_sequences=[x, y], outputs_info=0.)
+
+		# self.train_tbptt = theano.function([x, y], h_end[-1])
+		self.truncate_step = truncate_step
+
 		return self.f_part_tbptt
 
-	def train_tbptt(self, seq_input, seq_label, learning_rate, truncate_step=5):
+	def train_tbptt(self, seq_input, seq_label):
 		'''
 		@summary: T-BPTT Algorithm
 		
@@ -184,15 +193,9 @@ class RNN(object):
 		'''
 		h_init = self.h_0.get_value(borrow=True)
 		# slice the sequence, do BPTT in each slice
-		for j in range(0, len(seq_input), truncate_step):
+		for j in range(0, len(seq_input), self.truncate_step):
 			# slice
-			part_in = seq_input[j:j+truncate_step]
-			part_y = seq_label[j*self.batch_size:(j+truncate_step)*self.batch_size]
-			# BPTT
-			res = self.f_part_tbptt(part_in, part_y, h_init)
-			# reset the h_init
-			h_init = res[0]
-			# update parameter "h_0" when first BPTT
-			if j == 0:
-				self.h_0.set_value(self.h_0.get_value() - learning_rate * res[1])
-
+			part_in = seq_input[j:j+self.truncate_step]
+			part_y = seq_label[j*self.batch_size:(j+self.truncate_step)*self.batch_size]
+			# BPTT and reset the h_init
+			h_init = self.f_part_tbptt(part_in, part_y, h_init)
