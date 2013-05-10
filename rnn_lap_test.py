@@ -12,13 +12,13 @@ import time
 import theano.sandbox.cuda
 
 nlpdict = NlpDict()
-nlpdict.buildfromfile('./data/pku_train_nw.ltxt')
+nlpdict.buildfromfile('./data/text.txt')
 
 #############
 # Trainging #
 #############
 # text
-f = file('./data/pku_train_nw.ltxt')
+f = file('./data/text.txt')
 text = unicode(f.read(), 'utf-8')
 text = text.replace(" ", "")
 f.close()
@@ -27,13 +27,13 @@ len_text = len(text)
 
 print "Train size is: %s" % len_text
 
-rnnlm = RnnLM(nlpdict, n_hidden=50, lr=0.1, batch_size=10)
+rnnlm = RnnLM(nlpdict, n_hidden=15, lr=0.3, batch_size=10)
 
 print "Rnn training start!"
 
-train_text = text[:4001]
+train_text = text[:515]
 
-rnnlm.traintext(train_text, add_se=False, epoch=20, DEBUG=True)
+rnnlm.traintext(train_text, add_se=False, epoch=500, DEBUG=True)
 
 # print rnnlm.rnn.h_0.get_value()
 
