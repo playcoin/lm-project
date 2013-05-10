@@ -33,6 +33,8 @@ print "Rnn training start!"
 
 train_text = text[:201]
 
-rnnlm.traintext(train_text, add_se=False, epoch=200, DEBUG=True)
+rnnlm.traintext(train_text, add_se=False, epoch=400, DEBUG=True)
+
+# print rnnlm.rnn.h_0.get_value()
 
 # print rnnlm.testtext(test_text)[0]
