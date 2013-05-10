@@ -91,6 +91,13 @@ class RnnLM(LMBase):
 				mat_in, label = theano.shared(mat_in, borrow=True), theano.shared(label, borrow=True)
 
 				self.rnn.train_tbptt(mat_in.get_value(), label.get_value())
+
+				mat_in, label = self.tids2nndata(tidseq[j+sentence_length/2:j+data_slice_size+1+sentence_length/2], shared=False)
+				mat_in = mat_in.reshape(self.batch_size, mat_in.shape[0] / self.batch_size, mat_in.shape[1]).transpose(1,0,2)
+				label = label.reshape(self.batch_size, label.shape[0] / self.batch_size).T.flatten()
+				mat_in, label = theano.shared(mat_in, borrow=True), theano.shared(label, borrow=True)
+
+				self.rnn.train_tbptt(mat_in.get_value(), label.get_value())
 			
 			if DEBUG:
 				err = self.testtext(test_text)[0]
