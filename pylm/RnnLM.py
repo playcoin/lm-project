@@ -64,24 +64,38 @@ class RnnLM(LMBase):
 
 		self.__initRnn()
 
-		test_text = text[20:200]
+		tidseq = self.tokens2ids(text, add_se)
+
+		# variables for slice sentence
+		sentence_length = 20
+		data_slice_size = sentence_length * self.batch_size
+		data_size = len(tidseq) / data_slice_size * data_slice_size
+		print "Data size:" , data_size
+		data_size -= data_slice_size / 2
+
+		test_text = text[0:1000]
 
 		# train whole text
-		mat_in, label = self.tids2nndata(self.tokens2ids(text, add_se), shared=False)
-
-		mat_in = mat_in.reshape(self.batch_size, mat_in.shape[0] / self.batch_size, mat_in.shape[1])
-		mat_in = mat_in.transpose(1,0,2)
-		# print seq_label
-		label = label.reshape(self.batch_size, label.shape[0] / self.batch_size).T.flatten()
-
-		mat_in, label = theano.shared(mat_in, borrow=True), theano.shared(label, borrow=True)
+		# mat_in, label = self.tids2nndata(self.tokens2ids(text, add_se), shared=False)
+		# mat_in = mat_in.reshape(self.batch_size, mat_in.shape[0] / self.batch_size, mat_in.shape[1]).transpose(1,0,2)
+		# label = label.reshape(self.batch_size, label.shape[0] / self.batch_size).T.flatten()
+		# mat_in, label = theano.shared(mat_in, borrow=True), theano.shared(label, borrow=True)
 
 		s_time = time.clock()
 		for i in xrange(epoch):
-			self.rnn.train_tbptt(mat_in.get_value(), label.get_value())
-			if DEBUG and (i + 1) % 10 == 0:
+
+			for j in xrange(0, data_size, data_slice_size / 2):
+				mat_in, label = self.tids2nndata(tidseq[j:j+data_slice_size+1], shared=False)
+				mat_in = mat_in.reshape(self.batch_size, mat_in.shape[0] / self.batch_size, mat_in.shape[1]).transpose(1,0,2)
+				label = label.reshape(self.batch_size, label.shape[0] / self.batch_size).T.flatten()
+				mat_in, label = theano.shared(mat_in, borrow=True), theano.shared(label, borrow=True)
+
+				self.rnn.train_tbptt(mat_in.get_value(), label.get_value())
+			
+			if DEBUG:
 				err = self.testtext(test_text)[0]
-				print "Error rate in epoch %s, is %.3f." % ( i+1, err)
+				e_time = time.clock()
+				print "Error rate in epoch %s, is %.3f. Training time so far is: %.2fm" % ( i+1, err, (e_time-s_time) / 60.)
 
 		e_time = time.clock()
 		print "RnnLM train over!! The total training time is %.2fm." % ((e_time - s_time) / 60.) 
