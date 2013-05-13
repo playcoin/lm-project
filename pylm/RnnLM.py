@@ -56,6 +56,7 @@ class RnnLM(LMBase):
 		rng = numpy.random.RandomState(213234)
 		rnn = RNN(rng, x, self.ndict.size(), self.n_hidden, self.ndict.size(), self.batch_size, params=self.rnnparams)
 		self.rnn = rnn
+		self.rnnparams = rnn.params
 		print "Compile Truncate-BPTT Algorithm!"
 		rnn.build_tbptt(x, y, h_init, self.lr, self.truncate_step)
 
@@ -100,13 +101,13 @@ class RnnLM(LMBase):
 					self.rnn.train_tbptt(mat_in, label)
 			
 			if DEBUG:
-				err, r_labels = self.testtext(test_text)
+				err = self.testtext(test_text)[0]
 				e_time = time.clock()
 				print "Error rate in epoch %s, is %.3f. Training time so far is: %.2fm" % ( i+1, err, (e_time-s_time) / 60.)
-				print ''.join([self.ndict.gettoken(x) for x in r_labels])
+				# print ''.join([self.ndict.gettoken(x) for x in r_labels])
 
 			if SAVE:
-				self.savemodel("./data/RnnLM.model.epoch%s.obj" % i+1)
+				self.savemodel("./data/RnnLM.model.epoch%s.obj" % (i+1))
 
 		e_time = time.clock()
 		print "RnnLM train over!! The total training time is %.2fm." % ((e_time - s_time) / 60.) 
@@ -128,13 +129,13 @@ class RnnLM(LMBase):
 
 	def savemodel(self, filepath="./data/RnnLM.model.obj"):
 		backupfile = open(filepath, 'w')
-		cPickle.dump((self.batch_size, self.n_hidden, self.lr, self.truncate_step, self.mlpparams), backupfile)
+		cPickle.dump((self.batch_size, self.n_hidden, self.lr, self.truncate_step, self.rnnparams), backupfile)
 		backupfile.close()
 		print "Save model complete!"
 
 	def loadmodel(self, filepath="./data/RnnLM.model.obj"):
 		backupfile = open(filepath)
-		self.batch_size, self.n_hidden, self.lr, self.truncate_step, self.mlpparams = cPickle.load(backupfile)
+		self.batch_size, self.n_hidden, self.lr, self.truncate_step, self.rnnparams = cPickle.load(backupfile)
 		backupfile.close()
 		print "Load model complete!"
 

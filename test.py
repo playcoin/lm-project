@@ -56,9 +56,9 @@ ce, logs = ngram.crossentropy(test_text)
 print "Cross-entropy is:", ce
 print "Perplexity is:", numpy.exp2(ce)
 
-s_prefix = u"囧家"
+s_prefix = u"囧"
 prob = 0.
 for char in nlpdict.ndict_inv:
-	prob += ngram.likelihood(s_prefix+char, False, "backoff")[-1]
+	prob += ngram.likelihood(s_prefix+char, False, "interpolation")[-1]
 
 print prob
