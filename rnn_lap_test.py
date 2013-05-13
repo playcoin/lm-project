@@ -32,8 +32,9 @@ rnnlm = RnnLM(nlpdict, n_hidden=15, lr=0.3, batch_size=10, truncate_step=6)
 print "Rnn training start!"
 
 train_text = text
+test_text = text[:492]
 
-rnnlm.traintext(train_text, add_se=False, epoch=500, DEBUG=True)
+rnnlm.traintext(train_text, test_text, add_se=False, epoch=500, DEBUG=True)
 
 # print rnnlm.rnn.h_0.get_value()
 
