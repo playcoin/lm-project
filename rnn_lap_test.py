@@ -27,11 +27,11 @@ len_text = len(text)
 
 print "Train size is: %s" % len_text
 
-rnnlm = RnnLM(nlpdict, n_hidden=15, lr=0.3, batch_size=10)
+rnnlm = RnnLM(nlpdict, n_hidden=15, lr=0.3, batch_size=10, truncate_step=6)
 
 print "Rnn training start!"
 
-train_text = text[:515]
+train_text = text
 
 rnnlm.traintext(train_text, add_se=False, epoch=500, DEBUG=True)
 
