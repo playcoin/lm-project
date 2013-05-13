@@ -144,7 +144,7 @@ class RNN(object):
 		'''
 
 		# output of hidden layer and output layer
-		part_h, _ = theano.scan(self.rnn_step, sequences=x, outputs_info=dict(initial=h_init, taps=[-1]))
+		part_h, _ = theano.scan(self.rnn_step, sequences=x, outputs_info=h_init)
 		part_p_y_given_x, _ = theano.scan(self.rnn_softmax, sequences=part_h)
 		
 		# apply the laster output of hidden layer as the next input 
