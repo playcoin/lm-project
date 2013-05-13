@@ -65,11 +65,13 @@ class RnnLM(LMBase):
 		self.__initRnn()
 
 		tidseq = self.tokens2ids(text, add_se)
+		seq_size = len(tidseq)
 
 		# variables for slice sentence
 		sentence_length = 20
+		half_sen_length = sentence_length / 2
 		data_slice_size = sentence_length * self.batch_size
-		data_size = len(tidseq) / data_slice_size * data_slice_size
+		data_size = seq_size / data_slice_size * data_slice_size
 		print "Data size:" , data_size
 		data_size -= data_slice_size / 2
 
@@ -92,12 +94,13 @@ class RnnLM(LMBase):
 
 				self.rnn.train_tbptt(mat_in.get_value(), label.get_value())
 
-				mat_in, label = self.tids2nndata(tidseq[j+sentence_length/2:j+data_slice_size+1+sentence_length/2], shared=False)
-				mat_in = mat_in.reshape(self.batch_size, mat_in.shape[0] / self.batch_size, mat_in.shape[1]).transpose(1,0,2)
-				label = label.reshape(self.batch_size, label.shape[0] / self.batch_size).T.flatten()
-				mat_in, label = theano.shared(mat_in, borrow=True), theano.shared(label, borrow=True)
+				if (j+data_slice_size+half_sen_length) < seq_size:
+					mat_in, label = self.tids2nndata(tidseq[j+half_sen_length:j+data_slice_size+half_sen_length+1], shared=False)
+					mat_in = mat_in.reshape(self.batch_size, mat_in.shape[0] / self.batch_size, mat_in.shape[1]).transpose(1,0,2)
+					label = label.reshape(self.batch_size, label.shape[0] / self.batch_size).T.flatten()
+					mat_in, label = theano.shared(mat_in, borrow=True), theano.shared(label, borrow=True)
 
-				self.rnn.train_tbptt(mat_in.get_value(), label.get_value())
+					self.rnn.train_tbptt(mat_in.get_value(), label.get_value())
 			
 			if DEBUG:
 				err = self.testtext(test_text)[0]
