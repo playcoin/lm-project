@@ -40,7 +40,7 @@ class RnnLM(LMBase):
 
 		self.rnn = None
 
-	def __initRnn(self):
+	def __initRnn(self, no_train=False):
 		'''
 		@summary: Initiate RNN model 
 		'''
@@ -57,12 +57,18 @@ class RnnLM(LMBase):
 		rnn = RNN(rng, x, self.ndict.size(), self.n_hidden, self.ndict.size(), self.batch_size, params=self.rnnparams)
 		self.rnn = rnn
 		self.rnnparams = rnn.params
-		print "Compile Truncate-BPTT Algorithm!"
-		rnn.build_tbptt(x, y, h_init, self.lr, self.truncate_step)
 
-		print "Comile Test function"
 		error = rnn.errors(u,y)
 		self.test_model = theano.function([u, y], [error, rnn.y_pred])
+		print "Compile Test function complete!"
+
+		probs = rnn.y_prob[T.arange(y.shape[0]), y]
+		self.rnn_prob = theano.function([u, y], probs)
+		print "Compile likelihood function complete!"
+
+		if not no_train:
+			rnn.build_tbptt(x, y, h_init, self.lr, self.truncate_step)
+			print "Compile Truncate-BPTT Algorithm complete!"
 
 	def traintext(self, text, test_text, add_se=True, epoch=200, DEBUG = False, SAVE=False):
 
@@ -114,15 +120,21 @@ class RnnLM(LMBase):
 
 	def testtext(self, text):
 
-		mat_in, label = self.tids2nndata(self.tokens2ids(text))
+		self.__initRnn(no_train=True)
 
-		return self.test_model(mat_in.get_value(), label.get_value())
+		mat_in, label = self.tids2nndata(self.tokens2ids(text), shared=False)
+
+		return self.test_model(mat_in, label)
 
 	def predict(self, text):
 		return
 
 	def likelihood(self, text):
-		return
+
+		self.__initRnn(no_train=True)
+		mat_in, label = self.tids2nndata(self.tokens2ids(text), shared=False)
+
+		return self.rnn_prob(mat_in, label)
 
 	def crossentropy(self, text):
 		return

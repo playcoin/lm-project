@@ -24,7 +24,7 @@ len_text = len(text)
 print "Train size is: %s" % len_text
 
 # ngram_file_path = "./data/ngram.model.obj"
-ngram = Ngram(nlpdict, 3)
+ngram = Ngram(nlpdict, 5)
 ngram.traintext(text)
 
 # print "Save N-gram model"
@@ -56,9 +56,25 @@ ce, logs = ngram.crossentropy(test_text)
 print "Cross-entropy is:", ce
 print "Perplexity is:", numpy.exp2(ce)
 
-s_prefix = u"囧"
+# for i in xrange(0, len(test_text), 10000):
+# 	ce, logs = ngram.crossentropy(test_text[i:i+10000])
+# 	print "Cross-entropy of %s~%s is %s:" % (i, i+10000, ce) 
+
+# # ce, logs = ngram.crossentropy(test_text[87730:87740])
+# # print "Cross-entropy of %s~%s is %s:" % (87730, 87740, ce) 
+
+
+
+s_prefix = u"囧家"
 prob = 0.
 for char in nlpdict.ndict_inv:
-	prob += ngram.likelihood(s_prefix+char, False, "interpolation")[-1]
+	prob += ngram.likelihood(s_prefix+char, False)[-1]
+
+print prob
+
+s_prefix = u"的戊"
+prob = 0.
+for char in nlpdict.ndict_inv:
+	prob += ngram.likelihood(s_prefix+char, False)[-1]
 
 print prob

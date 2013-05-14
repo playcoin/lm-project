@@ -40,6 +40,8 @@ class Ngram(LMBase):
 
 		# 构造N个cpmap
 		self.cpmaps = [{} for i in range(self.N)]
+		self.k = 10
+		self.fofs = [[0 for j in xrange(self.k+2)] for i in range(self.N)]
 		self.train_token_size = 0;
 
 	def __traintidseq(self, tidseq):
@@ -99,6 +101,25 @@ class Ngram(LMBase):
 				for tid, pair in cpobj.viewitems():
 					cpobj[tid][1] = pair[0] / csum
 
+	def __calfof(self):
+		'''
+		@summary: Frequency of frequency
+		'''
+		# iterate all cpmap of each n-gram
+		for i in range(self.N):
+			fof = self.fofs[i]
+			cpmap = self.cpmaps[i]
+
+			for key, cpobj in cpmap.viewitems():
+				for pair in cpobj.viewvalues():
+					count = pair[0]
+					if count <= self.k + 1:
+						fof[count] += 1
+
+					fof[0] += count
+
+		# print self.fofs
+
 	def __updatelambdas(self):
 		'''
 		@summary: update the lambdas corresponding to each n-gram,
@@ -128,7 +149,7 @@ class Ngram(LMBase):
 		total = numpy.sum(clambdas)
 
 		self.lambdas = [(float(lam) / total) for lam in clambdas]
-		print self.lambdas
+		# print self.lambdas
 
 	def traintokenseq(self, tokenseq, add_se=True):
 		'''
@@ -159,12 +180,96 @@ class Ngram(LMBase):
 			self.traintokenseq(text)
 
 		print "Count over! Calculate prop!"
-		self.__updateprop()
-		self.__updatelambdas()
+		# self.__updateprop()
+		self.__calfof()
+		# self.__updatelambdas()
 		print "N-gram Train Over!"
 
 	def testtext(self, text):
 		return
+
+	def getcount(self, tids):
+		'''
+		@summary: Return the count of token seqs
+		
+		@param tids:
+		'''
+
+		length = len(tids)
+		if length > self.N:
+			return 0
+		elif length == 0:
+			return self.fofs[0][0]
+
+		pre_tids = tids[:-1]
+		n = len(pre_tids)
+		ctid = tids[-1]
+
+		cpmap = self.cpmaps[n]
+		key = tuple((n > 0 and pre_tids or [-1]))
+
+		if key in cpmap and ctid in cpmap[key]:
+			return cpmap[key][ctid][0]
+		else:
+			return 0
+
+	def cpdiscount(self, count, n):
+		'''
+		@summary: Return the discount frequency of a n-gram text
+		
+		@param count: the origin count
+		@param n: the current length of text
+		@result: 
+		'''
+
+		if count > self.k:
+			return count
+		else:
+			fof = self.fofs[n-1]
+			return (float(count + 1) * fof[count + 1] / fof[count] - count*float(self.k + 1) * fof[self.k+1] / fof[1] ) / (1 - float(self.k + 1) * fof[self.k+1] / fof[1])
+
+	def probdiscount(self, tids, count=None):
+		'''
+		@summary: Return the discount probability of a n-gram text
+		
+		@param tids:
+		@result: 
+		'''
+		count = count or self.getcount(tids)
+
+		if count == 0 and len(tids) == 1:
+			return float(self.fofs[0][1]) / self.fofs[0][0]
+
+		discount = self.cpdiscount(count, len(tids))
+
+		return float(discount) / self.getcount(tids[:-1])
+
+	def alpha(self, tids):
+		'''
+		@summary: Return the alpha value of the history text 
+		
+		@param tids: history token ids
+		'''
+		if self.getcount(tids) < 1:
+			return 1.
+
+		numerator = 1.
+		denominator = 1.
+
+		for i in xrange(self.ndict.size()):
+			n_tids = tids + [i]
+			count = self.getcount(n_tids)
+			if count > 0:
+				# print count, n_tids
+				numerator -= self.probdiscount(n_tids, count)
+				denominator -= self.probdiscount(n_tids[1:])
+
+		# equal judgement for float
+		if abs(numerator-0.) < 0.00001 or abs(denominator-0.) < 0.00001:
+			return 1.
+
+		# print numerator, denominator
+		return numerator / denominator
 
 	def backoff(self, tids):
 		'''
@@ -174,26 +279,14 @@ class Ngram(LMBase):
 		@result: 序列概率
 		'''
 
-		# 只取序列的最后N个
-		tids = tids[-self.N:]
 		n = len(tids)
-		ctid = tids[-1]
-		prob = 0.
-		# print tids
-		while n > 0 and prob == 0.:
-			cpmap = self.cpmaps[n-1]
-			key = tuple((n > 1 and tids[:-1] or [-1]))
-			# print key, cpmap[key]
-			if key in cpmap and ctid in cpmap[key]:
-				prob = cpmap[key][ctid][1]
-			else:
-				n -= 1
-				tids = tids[-n:]
+		count = self.getcount(tids)
 
-		# 如果 prob 还是 0，那么就给个最很小的值
-		prob = prob == 0. and (self.SMOOTH_COEF / self.train_token_size) or prob
+		if count == 0 and n > 1:
+			# print tids
+			return self.alpha(tids[:-1]) * self.backoff(tids[1:])
 
-		return prob
+		return self.probdiscount(tids, count)
 
 	def interpolation(self, tids):
 		'''
@@ -272,15 +365,15 @@ class Ngram(LMBase):
 
 		return tid_max, p_max
 
-	def likelihood(self, text, add_se=False, smoothfuncname = "interpolation"):
+	def likelihood(self, text, add_se=False, smoothfuncname = "backoff"):
 
 		# turn text sequence to token id sequence
 		tidseq = self.tokens2ids(text)
 
 		# choose smooth function
-		smoothfunc = self.interpolation
-		if smoothfuncname == 'backoff':
-			smoothfunc = self.backoff
+		smoothfunc = self.backoff
+		if smoothfuncname == 'interpolation':
+			smoothfunc = self.interpolation
 
 		# cal the log probability
 		# cal cross-entropy first, use the equation:
@@ -315,7 +408,8 @@ class Ngram(LMBase):
 			else:
 				sub_seq = tidseq[i-self.N+1:i+1]
 
-			log_prob.append(numpy.log(self.interpolation(sub_seq)))
+			prob = self.backoff(sub_seq)
+			log_prob.append(numpy.log(prob))
 
 		crossentropy = - numpy.sum(log_prob) / len_seq
 
