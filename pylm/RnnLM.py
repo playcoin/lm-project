@@ -66,6 +66,9 @@ class RnnLM(LMBase):
 		self.rnn_prob = theano.function([u, y], probs)
 		print "Compile likelihood function complete!"
 
+		self.rnn_pred = theano.function([u], rnn.y_pred[-1])
+		print "Compile predict function complete!"
+
 		if not no_train:
 			rnn.build_tbptt(x, y, h_init, self.lr, self.truncate_step)
 			print "Compile Truncate-BPTT Algorithm complete!"
@@ -127,7 +130,10 @@ class RnnLM(LMBase):
 		return self.test_model(mat_in, label)
 
 	def predict(self, text):
-		return
+		self.__initRnn(no_train=True)
+		mat_in, _ = self.tids2nndata(self.tokens2ids(text), truncate_input=False, shared=False)
+
+		return self.rnn_pred(mat_in)
 
 	def likelihood(self, text):
 
@@ -137,7 +143,12 @@ class RnnLM(LMBase):
 		return self.rnn_prob(mat_in, label)
 
 	def crossentropy(self, text):
-		return
+
+		log_prob = numpy.log(self.likelihood(text))
+
+		crossentropy = - numpy.sum(log_prob) / len(text)
+
+		return crossentropy
 
 	def savemodel(self, filepath="./data/RnnLM.model.obj"):
 		backupfile = open(filepath, 'w')
