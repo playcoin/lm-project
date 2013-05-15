@@ -76,10 +76,12 @@ class MlpBigram(LMBase):
 		self.mlp_predict = theano.function(inputs=[x], outputs=y_pred[-1])
 		print "Compile predict function complete!"
 
-		error = classifier.errors(y)
 		# test model function
-		self.test_model = theano.function(inputs=[x, y], outputs=error)
+		self.test_model = theano.function(inputs=[x, y], outputs=classifier.errors(y))
 		print "Compile test function complete!"
+
+		self.mlp_hidden = theano.function(inputs=[x], outputs=classifier.hiddenLayer.output)
+		print "Compile hidden output function complete!"
 
 		if no_train:
 			return
@@ -179,6 +181,26 @@ class MlpBigram(LMBase):
 		crossentropy = - numpy.sum(log_prob) / len_seq
 
 		return crossentropy, log_prob
+
+	def savehvalues(self, filepath="./data/MlpBigram.hiddens.obj"):
+		'''
+		@summary: Output the output value of hidden layer by cPickle
+		
+		@param filepath:
+		'''
+
+		self.__initMlp(no_train = True)
+
+		tids = range(0, len(self.ndict.size()))
+
+		mat_in, _ = self.tids2nndata(tids, truncate_input=False)
+
+		hidden_values = self.mlp_hidden(mat_in.get_value())
+
+		backupfile = open(filepath, 'w')
+		cPickle.dump(hidden_values, backupfile)
+		backupfile.close()
+		print "Save hidden values complete!"
 
 	def savemodel(self, filepath="./data/MlpBigram.model.obj"):
 
