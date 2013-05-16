@@ -53,13 +53,15 @@ class MlpNgram(LMBase):
 
 		# mlp obj
 		self.mlp = None
+		self.hvalue_file = hvalue_file
+		self.__loadhvalues()
 
-	def __setTrainData(self, train_data, label_data):
+	def __setTrainData(self, train_data):
 		'''
 		@summary: Set the trainging data, data should be Theano.SharedVariable for GPU.
 		'''
-		self.train_data = train_data
-		self.label_data = label_data
+		self.train_data = train_data[0]
+		self.label_data = train_data[1]
 
 	def __initMlp(self, no_train=False):
 		'''
@@ -80,7 +82,7 @@ class MlpNgram(LMBase):
 		rng = numpy.random.RandomState(4321)
 
 		# construct the MLP class
-		self.mlp = MLP(rng=rng, input=x, n_in=n_in * (self.N - 1),
+		self.mlp = MLP(rng=rng, input=x, n_in=self.n_in * (self.N - 1),
 						 n_hidden=self.n_hidden, n_out=self.ndict.size(),
 						 hW=self.mlpparams[0], hb=self.mlpparams[1], oW=self.mlpparams[2], ob=self.mlpparams[3])
 
@@ -134,7 +136,7 @@ class MlpNgram(LMBase):
 
 	def __loadhvalues(self):
 		'''
-		@summary: Load the hidden output values of MlpBigram from given file
+		@summary: Load the hidden output values of MlpNgram from given file
 		'''
 		backupfile = open(self.hvalue_file)
 		self.hvalues = cPickle.load(backupfile)
@@ -166,7 +168,7 @@ class MlpNgram(LMBase):
 				if j < 0:
 					hvalue = zeros.copy()
 				else:
-					hvalue = numpy.ones((self.n_in,), dtype=theano.config.floatX) # self.hvalues[tidseq[j]]
+					hvalue = self.hvalues[tidseq[j]]
 				vec.extend(hvalue)
 			mat_in.append(vec)
 		mat_in = theano.shared(numpy.asarray(mat_in, dtype=theano.config.floatX), borrow=True)
@@ -176,7 +178,7 @@ class MlpNgram(LMBase):
 
 		return mat_in, vec_out
 
-	def traintidseq(self, tidseq, data_slice_size=50000):
+	def traintidseq(self, tidseq, data_slice_size=100000):
 		'''
 		@summary: Train a token id sequence. Slice data for GPU transpose data
 		
@@ -197,17 +199,17 @@ class MlpNgram(LMBase):
 		total_data_size = len(tidseq)
 		for i in xrange(data_slice_size, total_data_size, data_slice_size):
 			data_slice = tidseq[i-self.N+2:i+data_slice_size+1]
-			self.__setTrainData(self.tids2inputdata(data_slice), zero_start=False)
+			self.__setTrainData(self.tids2inputdata(data_slice, zero_start=False))
 
 			n_batch = int(math.ceil(data_slice_size / self.batch_size))
 			for i in xrange(n_batch):
 				self.train_batch(i)
 
-	def traintext(self, text, test_text, add_se=False, epoch=50, DEBUG=False, SAVE=False):
+	def traintext(self, text, test_text, add_se=False, epoch=100, DEBUG=False, SAVE=False):
 		# token chars to token ids
 		tidseq = self.tokens2ids(text, add_se)
 		
-		print "MlpBigram train start!!"
+		print "MlpNgram train start!!"
 		s_time = time.clock()
 		for i in xrange(epoch):
 			self.traintidseq(tidseq)
@@ -215,14 +217,14 @@ class MlpNgram(LMBase):
 			if DEBUG:
 				print "Error rate: %0.5f. Epoch: %s. Training time so far: %0.1fm" % (self.testtext(test_text), i+1, (time.clock()-s_time)/60.)
 
-			if SAVE and (i+1)%5==0:
-				self.savemodel("./data/Mlp%sgram.model.epoch%s.obj" % (self.N, i+1))
+			if SAVE:
+				self.savemodel("./data/MlpNgram/Mlp%sgram.model.epoch%s.n_hidden%s.obj" % (self.N, i+1, self.n_hidden))
 
 		e_time = time.clock()
 
 		duration = e_time - s_time
 
-		print "MlpBigram train over!! The total training time is %.2fm." % (duration / 60.) 	
+		print "MlpNgram train over!! The total training time is %.2fm." % (duration / 60.) 	
 
 	def testtext(self, text):
 
@@ -257,26 +259,21 @@ class MlpNgram(LMBase):
 		return self.mlp_prob(mat_in.get_value(borrow=True), vec_out.get_value(borrow=True))
 
 	def crossentropy(self, text, add_se=False):
-		pass
-		# log_prob = []
-		# len_seq = len(text)
-		# for i in xrange(len_seq-1):
-		# 	sub_seq = text[i:i+2]
 
-		# 	log_prob.append(numpy.log(self.likelihood(sub_seq)))
+		log_prob = numpy.log(self.likelihood(text))
 
-		# crossentropy = - numpy.sum(log_prob) / len_seq
+		crossentropy = - numpy.sum(log_prob) / len(text)
 
-		# return crossentropy, log_prob
+		return crossentropy
 
-	def savemodel(self, filepath="./data/MlpNgram.model.obj"):
+	def savemodel(self, filepath="./data/MlpNgram/MlpNgram.model.obj"):
 
 		backupfile = open(filepath, 'w')
 		cPickle.dump((self.batch_size, self.N, self.n_in, self.n_hidden, self.lr, self.l1_reg, self.l2_reg, self.mlpparams), backupfile)
 		backupfile.close()
 		print "Save model complete!"
 
-	def loadmodel(self, filepath="./data/MlpNgram.model.obj"):
+	def loadmodel(self, filepath="./data/MlpNgram/MlpNgram.model.obj"):
 
 		backupfile = open(filepath)
 		self.batch_size, self.N, self.n_in, self.n_hidden, self.lr, self.l1_reg, self.l2_reg, self.mlpparams = cPickle.load(backupfile)

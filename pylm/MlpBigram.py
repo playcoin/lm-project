@@ -191,7 +191,7 @@ class MlpBigram(LMBase):
 
 		self.__initMlp(no_train = True)
 
-		tids = range(0, len(self.ndict.size()))
+		tids = range(0, self.ndict.size())
 
 		mat_in, _ = self.tids2nndata(tids, truncate_input=False)
 
