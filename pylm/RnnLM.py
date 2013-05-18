@@ -116,7 +116,7 @@ class RnnLM(LMBase):
 				# print ''.join([self.ndict.gettoken(x) for x in r_labels])
 
 			if SAVE:
-				self.savemodel("./data/RnnLM.model.epoch%s.obj" % (i+1))
+				self.savemodel("./data/RnnLM/RnnLM.model.epoch%s.n_hidden%s.truncstep%s.obj" % (i+1, self.n_hidden, self.truncate_step))
 
 		e_time = time.clock()
 		print "RnnLM train over!! The total training time is %.2fm." % ((e_time - s_time) / 60.) 
