@@ -66,7 +66,7 @@ class RnnLM(LMBase):
 		self.rnn_prob = theano.function([u, y], probs)
 		print "Compile likelihood function complete!"
 
-		self.rnn_sort = theano.function([u, y], rnn.y_sort)
+		self.rnn_sort = theano.function([u, y], rnn.y_sort_matrix, probs)
 		print "Compile argsort function complete!"
 
 		self.rnn_pred = theano.function([u], rnn.y_pred[-1])
@@ -145,11 +145,17 @@ class RnnLM(LMBase):
 
 		return self.rnn_prob(mat_in, label)
 
-	def rank(self, text):
+	def ranks(self, text):
 		self.__initRnn(no_train=True)
 		mat_in, label = self.tids2nndata(self.tokens2ids(text), shared=False)
 
-		return self.rnn_sort(mat_in, label)
+		sort_matrix, probs = self.rnn_sort(mat_in, label)
+
+		rank_list = []
+		for i in xrange(label.shape[0]):
+			rank_list.append(sort_matrix[i].searchsorted(probs[i]))
+
+		return rank_list
 
 	def crossentropy(self, text):
 
