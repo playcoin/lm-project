@@ -129,9 +129,10 @@ class RNN(object):
 		'''
 		h, _ = theano.scan(self.rnn_step, sequences=u, outputs_info=self.h_0[0])
 		self.y_prob = T.nnet.softmax(T.dot(h, self.W_out) + self.b_out)
+		self.y_pred = T.argmax(self.y_prob, axis=1)
+		
 		self.y_sort_maxtrix = self.n_out - T.argsort(self.y_prob, axis=1)
 		self.y_sort = self.y_sort_maxtrix[T.arange(y.shape[0]), y]
-		self.y_pred = T.argmax(self.y_prob, axis=1)
 
 		return T.mean(T.neq(self.y_pred, y))
 

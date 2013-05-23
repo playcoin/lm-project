@@ -145,6 +145,12 @@ class RnnLM(LMBase):
 
 		return self.rnn_prob(mat_in, label)
 
+	def rank(self, text):
+		self.__initRnn(no_train=True)
+		mat_in, label = self.tids2nndata(self.tokens2ids(text), shared=False)
+
+		return self.rnn_sort(mat_in, label)
+
 	def crossentropy(self, text):
 
 		log_probs = numpy.log(self.likelihood(text))
