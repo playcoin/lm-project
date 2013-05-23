@@ -411,7 +411,7 @@ class Ngram(LMBase):
 			prob = self.backoff(sub_seq)
 			log_prob.append(numpy.log(prob))
 
-		crossentropy = - numpy.sum(log_prob) / len_seq
+		crossentropy = - numpy.mean(log_prob)
 
 		return crossentropy, log_prob
 

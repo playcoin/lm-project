@@ -66,6 +66,9 @@ class RnnLM(LMBase):
 		self.rnn_prob = theano.function([u, y], probs)
 		print "Compile likelihood function complete!"
 
+		self.rnn_sort = theano.function([u, y], rnn.y_sort)
+		print "Compile argsort function complete!"
+
 		self.rnn_pred = theano.function([u], rnn.y_pred[-1])
 		print "Compile predict function complete!"
 
@@ -144,11 +147,27 @@ class RnnLM(LMBase):
 
 	def crossentropy(self, text):
 
-		log_prob = numpy.log(self.likelihood(text))
+		log_probs = numpy.log(self.likelihood(text))
 
-		crossentropy = - numpy.sum(log_prob) / len(text)
+		crossentropy = - numpy.mean(log_probs)
 
 		return crossentropy
+
+	def logaverank(self, text):
+		'''
+		@summary: Return the average log rank
+		
+		@param text:
+		@result: 
+		'''
+
+		self.__initRnn(no_train=True)
+		mat_in, label = self.tids2nndata(self.tokens2ids(text), shared=False)
+
+		log_ranks = numpy.log(self.rnn_sort(mat_in, label))
+
+		return numpy.mean(log_ranks)
+
 
 	def savemodel(self, filepath="./data/RnnLM.model.obj"):
 		backupfile = open(filepath, 'w')

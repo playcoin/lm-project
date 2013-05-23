@@ -94,6 +94,11 @@ class MlpNgram(LMBase):
 		self.mlp_prob = theano.function(inputs=[x, y], outputs=probs)
 		print "Compile likelihood function complete!"
 
+		y_sort_matrix = T.as_tensor_variable(self.ndict.size()) - T.argsort(classifier.logRegressionLayer.p_y_given_x, axis=1)
+		y_sort = y_sort_matrix[T.arange(y.shape[0]), y]
+		self.mlp_sort = theano.function(inputs=[x, y], outputs=y_sort)
+		print "Compile argsort function complete!"
+
 		y_pred = classifier.logRegressionLayer.y_pred
 		self.mlp_predict = theano.function(inputs=[x], outputs=y_pred[-1])
 		print "Compile predict function complete!"
@@ -262,9 +267,24 @@ class MlpNgram(LMBase):
 
 		log_prob = numpy.log(self.likelihood(text))
 
-		crossentropy = - numpy.sum(log_prob) / len(text)
+		crossentropy = - numpy.mean(log_prob)
 
 		return crossentropy
+
+	def logaverank(self, text):
+		'''
+		@summary: Return the average log rank
+		
+		@param text:
+		@result: 
+		'''
+
+		self.__initMlp(no_train=True)
+		mat_in, label = self.tids2inputdata(self.tokens2ids(text))
+
+		log_ranks = numpy.log(self.mlp_sort(mat_in.get_value(borrow=True), label.get_value(borrow=True)))
+
+		return numpy.mean(log_ranks)
 
 	def savemodel(self, filepath="./data/MlpNgram/MlpNgram.model.obj"):
 
