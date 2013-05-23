@@ -66,7 +66,7 @@ class RnnLM(LMBase):
 		self.rnn_prob = theano.function([u, y], probs)
 		print "Compile likelihood function complete!"
 
-		self.rnn_sort = theano.function([u, y], rnn.y_sort_matrix, probs)
+		self.rnn_sort = theano.function([u, y], [rnn.y_sort_matrix, probs])
 		print "Compile argsort function complete!"
 
 		self.rnn_pred = theano.function([u], rnn.y_pred[-1])
@@ -152,8 +152,9 @@ class RnnLM(LMBase):
 		sort_matrix, probs = self.rnn_sort(mat_in, label)
 
 		rank_list = []
+		dict_size = self.ndict.size()
 		for i in xrange(label.shape[0]):
-			rank_list.append(sort_matrix[i].searchsorted(probs[i]))
+			rank_list.append(dict_size - sort_matrix[i].searchsorted(probs[i]))
 
 		return rank_list
 
@@ -172,11 +173,7 @@ class RnnLM(LMBase):
 		@param text:
 		@result: 
 		'''
-
-		self.__initRnn(no_train=True)
-		mat_in, label = self.tids2nndata(self.tokens2ids(text), shared=False)
-
-		log_ranks = numpy.log(self.rnn_sort(mat_in, label))
+		log_ranks = numpy.log(self.ranks(text))
 
 		return numpy.mean(log_ranks)
 

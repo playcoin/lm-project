@@ -131,7 +131,7 @@ class RNN(object):
 		self.y_prob = T.nnet.softmax(T.dot(h, self.W_out) + self.b_out)
 		self.y_pred = T.argmax(self.y_prob, axis=1)
 
-		self.y_sort_maxtrix = T.sort(self.y_prob, axis=1)
+		self.y_sort_matrix = T.sort(self.y_prob, axis=1)
 
 		return T.mean(T.neq(self.y_pred, y))
 
