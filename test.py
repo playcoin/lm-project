@@ -51,10 +51,10 @@ f = file('./data/pku_test.txt')
 test_text = unicode(f.read(), 'utf-8')
 f.close()
 
-print "Test size is: %s" % len(test_text)
-ce, logs = ngram.crossentropy(test_text)
-print "Cross-entropy is:", ce
-print "Perplexity is:", numpy.exp(ce)
+# print "Test size is: %s" % len(test_text)
+# ce, logs = ngram.crossentropy(test_text)
+# print "Cross-entropy is:", ce
+# print "Perplexity is:", numpy.exp(ce)
 
 # for i in xrange(0, len(test_text), 10000):
 # 	ce, logs = ngram.crossentropy(test_text[i:i+10000])
@@ -65,16 +65,26 @@ print "Perplexity is:", numpy.exp(ce)
 
 
 
-s_prefix = u"囧家"
-prob = 0.
-for char in nlpdict.ndict_inv:
-	prob += ngram.likelihood(s_prefix+char, False)[-1]
+# s_prefix = u"囧家"
+# prob = []
+# for char in nlpdict.ndict_inv:
+# 	prob.append(ngram.likelihood(s_prefix+char, False)[-1])
 
-print prob
+# print prob
 
-s_prefix = u"的戊"
-prob = 0.
-for char in nlpdict.ndict_inv:
-	prob += ngram.likelihood(s_prefix+char, False)[-1]
+# s_prefix = u"的戊"
+# prob = 0.
+# for char in nlpdict.ndict_inv:
+# 	prob += ngram.likelihood(s_prefix+char, False)[-1]
 
-print prob
+# print prob
+
+# tokenids = [nlpdict[x] for x in u"国家主"]
+
+# print ngram.rank([20,21,22])
+
+# print ngram.rank([20,21,22])
+
+rank_list = ngram.ranks(test_text)
+
+print numpy.log(rank_list).mean()

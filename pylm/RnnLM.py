@@ -76,7 +76,7 @@ class RnnLM(LMBase):
 			rnn.build_tbptt(x, y, h_init, self.lr, self.truncate_step)
 			print "Compile Truncate-BPTT Algorithm complete!"
 
-	def traintext(self, text, test_text, add_se=True, epoch=200, DEBUG = False, SAVE=False):
+	def traintext(self, text, test_text, add_se=True, epoch=200, DEBUG = False, SAVE=False, SINDEX=1):
 
 		self.__initRnn()
 
@@ -115,11 +115,11 @@ class RnnLM(LMBase):
 			if DEBUG:
 				err = self.testtext(test_text)[0]
 				e_time = time.clock()
-				print "Error rate in epoch %s, is %.3f. Training time so far is: %.2fm" % ( i+1, err, (e_time-s_time) / 60.)
+				print "Error rate in epoch %s, is %.3f. Training time so far is: %.2fm" % ( i+SINDEX, err, (e_time-s_time) / 60.)
 				# print ''.join([self.ndict.gettoken(x) for x in r_labels])
 
 			if SAVE:
-				self.savemodel("./data/RnnLM/RnnLM.model.epoch%s.n_hidden%s.truncstep%s.obj" % (i+1, self.n_hidden, self.truncate_step))
+				self.savemodel("./data/RnnLM/RnnLM.model.epoch%s.n_hidden%s.truncstep%s.obj" % (i+SINDEX, self.n_hidden, self.truncate_step))
 
 		e_time = time.clock()
 		print "RnnLM train over!! The total training time is %.2fm." % ((e_time - s_time) / 60.) 
@@ -145,6 +145,15 @@ class RnnLM(LMBase):
 
 		return self.rnn_prob(mat_in, label)
 
+
+	def crossentropy(self, text):
+
+		log_probs = numpy.log(self.likelihood(text))
+
+		crossentropy = - numpy.mean(log_probs)
+
+		return crossentropy
+
 	def ranks(self, text):
 		self.__initRnn(no_train=True)
 		mat_in, label = self.tids2nndata(self.tokens2ids(text), shared=False)
@@ -157,15 +166,7 @@ class RnnLM(LMBase):
 			rank_list.append(dict_size - sort_matrix[i].searchsorted(probs[i]))
 
 		return rank_list
-
-	def crossentropy(self, text):
-
-		log_probs = numpy.log(self.likelihood(text))
-
-		crossentropy = - numpy.mean(log_probs)
-
-		return crossentropy
-
+		
 	def logaverank(self, text):
 		'''
 		@summary: Return the average log rank

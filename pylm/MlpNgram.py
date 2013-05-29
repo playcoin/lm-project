@@ -94,9 +94,8 @@ class MlpNgram(LMBase):
 		self.mlp_prob = theano.function(inputs=[x, y], outputs=probs)
 		print "Compile likelihood function complete!"
 
-		y_sort_matrix = T.as_tensor_variable(self.ndict.size()) - T.argsort(classifier.logRegressionLayer.p_y_given_x, axis=1)
-		y_sort = y_sort_matrix[T.arange(y.shape[0]), y]
-		self.mlp_sort = theano.function(inputs=[x, y], outputs=y_sort)
+		y_sort_matrix = T.sort(classifier.logRegressionLayer.p_y_given_x, axis=1)
+		self.mlp_sort = theano.function(inputs=[x, y], outputs=[y_sort_matrix, probs])
 		print "Compile argsort function complete!"
 
 		y_pred = classifier.logRegressionLayer.y_pred
@@ -263,6 +262,7 @@ class MlpNgram(LMBase):
 		mat_in, vec_out = self.tids2inputdata(self.tokens2ids(text))
 		return self.mlp_prob(mat_in.get_value(borrow=True), vec_out.get_value(borrow=True))
 
+
 	def crossentropy(self, text, add_se=False):
 
 		log_prob = numpy.log(self.likelihood(text))
@@ -271,6 +271,20 @@ class MlpNgram(LMBase):
 
 		return crossentropy
 
+	def ranks(self, text):
+
+		self.__initMlp(no_train=True)
+		mat_in, label = self.tids2inputdata(self.tokens2ids(text))
+
+		sort_matrix, probs = self.mlp_sort(mat_in.get_value(borrow=True), label.get_value(borrow=True))
+
+		rank_list = []
+		dict_size = self.ndict.size()
+		for i in xrange(label.shape[0]):
+			rank_list.append(dict_size - sort_matrix[i].searchsorted(probs[i]))
+
+		return rank_list
+
 	def logaverank(self, text):
 		'''
 		@summary: Return the average log rank
@@ -278,11 +292,7 @@ class MlpNgram(LMBase):
 		@param text:
 		@result: 
 		'''
-
-		self.__initMlp(no_train=True)
-		mat_in, label = self.tids2inputdata(self.tokens2ids(text))
-
-		log_ranks = numpy.log(self.mlp_sort(mat_in.get_value(borrow=True), label.get_value(borrow=True)))
+		log_ranks = numpy.log(self.ranks(text))
 
 		return numpy.mean(log_ranks)
 

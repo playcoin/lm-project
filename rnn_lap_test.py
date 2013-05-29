@@ -27,7 +27,7 @@ len_text = len(text)
 
 print "Train size is: %s" % len_text
 
-rnnlm = RnnLM(nlpdict, n_hidden=15, lr=0.3, batch_size=10, truncate_step=6)
+rnnlm = RnnLM(nlpdict, n_hidden=15, lr=0.3, batch_size=10, truncate_step=2)
 
 print "Rnn training start!"
 

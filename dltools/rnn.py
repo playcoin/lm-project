@@ -172,15 +172,6 @@ class RNN(object):
 
 		# BPTT for a truncate step. 
 		self.f_part_tbptt = theano.function(inputs=[x, y, h_init], outputs=out_h, updates=updates)
-		# 
-		# def tbptt_step(index, h_tm, x, y):
-		# 	part_in = x[index: index + truncate_step]
-		# 	part_y = y[index*self.batch_size : (index+truncate_step)*self.batch_size]
-		# 	return self.f_part_tbptt(part_in, part_y, h_tm)
-
-		# h_end, _ = theano.scan(tbptt_step, sequences=T.arange(0, x.shape[0], truncate_step), non_sequences=[x, y], outputs_info=0.)
-
-		# self.train_tbptt = theano.function([x, y], h_end[-1])
 		self.truncate_step = truncate_step
 
 		return self.f_part_tbptt

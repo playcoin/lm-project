@@ -6,6 +6,7 @@ Created on 2013-04-12 19:27
 '''
 import cPickle
 import numpy
+import time
 from LMBase import LMBase
 
 class Ngram(LMBase):
@@ -26,6 +27,8 @@ class Ngram(LMBase):
 
 		self.N = N < 1 and 1 or N
 		self.SMOOTH_COEF = 1.
+		self.dismap = {}
+		self.alphamap = {}
 		if ngram_file_path:
 			self.loadmodel(ngram_file_path)
 		else:
@@ -172,7 +175,7 @@ class Ngram(LMBase):
 		@param text: 输入文本，默认不包含空白符，
 		'''
 		
-		print "N-gram train start!!"
+		print "N(%s)-gram train start!!" % self.N
 		if(seqsplit):
 			lines = text.split(seqsplit)
 			[self.traintokenseq(line) for line in lines if line != ""]
@@ -183,7 +186,7 @@ class Ngram(LMBase):
 		# self.__updateprop()
 		self.__calfof()
 		# self.__updatelambdas()
-		print "N-gram Train Over!"
+		print "N(%s)-gram Train Over!" % self.N
 
 	def testtext(self, text):
 		return
@@ -231,18 +234,23 @@ class Ngram(LMBase):
 	def probdiscount(self, tids, count=None):
 		'''
 		@summary: Return the discount probability of a n-gram text
-		
-		@param tids:
 		@result: 
 		'''
 		count = count or self.getcount(tids)
+		tidskey = tuple(tids)
+		if tidskey in self.dismap:
+			return self.dismap[tidskey]
 
 		if count == 0 and len(tids) == 1:
-			return float(self.fofs[0][1]) / self.fofs[0][0]
+			propdis = float(self.fofs[0][1]) / self.fofs[0][0]
+			self.dismap[tidskey] = propdis
+			return propdis
 
 		discount = self.cpdiscount(count, len(tids))
 
-		return float(discount) / self.getcount(tids[:-1])
+		propdis = float(discount) / self.getcount(tids[:-1])
+		self.dismap[tidskey] = propdis
+		return propdis
 
 	def alpha(self, tids):
 		'''
@@ -252,6 +260,10 @@ class Ngram(LMBase):
 		'''
 		if self.getcount(tids) < 1:
 			return 1.
+
+		tidskey = tuple(tids)
+		if tidskey in self.alphamap:
+			return self.alphamap[tidskey]
 
 		numerator = 1.
 		denominator = 1.
@@ -266,10 +278,13 @@ class Ngram(LMBase):
 
 		# equal judgement for float
 		if abs(numerator-0.) < 0.00001 or abs(denominator-0.) < 0.00001:
+			self.alphamap[tidskey] = 1.
 			return 1.
 
 		# print numerator, denominator
-		return numerator / denominator
+		value = numerator / denominator
+		self.alphamap[tidskey] = value
+		return value
 
 	def backoff(self, tids):
 		'''
@@ -284,9 +299,11 @@ class Ngram(LMBase):
 
 		if count == 0 and n > 1:
 			# print tids
-			return self.alpha(tids[:-1]) * self.backoff(tids[1:])
+			prob = self.alpha(tids[:-1]) * self.backoff(tids[1:])
+			return prob
 
-		return self.probdiscount(tids, count)
+		prob = self.probdiscount(tids, count)
+		return prob
 
 	def interpolation(self, tids):
 		'''
@@ -364,6 +381,48 @@ class Ngram(LMBase):
 				len_text -= 1
 
 		return tid_max, p_max
+
+	def rank(self, tids):
+		'''
+		@summary: cal the rank for one tuple
+		
+		@param tids:
+		'''
+
+		probs = []
+		prefix = tids[:-1]
+		dict_size = self.ndict.size()
+		for i in range(dict_size):
+			prob = self.backoff(prefix + [i])
+			probs.append(prob)
+
+
+		# print probs
+		probs = numpy.asarray(probs)
+		probs.sort()
+		prob = self.backoff(tids)
+
+		return dict_size - probs.searchsorted(prob)
+
+	def ranks(self, text):
+		tidseq = self.tokens2ids(text)
+
+		rank_list = []
+		len_seq = len(tidseq)
+		stime = time.clock()
+		for i in xrange(len_seq):
+			sub_seq = []
+			if i < self.N:
+				sub_seq = tidseq[:i+1]
+			else:
+				sub_seq = tidseq[i-self.N+1:i+1]
+
+			rank_list.append(self.rank(sub_seq))
+			if (i+1) % 1000 == 0:
+				print "%s/%s, time: %ss" % (i+1, len_seq, time.clock() - stime)
+			# print rank_list
+
+		return rank_list
 
 	def likelihood(self, text, add_se=False, smoothfuncname = "backoff"):
 
