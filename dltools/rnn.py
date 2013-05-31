@@ -157,6 +157,8 @@ class RNN(object):
 		# cost function
 		part_p_y_given_x = part_p_y_given_x.reshape((y.shape[0], x.shape[2]))
 		part_cost = -T.mean(T.log(part_p_y_given_x)[T.arange(y.shape[0]), y])
+		# part_L2_sqr = (self.W_in ** 2).sum() + (self.W_h ** 2).sum() + (self.W_out ** 2).sum()
+		# part_cost = part_cost + 0.0001 * part_L2_sqr
 		# update params
 		params = [self.W_in, self.W_h, self.W_out, self.b_h, self.b_out]
 
