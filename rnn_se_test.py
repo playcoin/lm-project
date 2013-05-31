@@ -13,30 +13,41 @@ import theano.sandbox.cuda
 
 nlpdict = NlpDict()
 nlpdict.buildfromfile('./data/pku_train_nw.ltxt')
+print "NlpDict size is:", nlpdict.size()
 
 #############
 # Trainging #
 #############
 # text
-# f = file('./data/pku_train_nw.ltxt')
-# text = unicode(f.read(), 'utf-8')
-# text = text.replace(" ", "")
-# f.close()
+f = file('./data/pku_train_nw.ltxt')
+text = unicode(f.read(), 'utf-8')
+text = text.replace(" ", "")
+f.close()
 
-# len_text = len(text)
+len_text = len(text)
 
-# print "Train size is: %s" % len_text
+train_text = text
+test_text = text[:20000]
 
-# rnnlm = RnnLM(nlpdict, n_hidden=40, lr=0.13, batch_size=40, truncate_step=6)
-# rnnlm.traintext(train_text, test_text, add_se=False, epoch=50, DEBUG=True, SAVE=True)
+print "Train size is: %s" % len_text
+
+# rnnlm = RnnLM(nlpdict, n_hidden=140, lr=0.05, batch_size=40, truncate_step=6)
+rnnlm = RnnLM(nlpdict, n_hidden=140, lr=0.05, batch_size=40, truncate_step=6, backup_file_path="./data/RnnLM/RnnLM.model.epoch49.n_hidden140.truncstep6.obj")
+# rnnlm = RnnLM(nlpdict, n_hidden=120, lr=0.05, batch_size=40, truncate_step=6, backup_file_path="./data/RnnLM/RnnLM.model.epoch123.n_hidden120.truncstep6.obj")
+# rnnlm = RnnLM(nlpdict, n_hidden=150, lr=0.13, batch_size=20, backup_file_path="./data/RnnLM/RnnLM.model.epoch138.n_hidden150.truncstep6.obj")
+# rnnlm.lr = 0.0001
+# rnnlm.traintext(train_text, test_text, add_se=False, DEBUG=True, SAVE=True, SINDEX=35)
 
 #############
 #  Testing  #
 #############
-rnnlm = RnnLM(nlpdict, n_hidden=40, lr=0.13, batch_size=40, backup_file_path="./data/RnnLM.model.epoch45.obj")
-# print rnnlm.likelihood(u"中共中央总书记、国家主席江泽民")
+# rnnlm = RnnLM(nlpdict, n_hidden=60, lr=0.13, batch_size=50, backup_file_path="./data/RnnLM/RnnLM.model.epoch21.n_hidden60.truncstep6.obj")
+# simtest = u"""迈向充满希望的新世纪——一九九八年新年讲话（附图片１张）"""
+# print rnnlm.likelihood(simtest)
+# print rnnlm.ranks(simtest)
+# print rnnlm.logaverank(u"中共中央总书记、国家主席江泽民")
 
-print nlpdict.gettoken(rnnlm.predict(u"国家主席江"))
+# print nlpdict.gettoken(rnnlm.predict(u"国家主席江"))
 
 f = file('./data/pku_test.txt')
 tt = unicode(f.read(), 'utf-8')
@@ -44,4 +55,6 @@ f.close()
 
 ce = rnnlm.crossentropy(tt)
 print "Cross-entropy is:", ce
-print "Perplexity is:", numpy.exp2(ce)
+print "Perplexity is:", numpy.exp(ce)
+
+print "Average log rank is:", rnnlm.logaverank(tt)

@@ -53,10 +53,10 @@ nlpdict.buildfromfile('./data/pku_train_nw.ltxt')
 #  Testing  #
 #############
 
-theano.sandbox.cuda.use('gpu0')
-backup_file_path = "./data/MlpBigram.model.epoch44.obj"
-print "Model file: ", backup_file_path
-mlp_bigram = MlpBigram(nlpdict, backup_file_path=backup_file_path)
+# theano.sandbox.cuda.use('gpu0')
+# backup_file_path = "./data/MlpBigram.model.epoch44.obj"
+# print "Model file: ", backup_file_path
+# mlp_bigram = MlpBigram(nlpdict, backup_file_path=backup_file_path)
 # print mlp_bigram.likelihood(u"国家主席江泽")
 
 # print nlpdict.gettoken(mlp_bigram.predict(u"国家主席江"))

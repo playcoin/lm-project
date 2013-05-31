@@ -209,7 +209,7 @@ class MlpNgram(LMBase):
 			for i in xrange(n_batch):
 				self.train_batch(i)
 
-	def traintext(self, text, test_text, add_se=False, epoch=100, DEBUG=False, SAVE=False):
+	def traintext(self, text, test_text, add_se=False, epoch=100, DEBUG=False, SAVE=False, SINDEX=1):
 		# token chars to token ids
 		tidseq = self.tokens2ids(text, add_se)
 		
@@ -219,10 +219,10 @@ class MlpNgram(LMBase):
 			self.traintidseq(tidseq)
 
 			if DEBUG:
-				print "Error rate: %0.5f. Epoch: %s. Training time so far: %0.1fm" % (self.testtext(test_text), i+1, (time.clock()-s_time)/60.)
+				print "Error rate: %0.5f. Epoch: %s. Training time so far: %0.1fm" % (self.testtext(test_text), i+SINDEX, (time.clock()-s_time)/60.)
 
 			if SAVE:
-				self.savemodel("./data/MlpNgram/Mlp%sgram.model.epoch%s.n_hidden%s.obj" % (self.N, i+1, self.n_hidden))
+				self.savemodel("./data/MlpNgram/Mlp%sgram.model.epoch%s.n_hidden%s.obj" % (self.N, i+SINDEX, self.n_hidden))
 
 		e_time = time.clock()
 
@@ -280,6 +280,7 @@ class MlpNgram(LMBase):
 
 		rank_list = []
 		dict_size = self.ndict.size()
+		label = label.get_value()
 		for i in xrange(label.shape[0]):
 			rank_list.append(dict_size - sort_matrix[i].searchsorted(probs[i]))
 

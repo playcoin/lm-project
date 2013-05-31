@@ -31,7 +31,7 @@ print "Train size is: %s" % len_text
 
 theano.sandbox.cuda.use('gpu1')
 
-mlp_ngram = MlpNgram(nlpdict, backup_file_path="./data/MlpNgram/Mlp4gram.model.epoch5.obj")
+mlp_ngram = MlpNgram(nlpdict, hvalue_file="./data/pku_embedding.obj", backup_file_path="./data/MlpNgram/Mlp5gram.model.epoch106.n_hidden100.obj")
 # mlp_ngram.traintext(train_text, test_text, DEBUG=True, SAVE=False)
 
 
@@ -43,6 +43,8 @@ f = file('./data/pku_test.txt')
 test_text = unicode(f.read(), 'utf-8')
 f.close()
 
-ce = mlp_ngram.crossentropy(test_text[:100000])
-print "Cross-entropy is:", ce
-print "Perplexity is:", numpy.exp2(ce)
+# ce = mlp_ngram.crossentropy(test_text[:100000])
+# print "Cross-entropy is:", ce
+# print "Perplexity is:", numpy.exp(ce)
+
+print "Log rank is:", mlp_ngram.logaverank(test_text[:50000]) 
