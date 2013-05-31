@@ -24,7 +24,7 @@ len_text = len(text)
 print "Train size is: %s" % len_text
 
 # ngram_file_path = "./data/ngram.model.obj"
-ngram = Ngram(nlpdict, 3)
+ngram = Ngram(nlpdict, 4)
 ngram.traintext(text)
 
 # print "Save N-gram model"
@@ -85,6 +85,17 @@ f.close()
 
 # print ngram.rank([20,21,22])
 
-rank_list = ngram.ranks(test_text)
+# rank_list = ngram.ranks(test_text[:10000])
+
+# print numpy.log(rank_list).mean()
+
+import random
+
+sample_list = random.sample(range(len(test_text)), 1000)
+
+rank_list = []
+for i in sample_list:
+	tokens = test_text[i:i+4]
+	rank_list.append(ngram.ranks(tokens)[-1])
 
 print numpy.log(rank_list).mean()

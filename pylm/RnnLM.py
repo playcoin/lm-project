@@ -76,7 +76,7 @@ class RnnLM(LMBase):
 			rnn.build_tbptt(x, y, h_init, self.lr, self.truncate_step)
 			print "Compile Truncate-BPTT Algorithm complete!"
 
-	def traintext(self, text, test_text, add_se=True, epoch=200, DEBUG = False, SAVE=False, SINDEX=1):
+	def traintext(self, text, test_text, add_se=True, sen_slice_length=4, epoch=200, DEBUG = False, SAVE=False, SINDEX=1):
 
 		self.__initRnn()
 
@@ -84,7 +84,7 @@ class RnnLM(LMBase):
 		seq_size = len(tidseq)
 
 		# variables for slice sentence
-		sentence_length = 4 * self.truncate_step
+		sentence_length = sen_slice_length * self.truncate_step
 		half_sen_length = sentence_length / 2
 		data_slice_size = sentence_length * self.batch_size
 		data_size = seq_size / data_slice_size * data_slice_size

@@ -6,6 +6,7 @@ Created on 2013-04-12 17:50
 '''
 import cPickle
 import re
+import numpy
 
 class NlpDict(object):
 	'''
@@ -180,3 +181,35 @@ class NlpDict(object):
 
 		self.ndict, self.ndict_inv = cPickle.load(dict_file)
 		dict_file.close()
+
+	def transEmbedding(self, embedding_file_path, hv_file_path):
+		'''
+		@summary: 读取embedding的结果
+		
+		@param embedding_file_path:
+		'''
+		emfile = open(embedding_file_path)
+		text = unicode(emfile.read(), 'utf-8')
+		emfile.close()
+
+		# 逐行读取
+		lines = text.split('\n')
+		ev_map = {}
+		for i in xrange(len(lines)):
+			units = lines[i].split(', ')
+			units[0] = units[0] == "$EN$" and '\n' or units[0]
+			if len(units) > 1 and units[0] in self.ndict:
+				ev_map[units[0]] = [float(x) for x in units[1:-1]]
+
+		emvalues = []
+		for i in xrange(self.size()):
+			ev = ev_map[self.gettoken(i)]
+			emvalues.append(ev)
+
+		emvalues = numpy.asarray(emvalues, dtype="float32")
+		print emvalues.shape
+
+		hv_file = open(hv_file_path, 'wb')
+
+		cPickle.dump(emvalues, hv_file)
+		hv_file.close()
