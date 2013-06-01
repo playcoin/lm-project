@@ -117,27 +117,36 @@ class NlpDict(object):
 
 	def buildfromfile(self, text_file_path, white_space=False, freq_thres=0):
 		'''
-		@summary: 读取文本，并通过文本填充词典
+		@summary: 读取文本文件，并通过文本填充词典
 
 		@param text_file_path:
 		@param white_space:
 		@param freq_thres:
 		'''
-
-		# 重新初始化内部的dict对象
-		self.__dictinit()
-
 		# 读取文本
 		corpus = file(text_file_path)
 		text = corpus.read()
 		corpus.close()
+		# 转化为unicode
+		text = unicode(text, 'utf-8')
+
+		self.buildfromtext(text, white_space, freq_thres)
+
+	def buildfromtext(self, text, white_space=False, freq_thres=0):
+		'''
+		@summary: 直接通过文本构造词典
+		
+		@param text: 文本, 只支持unicode
+		@param white_space: 是否保留空白符
+		@param freq_thres: 是否清除低频词
+		'''
+		# 重新初始化内部的dict对象
+		self.__dictinit()
 		# 处理空白字符，如果需要的话，就留着
 		if not white_space:
 			text = re.sub(r'\t| ', '', text)
-		# 清除换行符，并转化为unicode
 		# 暂时先不清楚换行符
 		# text = unicode(re.sub(r'\n', '', text), 'utf-8')
-		text = unicode(text, 'utf-8')	# 暂时先不清楚换行符
 		# 清理低频词
 		if freq_thres > 0:
 			# 计算词频
@@ -157,6 +166,7 @@ class NlpDict(object):
 		else:	# 阈值为0的话，直接添加即可
 			for char in text:
 				self.addtoken(char)
+
 
 	def storeNlpDict(self, dict_file_path):
 		'''
