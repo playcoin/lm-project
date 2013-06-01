@@ -117,13 +117,9 @@ class MlpBigram(LMBase):
 										y : self.label_data[index * self.batch_size : (index+1) * self.batch_size]
 									})
 
-		print "Compile training function complete!"		
-		
-	def traintext(self, text, add_se=False, data_slice_size=40000):
-		
-		# token chars to token ids
-		tidseq = self.tokens2ids(text, add_se)
-		tidseq = theano.shared(tidseq).get_value(borrow=True)
+		print "Compile training function complete!"
+
+	def traintidseq(self, tidseq, data_slice_size=40000):
 
 		# train all slices of data. train_data and label_data will be reset to new slice
 		total_data_size = len(tidseq)
@@ -137,6 +133,28 @@ class MlpBigram(LMBase):
 			n_batch = int(math.ceil(data_slice_size / self.batch_size))
 			for i in xrange(n_batch):
 				self.train_batch(i)
+		
+	def traintext(self, text, test_text, add_se=False, epoch=100, DEBUG=False, SAVE=False, SINDEX=1):
+		
+		# token chars to token ids
+		tidseq = self.tokens2ids(text, add_se)
+		
+		print "MlpBigram train start!!"
+		s_time = time.clock()
+		for i in xrange(epoch):
+			self.traintidseq(tidseq)
+
+			if DEBUG:
+				print "Error rate: %0.5f. Epoch: %s. Training time so far: %0.1fm" % (self.testtext(test_text), i+SINDEX, (time.clock()-s_time)/60.)
+
+			if SAVE:
+				self.savemodel("./data/MlpBigram/MlpBigram.model.epoch%s.n_hidden%s.obj" % (i+SINDEX, self.n_hidden))
+
+		e_time = time.clock()
+
+		duration = e_time - s_time
+
+		print "MlpBigram train over!! The total training time is %.2fm." % (duration / 60.) 	
 
 	def testtext(self, text):
 
@@ -236,14 +254,14 @@ class MlpBigram(LMBase):
 		backupfile = open(filepath, 'w')
 		cPickle.dump((self.batch_size, self.n_hidden, self.lr, self.l1_reg, self.l2_reg, self.mlpparams), backupfile)
 		backupfile.close()
-		print "Save model complete!"
+		print "Save model complete! Filepath:", filepath
 
 	def loadmodel(self, filepath="./data/MlpBigram.model.obj"):
 
 		backupfile = open(filepath)
 		self.batch_size, self.n_hidden, self.lr, self.l1_reg, self.l2_reg, self.mlpparams = cPickle.load(backupfile)
 		backupfile.close()
-		print "Load model complete!"
+		print "Load model complete! Filepath:", filepath
 
 
 

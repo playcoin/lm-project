@@ -302,14 +302,14 @@ class MlpNgram(LMBase):
 		backupfile = open(filepath, 'w')
 		cPickle.dump((self.batch_size, self.N, self.n_in, self.n_hidden, self.lr, self.l1_reg, self.l2_reg, self.mlpparams), backupfile)
 		backupfile.close()
-		print "Save model complete!"
+		print "Save model complete! Filepath:", filepath
 
 	def loadmodel(self, filepath="./data/MlpNgram/MlpNgram.model.obj"):
 
 		backupfile = open(filepath)
 		self.batch_size, self.N, self.n_in, self.n_hidden, self.lr, self.l1_reg, self.l2_reg, self.mlpparams = cPickle.load(backupfile)
 		backupfile.close()
-		print "Load model complete!"
+		print "Load model complete! Filepath:", filepath
 
 
 

@@ -183,12 +183,12 @@ class RnnLM(LMBase):
 		backupfile = open(filepath, 'w')
 		cPickle.dump((self.batch_size, self.n_hidden, self.lr, self.truncate_step, self.rnnparams), backupfile)
 		backupfile.close()
-		print "Save model complete!"
+		print "Save model complete! Filepath:", filepath
 
 	def loadmodel(self, filepath="./data/RnnLM.model.obj"):
 		backupfile = open(filepath)
 		self.batch_size, self.n_hidden, self.lr, self.truncate_step, self.rnnparams = cPickle.load(backupfile)
 		backupfile.close()
-		print "Load model complete!"
+		print "Load model complete! Filepath:", filepath
 
 
