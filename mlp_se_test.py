@@ -11,43 +11,36 @@ import numpy
 import time
 import theano.sandbox.cuda
 
-nlpdict = NlpDict()
-nlpdict.buildfromfile('./data/pku_train_nw.ltxt')
-
-
 #############
 # Trainging #
 #############
-# # text
-# f = file('./data/pku_train_nw.ltxt')
-# text = unicode(f.read(), 'utf-8')
-# text = text.replace(" ", "")
-# f.close()
+# text
+f = file('./data/pku_train_nw.ltxt')
+text = unicode(f.read(), 'utf-8')
+text = text.replace(" ", "")
+f.close()
 
-# len_text = len(text)
+# NlpDict
+nlpdict = NlpDict()
+nlpdict.buildfromtext(text, freq_thres=0)
+print "NlpDict size is:", nlpdict.size()
 
-# print "Train size is: %s" % len_text
+# use gpu
+theano.sandbox.cuda.use('gpu1')
 
-# theano.sandbox.cuda.use('gpu0')
+# mlp_bigram = MlpBigram(nlpdict, n_hidden=50, lr=0.13, batch_size=50)
+mlp_bigram = MlpBigram(nlpdict, n_hidden=50, lr=0.13, batch_size=50, backup_file_path="./data/MlpBigram/MlpBigram.model.epoch500.n_hidden50.obj")
 
-# mlp_bigram = MlpBigram(nlpdict, n_hidden=30, lr=0.13, batch_size=50)
+train_text = text[:-20000]
+test_text = text[-20000:]
 
-# train_text = text
-# test_text = text[0:10000]
+# print "Train size is: %s, testing size is: %s" % (len(train_text), len(test_text))
+# mlp_bigram.lr = 0.01
+# mlp_bigram.traintext(train_text, test_text, DEBUG=True, SAVE=True, SINDEX=417, epoch=500)
 
-# print "MlpBigram train start!!"
-# s_time = time.clock()
-# for i in xrange(50):
-# 	mlp_bigram.traintext(train_text, add_se=False)
-# 	print "Error rate: %0.5f. Epoch: %s. Training time so far: %0.1fm" % (mlp_bigram.testtext(test_text), i+1, (time.clock()-s_time)/60.)
-# 	if (i+1) % 5 == 0:
-# 		mlp_bigram.savemodel("./data/MlpBigram.model.epoch%s.obj" % i)
-
-# e_time = time.clock()
-
-# duration = e_time - s_time
-
-# print "MlpBigram train over!! The total training time is %.2fm." % (duration / 60.) 
+# ce, logs = mlp_bigram.crossentropy(test_text)
+# print "Cross-entropy is:", ce
+# print "Perplexity is:", numpy.exp(ce)
 
 #############
 #  Testing  #

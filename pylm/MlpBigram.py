@@ -5,6 +5,7 @@ Created on 2013-04-28 14:40
 @author: egg
 '''
 import math
+import time
 import numpy
 import theano
 import theano.tensor as T

@@ -11,10 +11,6 @@ import numpy
 import time
 import theano.sandbox.cuda
 
-nlpdict = NlpDict()
-nlpdict.buildfromfile('./data/pku_train_nw.ltxt')
-
-
 #############
 # Trainging #
 #############
@@ -24,18 +20,28 @@ text = unicode(f.read(), 'utf-8')
 text = text.replace(" ", "")
 f.close()
 
-len_text = len(text)
+# NlpDict
+nlpdict = NlpDict()
+nlpdict.buildfromtext(text, freq_thres=0)
+print "NlpDict size is:", nlpdict.size()
+nlpdict.transEmbedding('./data/pku_closed_word_embedding.ltxt', "./data/pku_embedding_c1.obj")
 
-print "Train size is: %s" % len_text
-
+# use gpu
 theano.sandbox.cuda.use('gpu1')
 
-mlp_ngram = MlpNgram(nlpdict, N=5, n_in=50, n_hidden=100, lr=0.07, batch_size=50, hvalue_file="./data/pku_embedding.obj")
+# mlp_ngram = MlpNgram(nlpdict, N=4, n_in=50, n_hidden=150, lr=0.07, batch_size=50, hvalue_file="./data/MlpBigram.hiddens.obj")
+mlp_ngram = MlpNgram(nlpdict, N=5, n_in=50, n_hidden=200, lr=0.07, batch_size=50, hvalue_file="./data/pku_embedding_c1.obj")
 # mlp_ngram = MlpNgram(nlpdict, backup_file_path="./data/MlpNgram/Mlp5gram.model.epoch10.n_hidden100.obj", hvalue_file="./data/pku_embedding.obj")
-mlp_ngram.lr = 0.001
+# mlp_ngram.lr = 0.05
 
-train_text = text
-test_text = text[0:20000]
+train_text = text[:-20000]
+test_text = text[-20000:]
 
-mlp_ngram.traintext(train_text, test_text, DEBUG=True, SAVE=True, SINDEX=11)
+print "Train size is: %s, testing size is: %s" % (len(train_text), len(test_text))
+mlp_ngram.traintext(train_text, test_text, DEBUG=True, SAVE=False, SINDEX=1, epoch=20)
 
+ce = mlp_ngram.crossentropy(test_text)
+print "Cross-entropy is:", ce
+print "Perplexity is:", numpy.exp(ce)
+
+print "Log rank is:", mlp_ngram.logaverank(test_text) 
