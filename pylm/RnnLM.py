@@ -70,7 +70,7 @@ class RnnLM(LMBase):
 		self.rnn_sort = theano.function([u, y], [rnn.y_sort_matrix, probs])
 		print "Compile argsort function complete!"
 
-		self.rnn_pred = theano.function([u], rnn.y_pred[-1])
+		self.rnn_pred = theano.function([u], [rnn.y_pred[-1], rnn.y_prob[-1]])
 		print "Compile predict function complete!"
 
 		if not no_train:
@@ -183,9 +183,7 @@ class RnnLM(LMBase):
 		'''
 		@summary: Return the top N predict char of the history tids
 		'''
-		self.__initRnn(no_train=True)
-		tidmat, _ = self.tids2nndata(self.tokens2ids(text), truncate_input=False, shared=False)
-		probs = self.rnn_probs(tidmat.get_value(borrow=True))
+		_, probs = self.predict(text)
 		
 		sort_probs = probs.copy()
 		sort_probs.sort()

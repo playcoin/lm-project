@@ -24,7 +24,7 @@ len_text = len(text)
 print "Train size is: %s" % len_text
 
 # ngram_file_path = "./data/ngram.model.obj"
-ngram = Ngram(nlpdict, 2)
+ngram = Ngram(nlpdict, 3)
 ngram.traintext(text)
 
 # print "Save N-gram model"
@@ -82,13 +82,36 @@ f.close()
 #############
 # rank test #
 #############
-s_prefix = u"主席"
-tids = [nlpdict[x] for x in s_prefix]
-top_tids, top_probs = ngram.topN(tids)
-for x in top_tids:
-	print nlpdict.gettoken(x),
-print 
-print top_probs
+
+f = file("./test/Ngram_test_output.txt", 'wb')
+
+def topN_predict(s_prefix):
+	print >> f, "Test text:", s_prefix.encode("utf-8")
+	top_tids, top_probs = ngram.topN(s_prefix, 10)
+	for x in top_tids:
+		print >> f, nlpdict.gettoken(x).encode("utf-8"),
+	print >> f
+	print >> f, top_probs
+	print >> f
+
+topN_predict(u"中共中央")
+topN_predict(u"中国")
+topN_predict(u"国际合作")
+topN_predict(u"行政区")
+topN_predict(u"建设工地")
+topN_predict(u"装机")
+topN_predict(u"搦管自思")
+topN_predict(u"好囧")
+
+topN_predict(u"中共中央总书记、国家主席")
+topN_predict(u"一定能够取得改革开放的社会主义现代化建设的")
+topN_predict(u"从城里来的人们听着惊心动魄的")
+topN_predict(u"人们还在忍受战火的")
+
+
+f.close()
+
+
 # rank_list = []
 # for i in xrange(nlpdict.size()):
 # 	rank_list.append(ngram.rank(tids + [i]))
@@ -107,12 +130,12 @@ print top_probs
 # print numpy.log(rank_list).mean()
 
 
-###################
+# ##################
 # PPL by sampling #
-###################
+# ##################
 # import random
 
-# sample_list = random.sample(range(len(test_text)), 1000)
+# sample_list = random.sample(range(len(test_text)), 20000)
 
 # rank_list = []
 # for i in sample_list:

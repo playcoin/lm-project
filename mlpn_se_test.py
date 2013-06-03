@@ -29,14 +29,14 @@ train_text = text
 
 print "Train size is: %s" % len_text
 
-theano.sandbox.cuda.use('gpu1')
+theano.sandbox.cuda.use('gpu0')
 
 mlp_ngram = MlpNgram(nlpdict, hvalue_file="./data/pku_embedding.obj", backup_file_path="./data/MlpNgram/Mlp8gram.model.epoch20.n_hidden200.obj")
 # mlp_ngram.traintext(train_text, test_text, DEBUG=True, SAVE=False)
 
 
 #############
-# Testing #
+#  Testing  #
 #############
 
 f = file('./data/pku_test.txt')

@@ -92,7 +92,7 @@ class MlpNgram(LMBase):
 
 		probs = classifier.logRegressionLayer.p_y_given_x[T.arange(y.shape[0]), y]
 		self.mlp_prob = theano.function(inputs=[x, y], outputs=probs)
-		self.mlp_probs = theano.function(inputs=[x, y], outputs=classifier.logRegressionLayer.p_y_given_x[-1])
+		self.mlp_probs = theano.function(inputs=[x], outputs=classifier.logRegressionLayer.p_y_given_x[-1])
 		print "Compile likelihood function complete!"
 
 		y_sort_matrix = T.sort(classifier.logRegressionLayer.p_y_given_x, axis=1)

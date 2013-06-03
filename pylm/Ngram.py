@@ -398,11 +398,12 @@ class Ngram(LMBase):
 
 
 		# print probs
-		probs = numpy.asarray(probs)
+		# probs = numpy.asarray(probs)
 		probs.sort()
+		probs = probs[::-1]
 		prob = self.backoff(tids)
 
-		return dict_size - probs.searchsorted(prob)
+		return 1 + probs.index(prob)
 
 	def ranks(self, text):
 		tidseq = self.tokens2ids(text)
@@ -424,12 +425,12 @@ class Ngram(LMBase):
 
 		return rank_list
 
-	def topN(self, tids, N=10):
+	def topN(self, text, N=10):
 		'''
 		@summary: Return the top N predict char of the history tids
 		'''
 		probs = []
-		prefix = tids
+		prefix = self.tokens2ids(text)
 		dict_size = self.ndict.size()
 		for i in range(dict_size):
 			prob = self.backoff(prefix + [i])
