@@ -24,7 +24,7 @@ len_text = len(text)
 print "Train size is: %s" % len_text
 
 # ngram_file_path = "./data/ngram.model.obj"
-ngram = Ngram(nlpdict, 4)
+ngram = Ngram(nlpdict, 2)
 ngram.traintext(text)
 
 # print "Save N-gram model"
@@ -79,6 +79,23 @@ f.close()
 
 # print prob
 
+#############
+# rank test #
+#############
+s_prefix = u"主席"
+tids = [nlpdict[x] for x in s_prefix]
+top_tids, top_probs = ngram.topN(tids)
+for x in top_tids:
+	print nlpdict.gettoken(x),
+print 
+print top_probs
+# rank_list = []
+# for i in xrange(nlpdict.size()):
+# 	rank_list.append(ngram.rank(tids + [i]))
+
+# print rank_list
+
+
 # tokenids = [nlpdict[x] for x in u"国家主"]
 
 # print ngram.rank([20,21,22])
@@ -89,13 +106,17 @@ f.close()
 
 # print numpy.log(rank_list).mean()
 
-import random
 
-sample_list = random.sample(range(len(test_text)), 1000)
+###################
+# PPL by sampling #
+###################
+# import random
 
-rank_list = []
-for i in sample_list:
-	tokens = test_text[i:i+4]
-	rank_list.append(ngram.ranks(tokens)[-1])
+# sample_list = random.sample(range(len(test_text)), 1000)
 
-print numpy.log(rank_list).mean()
+# rank_list = []
+# for i in sample_list:
+# 	tokens = test_text[i:i+4]
+# 	rank_list.append(ngram.ranks(tokens)[-1])
+
+# print numpy.log(rank_list).mean()

@@ -424,6 +424,25 @@ class Ngram(LMBase):
 
 		return rank_list
 
+	def topN(self, tids, N=10):
+		'''
+		@summary: Return the top N predict char of the history tids
+		'''
+		probs = []
+		prefix = tids
+		dict_size = self.ndict.size()
+		for i in range(dict_size):
+			prob = self.backoff(prefix + [i])
+			probs.append(prob)
+
+		sort_probs = numpy.asarray(probs)
+		sort_probs.sort()
+		top_probs = sort_probs[-N:][::-1]
+
+		top_tokens = [probs.index(x) for x in top_probs]
+		return top_tokens, top_probs
+
+
 	def likelihood(self, text, add_se=False, smoothfuncname = "backoff"):
 
 		# turn text sequence to token id sequence
