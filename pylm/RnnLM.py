@@ -64,6 +64,7 @@ class RnnLM(LMBase):
 
 		probs = rnn.y_prob[T.arange(y.shape[0]), y]
 		self.rnn_prob = theano.function([u, y], probs)
+		self.rnn_probs = theano.function([u], rnn.y_prob[-1])
 		print "Compile likelihood function complete!"
 
 		self.rnn_sort = theano.function([u, y], [rnn.y_sort_matrix, probs])
@@ -177,6 +178,23 @@ class RnnLM(LMBase):
 		log_ranks = numpy.log(self.ranks(text))
 
 		return numpy.mean(log_ranks)
+
+	def topN(self, text, N=10):
+		'''
+		@summary: Return the top N predict char of the history tids
+		'''
+		self.__initRnn(no_train=True)
+		tidmat, _ = self.tids2nndata(self.tokens2ids(text), truncate_input=False, shared=False)
+		probs = self.rnn_probs(tidmat.get_value(borrow=True))
+		
+		sort_probs = probs.copy()
+		sort_probs.sort()
+		top_probs = sort_probs[-N:][::-1]
+
+		probs = list(probs)
+		top_tokens = [probs.index(x) for x in top_probs]
+
+		return top_tokens, top_probs
 
 
 	def savemodel(self, filepath="./data/RnnLM.model.obj"):

@@ -92,6 +92,7 @@ class MlpNgram(LMBase):
 
 		probs = classifier.logRegressionLayer.p_y_given_x[T.arange(y.shape[0]), y]
 		self.mlp_prob = theano.function(inputs=[x, y], outputs=probs)
+		self.mlp_probs = theano.function(inputs=[x, y], outputs=classifier.logRegressionLayer.p_y_given_x[-1])
 		print "Compile likelihood function complete!"
 
 		y_sort_matrix = T.sort(classifier.logRegressionLayer.p_y_given_x, axis=1)
@@ -296,6 +297,23 @@ class MlpNgram(LMBase):
 		log_ranks = numpy.log(self.ranks(text))
 
 		return numpy.mean(log_ranks)
+
+	def topN(self, text, N=10):
+		'''
+		@summary: Return the top N predict char of the history tids
+		'''
+		self.__initMlp(no_train=True)
+		tidmat, _ = self.tids2inputdata(self.tokens2ids(text), truncate_input=False)
+		probs = self.mlp_probs(tidmat.get_value(borrow=True))
+		
+		sort_probs = probs.copy()
+		sort_probs.sort()
+		top_probs = sort_probs[-N:][::-1]
+
+		probs = list(probs)
+		top_tokens = [probs.index(x) for x in top_probs]
+
+		return top_tokens, top_probs
 
 	def savemodel(self, filepath="./data/MlpNgram/MlpNgram.model.obj"):
 

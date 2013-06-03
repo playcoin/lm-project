@@ -231,7 +231,7 @@ class MlpBigram(LMBase):
 
 		return numpy.mean(log_ranks)
 
-	def topN(self, text):
+	def topN(self, text, N=10):
 		'''
 		@summary: Return the top N predict char of the history tids
 		'''
