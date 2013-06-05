@@ -15,13 +15,14 @@ import numpy
 
 import theano
 import theano.tensor as T
+from theano.tensor.shared_randomstreams import RandomStreams
 
 class RNN(object):
 	'''
 	@summary: RNN model
 	'''
 
-	def __init__(self, rng, input, n_in, n_h, n_out, batch_size, params=None, activation=T.tanh):
+	def __init__(self, rng, input, n_in, n_h, n_out, batch_size, lr, dropout=False, params=None, activation=T.tanh):
 		'''
 		@summary: Initial params and theano variable
 		
@@ -34,6 +35,7 @@ class RNN(object):
 		@param activation:
 		@result: 
 		'''
+		self.theano_rng = RandomStreams(rng.randint(2 ** 30))
 
 		W_in, W_h, W_out, b_h, b_out, h_0 = params or (None, None, None, None, None, None)
 
@@ -85,11 +87,12 @@ class RNN(object):
 		self.batch_size = batch_size
 		self.n_out = T.as_tensor_variable(n_out)
 
-		# self.h and self.p_y_given_x are for training function
-		self.h, _ = theano.scan(self.rnn_step, sequences=input, outputs_info=dict(initial=self.h_0, taps=[-1]))
-		self.p_y_given_x, _ = theano.scan(self.rnn_softmax, sequences=self.h)
-
 		self.params = [self.W_in, self.W_h, self.W_out, self.b_h, self.b_out, self.h_0]
+
+		# learing rate
+		self.lr = theano.shared(numpy.array(lr, dtype=theano.config.floatX))
+		# dropout
+		self.dropout = dropout
 
 	def rnn_step(self, u_tm, h_tm):
 		'''
@@ -102,6 +105,18 @@ class RNN(object):
 		h_t = self.activation(lin_h)
 		return h_t
 
+	def rnn_step_index(self, i, h_tm, u):
+		'''
+		@summary: iter function of scan op
+		
+		@param u_tm: current input
+		@param h_tm: last output of hidden layer
+		'''
+		last = T.max([0, i-1])
+		lin_h = T.dot(u[last], self.W_in) + T.dot(u[i], self.W_in) + T.dot(h_tm, self.W_h) + self.b_h
+		h_t = self.activation(lin_h)
+		return h_t
+
 	def rnn_softmax(self, h):
 		'''
 		@summary: iter function to calculate softmax of outputlayer
@@ -111,14 +126,17 @@ class RNN(object):
 		'''
 		return T.nnet.softmax(T.dot(h, self.W_out) + self.b_out)
 
-	def loss_NLL(self, y):
+	def corrupt(self, input, corruption_level=.5):
 		'''
-		@summary: Loss function of BPTT
+		@summary: For dropout
 		
-		@param y: labels
+		@param input:
+		@param corruption_level:
+		@result: 
 		'''
-		y_tmp = self.p_y_given_x.reshape((self.input.shape[0] * self.input.shape[1], 10))
-		return -T.mean(T.log(y_tmp)[T.arange(y.shape[0]), y])
+		return self.theano_rng.binomial(size=input.shape, n=1,
+										p=1 - corruption_level,
+										dtype=theano.config.floatX) * input
 
 	def errors(self, u, y):
 		'''
@@ -128,14 +146,18 @@ class RNN(object):
 		@param y: labels
 		'''
 		h, _ = theano.scan(self.rnn_step, sequences=u, outputs_info=self.h_0[0])
-		self.y_prob = T.nnet.softmax(T.dot(h, self.W_out) + self.b_out)
+		if self.dropout:
+			self.y_prob = T.nnet.softmax(T.dot(h, self.W_out / 2.) + self.b_out)
+		else:
+			self.y_prob = T.nnet.softmax(T.dot(h, self.W_out) + self.b_out)
+
 		self.y_pred = T.argmax(self.y_prob, axis=1)
 
 		self.y_sort_matrix = T.sort(self.y_prob, axis=1)
 
 		return T.mean(T.neq(self.y_pred, y))
 
-	def build_tbptt(self, x, y, h_init, l_rate, truncate_step=5):
+	def build_tbptt(self, x, y, h_init, truncate_step=5):
 		'''
 		@summary: Build T-BPTT training theano function.
 		
@@ -148,17 +170,24 @@ class RNN(object):
 
 		# output of hidden layer and output layer
 		part_h, _ = theano.scan(self.rnn_step, sequences=x, outputs_info=h_init)
+		# part_h, _ = theano.scan(self.rnn_step_2, sequences=dict(input=x, taps=[-1, 0]), outputs_info=h_init)
+		# part_h, _ = theano.scan(self.rnn_step_index, sequences=T.arange(x.shape[0]), outputs_info=h_init, non_sequences=x)
+		if self.dropout:
+			part_h = self.corrupt(part_h, 0.5)
+
 		part_p_y_given_x, _ = theano.scan(self.rnn_softmax, sequences=part_h)
-		
+
 		# apply the laster output of hidden layer as the next input 
 		out_h = part_h[-1]
 		
 		#### BPTT ####
 		# cost function
-		part_p_y_given_x = part_p_y_given_x.reshape((y.shape[0], x.shape[2]))
-		part_cost = -T.mean(T.log(part_p_y_given_x)[T.arange(y.shape[0]), y])
-		# part_L2_sqr = (self.W_in ** 2).sum() + (self.W_h ** 2).sum() + (self.W_out ** 2).sum()
-		# part_cost = part_cost + 0.0001 * part_L2_sqr
+		part_p_y_given_x = part_p_y_given_x.reshape((y.shape[0], self.n_out))
+		# cross-entropy loss
+		part_cost = T.mean(T.nnet.categorical_crossentropy(part_p_y_given_x, y))
+		if self.dropout:
+			part_L2_sqr = (self.W_in ** 2).sum() + (self.W_h ** 2).sum() + (self.W_out ** 2).sum()
+			part_cost = part_cost + 0.000001 * part_L2_sqr
 		# update params
 		params = [self.W_in, self.W_h, self.W_out, self.b_h, self.b_out]
 
@@ -170,7 +199,7 @@ class RNN(object):
 		updates = []
 		#	C = [(a1, b1), (a2, b2), (a3, b3), (a4, b4)]
 		for param, gparam in zip(params, gparams):
-			updates.append((param, param - l_rate * gparam))
+			updates.append((param, param - self.lr * gparam))
 
 		# BPTT for a truncate step. 
 		self.f_part_tbptt = theano.function(inputs=[x, y, h_init], outputs=out_h, updates=updates)

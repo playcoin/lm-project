@@ -22,7 +22,7 @@ class RnnLM(LMBase):
 	@summary: RNN Langeuage Model
 	'''
 
-	def __init__(self, ndict, n_hidden, lr, batch_size, backup_file_path=None, truncate_step=5):
+	def __init__(self, ndict, n_hidden, lr, batch_size, dropout=False, backup_file_path=None, truncate_step=5):
 		'''
 		@summary: Construct function, initiate some attribute
 		'''
@@ -39,6 +39,8 @@ class RnnLM(LMBase):
 			self.loadmodel(backup_file_path)
 
 		self.rnn = None
+		self.dropout = dropout
+		self.in_size = self.out_size  = ndict.size()
 
 	def __initRnn(self, no_train=False):
 		'''
@@ -54,7 +56,7 @@ class RnnLM(LMBase):
 		h_init = T.matrix('h_init')
 
 		rng = numpy.random.RandomState(213234)
-		rnn = RNN(rng, x, self.ndict.size(), self.n_hidden, self.ndict.size(), self.batch_size, params=self.rnnparams)
+		rnn = RNN(rng, x, self.in_size, self.n_hidden, self.out_size, self.batch_size, self.lr, dropout=self.dropout, params=self.rnnparams)
 		self.rnn = rnn
 		self.rnnparams = rnn.params
 
@@ -64,7 +66,6 @@ class RnnLM(LMBase):
 
 		probs = rnn.y_prob[T.arange(y.shape[0]), y]
 		self.rnn_prob = theano.function([u, y], probs)
-		self.rnn_probs = theano.function([u], rnn.y_prob[-1])
 		print "Compile likelihood function complete!"
 
 		self.rnn_sort = theano.function([u, y], [rnn.y_sort_matrix, probs])
@@ -74,10 +75,10 @@ class RnnLM(LMBase):
 		print "Compile predict function complete!"
 
 		if not no_train:
-			rnn.build_tbptt(x, y, h_init, self.lr, self.truncate_step)
+			rnn.build_tbptt(x, y, h_init, self.truncate_step)
 			print "Compile Truncate-BPTT Algorithm complete!"
 
-	def traintext(self, text, test_text, add_se=True, sen_slice_length=4, epoch=200, DEBUG = False, SAVE=False, SINDEX=1):
+	def traintext(self, text, test_text, add_se=True, sen_slice_length=4, epoch=200, lr_coef = -1., DEBUG = False, SAVE=False, SINDEX=1):
 
 		self.__initRnn()
 
@@ -99,17 +100,14 @@ class RnnLM(LMBase):
 
 			for j in xrange(0, data_size, data_slice_size / 2):
 				# reshape to matrix: [SEQ][BATCH][FRAME]
-				# mat_in, label = self.tids2nndata(tidseq[j:j+data_slice_size+1], shared=False)
 				mat_in = mat_in_total[j:j+data_slice_size].reshape(self.batch_size, sentence_length, mat_in_total.shape[1]).transpose(1,0,2)
 				label = label_total[j:j+data_slice_size].reshape(self.batch_size, sentence_length).T.flatten()
-				# mat_in, label = theano.shared(mat_in, borrow=True), theano.shared(label, borrow=True)
 				
 				self.rnn.train_tbptt(mat_in, label)
 
 				if (j+data_slice_size+half_sen_length) < seq_size:
 					mat_in = mat_in_total[j+half_sen_length:j+data_slice_size+half_sen_length].reshape(self.batch_size, sentence_length, mat_in_total.shape[1]).transpose(1,0,2)
 					label = label_total[j+half_sen_length:j+data_slice_size+half_sen_length].reshape(self.batch_size, sentence_length).T.flatten()
-					# mat_in, label = theano.shared(mat_in, borrow=True), theano.shared(label, borrow=True)
 					
 					self.rnn.train_tbptt(mat_in, label)
 			
@@ -121,6 +119,11 @@ class RnnLM(LMBase):
 
 			if SAVE:
 				self.savemodel("./data/RnnLM/RnnLM.model.epoch%s.n_hidden%s.truncstep%s.obj" % (i+SINDEX, self.n_hidden, self.truncate_step))
+
+			if lr_coef > 0:
+				# update learning_rate
+				lr = self.rnn.lr.get_value() * lr_coef
+				self.rnn.lr.set_value(numpy.array(lr, dtype=theano.config.floatX))
 
 		e_time = time.clock()
 		print "RnnLM train over!! The total training time is %.2fm." % ((e_time - s_time) / 60.) 

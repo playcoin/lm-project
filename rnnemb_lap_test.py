@@ -6,7 +6,7 @@ Created on 2013-05-05 23:00
 '''
 
 from nlpdict.NlpDict import NlpDict
-from pylm.RnnLM import RnnLM
+from pylm.RnnEmbLM import RnnEmbLM
 import numpy
 import time
 import theano.sandbox.cuda
@@ -26,27 +26,15 @@ test_text = text[:2404]
 len_text = len(train_text)
 
 nlpdict = NlpDict()
-nlpdict.buildfromtext(train_text)
-
+nlpdict.buildfromtext(text)
+nlpdict.transEmbedding('./data/pku_closed_word_embedding.ltxt', "./data/pku_embedding_s.obj")
 print "Dict size is: %s, Train size is: %s" % (nlpdict.size(), len_text)
 
-rnnlm = RnnLM(nlpdict, n_hidden=200, lr=0.5, batch_size=10, truncate_step=4, dropout=True)
+rnnlm = RnnEmbLM(nlpdict, n_hidden=200, lr=0.5, batch_size=10, truncate_step=4, dropout=False)
+rnnlm.loadEmbeddings("./data/pku_embedding_s.obj")
 # rnnlm = RnnLM(nlpdict, n_hidden=200, lr=0.5, batch_size=10, truncate_step=4, dropout=True, backup_file_path="./data/simple_rnn_model.epoch150.n_hidden200.ts4.dylr.dropout.obj")
 
 print "Rnn training start!"
 
-
-rnnlm.traintext(train_text, test_text, add_se=False, sen_slice_length=20, epoch=150, lr_coef=0.96, DEBUG=True)
+rnnlm.traintext(train_text, test_text, add_se=False, sen_slice_length=10, epoch=150, lr_coef=0.96, DEBUG=True)
 # rnnlm.savemodel("./data/simple_rnn_model.epoch150.n_hidden200.ts4.dylr.dropout.obj")
-
-# print rnnlm.rnn.h_0.get_value()
-
-# print rnnlm.testtext(test_text)[0]
-s_prefix = u"中共中央"
-print "Test text:", s_prefix
-top_tids, top_probs = rnnlm.topN(s_prefix, 10)
-for x in top_tids:
-	print nlpdict.gettoken(x),
-print
-print top_probs
-print
