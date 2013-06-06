@@ -7,6 +7,7 @@ Created on 2013-05-05 23:00
 
 from nlpdict.NlpDict import NlpDict
 from pylm.RnnLM import RnnLM
+from pylm.RnnEmbLM import RnnEmbTrLM
 import numpy
 import time
 import theano.sandbox.cuda
@@ -30,13 +31,11 @@ nlpdict.buildfromtext(train_text)
 
 print "Dict size is: %s, Train size is: %s" % (nlpdict.size(), len_text)
 
-rnnlm = RnnLM(nlpdict, n_hidden=200, lr=0.5, batch_size=10, truncate_step=4, dropout=True)
+rnnlm = RnnLM(nlpdict, n_hidden=200, lr=0.5, batch_size=10, truncate_step=4, dropout=False)
 # rnnlm = RnnLM(nlpdict, n_hidden=200, lr=0.5, batch_size=10, truncate_step=4, dropout=True, backup_file_path="./data/simple_rnn_model.epoch150.n_hidden200.ts4.dylr.dropout.obj")
 
-print "Rnn training start!"
-
-
-rnnlm.traintext(train_text, test_text, add_se=False, sen_slice_length=20, epoch=150, lr_coef=0.96, DEBUG=True)
+rnnlm.traintext(train_text, test_text, add_se=False, sen_slice_length=20, epoch=50, lr_coef=0.96, DEBUG=True)
+# print rnnlm.rnn.C.get_value().sum()
 # rnnlm.savemodel("./data/simple_rnn_model.epoch150.n_hidden200.ts4.dylr.dropout.obj")
 
 # print rnnlm.rnn.h_0.get_value()

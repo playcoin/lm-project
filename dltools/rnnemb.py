@@ -29,15 +29,19 @@ class RNNEMB(RNN):
 		'''
 
 		# RNN init 
-		super(RNNEMB, self).__init__(rng, n_emb, n_h, n_out, batch_size, lr, dropout, params, activation)
+		super(RNNEMB, self).__init__(rng, 
+			n_in  = n_emb, 
+			n_h   = n_h, 
+			n_out = n_out, 
+			batch_size = batch_size, 
+			lr = lr, 
+			dropout = dropout, 
+			params = params, 
+			activation = activation)
 
 		# init embeddings
 		if embeddings is None:
-			embeddings = numpy.asarray(rng.uniform(
-				low  = -numpy.sqrt(6.0 / (n_in + n_emb)),
-				high  = numpy.sqrt(6.0 / (n_in + n_emb)),
-				size = (n_in, n_emb)), dtype = theano.config.floatX
-			)
+			embeddings = numpy.identity(n_in, dtype=theano.config.floatX)
 
 		self.C = theano.shared(value=embeddings, name='C', borrow=True)
 
@@ -52,7 +56,7 @@ class RNNEMB(RNN):
 		h_t = self.activation(lin_h)
 		return h_t
 
-	def build_tbptt(self, x, y, h_init, truncate_step=5):
+	def build_tbptt(self, x, y, h_init, truncate_step=5, train_emb=False):
 		'''
 		@summary: Build T-BPTT training theano function.
 		
@@ -69,8 +73,7 @@ class RNNEMB(RNN):
 			part_h = self.corrupt(part_h, 0.5)
 
 		part_p_y_given_x, _ = theano.scan(self.rnn_softmax, sequences=part_h)
-
-		# apply the laster output of hidden layer as the next input 
+		# apply the last output of hidden layer as the next input 
 		out_h = part_h[-1]
 		
 		#### BPTT ####
@@ -82,7 +85,10 @@ class RNNEMB(RNN):
 			part_L2_sqr = (self.W_in ** 2).sum() + (self.W_h ** 2).sum() + (self.W_out ** 2).sum()
 			part_cost = part_cost + 0.000001 * part_L2_sqr
 		# update params
-		params = [self.W_in, self.W_h, self.W_out, self.b_h, self.b_out, self.C]
+		params = [self.W_in, self.W_h, self.W_out, self.b_h, self.b_out]
+		# check whether to train the embedding
+		if train_emb:
+			params.append(self.C)
 
 		gparams = []
 		for param in params:

@@ -63,7 +63,7 @@ class RnnEmbTrLM(RnnLM):
 	@summary: Rnn language Model use Character Embedding, and ajust embedding in the training time.
 	'''
 
-	def __init__(self, ndict, n_hidden, lr, batch_size, emb_file_path = None, dropout=False, truncate_step=5, backup_file_path=None):
+	def __init__(self, ndict, n_hidden, lr, batch_size, train_emb=True, emb_file_path = None, dropout=False, truncate_step=5, backup_file_path=None):
 
 		LMBase.__init__(self, ndict)
 
@@ -73,11 +73,13 @@ class RnnEmbTrLM(RnnLM):
 			self.batch_size = batch_size
 			self.truncate_step = truncate_step
 			self.rnnparams = None
+			self.embvalues = None
 		else:
 			self.loadmodel(backup_file_path)
 
 		self.rnn = None
 		self.dropout = dropout
+		self.train_emb = train_emb
 		self.in_size = self.out_size  = ndict.size()
 
 		if emb_file_path:
@@ -85,7 +87,8 @@ class RnnEmbTrLM(RnnLM):
 			self.embvalues = cPickle.load(f)
 			f.close()
 			self.embvalues = self.embvalues.astype(theano.config.floatX)
-
+			
+		self.embsize = (self.embvalues is None) and self.in_size or self.embvalues.shape[1]
 
 	def initRnn(self, no_train=False):
 		'''
@@ -103,7 +106,7 @@ class RnnEmbTrLM(RnnLM):
 		rng = numpy.random.RandomState(213234)
 		rnn = RNNEMB(rng, 
 				self.in_size,
-				self.embvalues.shape[1], 
+				self.embsize, 
 				self.n_hidden, 
 				self.ndict.size(),
 				self.batch_size,
@@ -131,7 +134,7 @@ class RnnEmbTrLM(RnnLM):
 		print "Compile predict function complete!"
 
 		if not no_train:
-			rnn.build_tbptt(x, y, h_init, self.truncate_step)
+			rnn.build_tbptt(x, y, h_init, self.truncate_step, self.train_emb)
 			print "Compile Truncate-BPTT Algorithm complete!"
 
 	def tids2nndata(self, tidseq, truncate_input = True, shared =False):
