@@ -119,7 +119,8 @@ class RnnLM(LMBase):
 				# print ''.join([self.ndict.gettoken(x) for x in r_labels])
 
 			if SAVE:
-				self.savemodel("./data/RnnLM/RnnLM.model.epoch%s.n_hidden%s.truncstep%s.obj" % (i+SINDEX, self.n_hidden, self.truncate_step))
+				class_name = self.__class__.__name__
+				self.savemodel("./data/%s/%s.model.epoch%s.n_hidden%s.ssl%s.truncstep%s.dr%s.obj" % (class_name, class_name, i+SINDEX, self.n_hidden, sen_slice_length, self.truncate_step, self.dropout))
 
 			if lr_coef > 0:
 				# update learning_rate
