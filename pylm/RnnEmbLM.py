@@ -13,6 +13,7 @@ import theano
 import theano.tensor as T
 
 from RnnLM import RnnLM
+from LMBase import LMBase
 from dltools.rnn import RNN
 from dltools.rnnemb import RNNEMB
 
@@ -62,14 +63,28 @@ class RnnEmbTrLM(RnnLM):
 	@summary: Rnn language Model use Character Embedding, and ajust embedding in the training time.
 	'''
 
-	def __init__(self, ndict, n_hidden, lr, batch_size, emb_file_path, dropout=False, truncate_step=5, backup_file_path=None):
+	def __init__(self, ndict, n_hidden, lr, batch_size, emb_file_path = None, dropout=False, truncate_step=5, backup_file_path=None):
 
-		super(RnnEmbTrLM, self).__init__(ndict, n_hidden, lr, batch_size, dropout=dropout, truncate_step=truncate_step, backup_file_path=backup_file_path)
+		LMBase.__init__(self, ndict)
 
-		f = open(emb_file_path)
-		self.embvalues = cPickle.load(f)
-		f.close()
-		self.embvalues = self.embvalues.astype(theano.config.floatX)
+		if backup_file_path is None:
+			self.n_hidden = n_hidden
+			self.lr = lr
+			self.batch_size = batch_size
+			self.truncate_step = truncate_step
+			self.rnnparams = None
+		else:
+			self.loadmodel(backup_file_path)
+
+		self.rnn = None
+		self.dropout = dropout
+		self.in_size = self.out_size  = ndict.size()
+
+		if emb_file_path:
+			f = open(emb_file_path)
+			self.embvalues = cPickle.load(f)
+			f.close()
+			self.embvalues = self.embvalues.astype(theano.config.floatX)
 
 
 	def initRnn(self, no_train=False):
@@ -87,7 +102,7 @@ class RnnEmbTrLM(RnnLM):
 
 		rng = numpy.random.RandomState(213234)
 		rnn = RNNEMB(rng, 
-				self.ndict.size(), 
+				self.in_size,
 				self.embvalues.shape[1], 
 				self.n_hidden, 
 				self.ndict.size(),
@@ -134,3 +149,15 @@ class RnnEmbTrLM(RnnLM):
 		s_in = in_data[s_idx:e_idx].reshape(self.batch_size, len_sent).T
 		s_l = l_data[s_idx:e_idx].reshape(self.batch_size, len_sent).T.flatten()
 		return s_in, s_l
+
+	def savemodel(self, filepath):
+		backupfile = open(filepath, 'w')
+		cPickle.dump((self.batch_size, self.n_hidden, self.lr, self.truncate_step, self.rnnparams, self.rnn.C.get_value()), backupfile)
+		backupfile.close()
+		print "Save model complete! Filepath:", filepath
+
+	def loadmodel(self, filepath):
+		backupfile = open(filepath)
+		self.batch_size, self.n_hidden, self.lr, self.truncate_step, self.rnnparams, self.embvalues = cPickle.load(backupfile)
+		backupfile.close()
+		print "Load model complete! Filepath:", filepath

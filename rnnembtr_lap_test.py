@@ -35,5 +35,8 @@ rnnlm = RnnEmbTrLM(nlpdict, n_hidden=200, lr=0.5, batch_size=10, truncate_step=4
 
 print "Rnn training start!"
 
-rnnlm.traintext(train_text, test_text, add_se=False, sen_slice_length=10, epoch=150, lr_coef=0.96, DEBUG=True)
-# rnnlm.savemodel("./data/simple_rnn_model.epoch150.n_hidden200.ts4.dylr.dropout.obj")
+rnnlm.traintext(train_text, test_text, add_se=False, sen_slice_length=10, epoch=5, lr_coef=0.96, DEBUG=True)
+rnnlm.savemodel("./data/simple_rnnembtr_model.epoch5.n_hidden200.ts4.dylr.obj")
+
+rnnlm = RnnEmbTrLM(nlpdict, n_hidden=200, lr=0.5, batch_size=10, truncate_step=4, dropout=False, backup_file_path="./data/simple_rnnembtr_model.epoch5.n_hidden200.ts4.dylr.obj")
+rnnlm.traintext(train_text, test_text, add_se=False, sen_slice_length=10, epoch=5, lr_coef=0.96, DEBUG=True, SINDEX=6)
