@@ -42,7 +42,7 @@ class RnnLM(LMBase):
 		self.dropout = dropout
 		self.in_size = self.out_size  = ndict.size()
 
-	def __initRnn(self, no_train=False):
+	def initRnn(self, no_train=False):
 		'''
 		@summary: Initiate RNN model 
 		'''
@@ -56,7 +56,7 @@ class RnnLM(LMBase):
 		h_init = T.matrix('h_init')
 
 		rng = numpy.random.RandomState(213234)
-		rnn = RNN(rng, x, self.in_size, self.n_hidden, self.out_size, self.batch_size, self.lr, dropout=self.dropout, params=self.rnnparams)
+		rnn = RNN(rng, self.in_size, self.n_hidden, self.out_size, self.batch_size, self.lr, dropout=self.dropout, params=self.rnnparams)
 		self.rnn = rnn
 		self.rnnparams = rnn.params
 
@@ -78,9 +78,14 @@ class RnnLM(LMBase):
 			rnn.build_tbptt(x, y, h_init, self.truncate_step)
 			print "Compile Truncate-BPTT Algorithm complete!"
 
+	def reshape(self, in_data, l_data, s_idx, e_idx, len_sent):
+		s_in = in_data[s_idx:e_idx].reshape(self.batch_size, len_sent, in_data.shape[1]).transpose(1, 0, 2)
+		s_l = l_data[s_idx:e_idx].reshape(self.batch_size, len_sent).T.flatten()
+		return s_in, s_l
+
 	def traintext(self, text, test_text, add_se=True, sen_slice_length=4, epoch=200, lr_coef = -1., DEBUG = False, SAVE=False, SINDEX=1):
 
-		self.__initRnn()
+		self.initRnn()
 
 		tidseq = self.tokens2ids(text, add_se)
 		seq_size = len(tidseq)
@@ -100,15 +105,11 @@ class RnnLM(LMBase):
 
 			for j in xrange(0, data_size, data_slice_size / 2):
 				# reshape to matrix: [SEQ][BATCH][FRAME]
-				mat_in = mat_in_total[j:j+data_slice_size].reshape(self.batch_size, sentence_length, mat_in_total.shape[1]).transpose(1,0,2)
-				label = label_total[j:j+data_slice_size].reshape(self.batch_size, sentence_length).T.flatten()
-				
+				mat_in, label = self.reshape(mat_in_total, label_total, j, j+data_slice_size, sentence_length)
 				self.rnn.train_tbptt(mat_in, label)
 
 				if (j+data_slice_size+half_sen_length) < seq_size:
-					mat_in = mat_in_total[j+half_sen_length:j+data_slice_size+half_sen_length].reshape(self.batch_size, sentence_length, mat_in_total.shape[1]).transpose(1,0,2)
-					label = label_total[j+half_sen_length:j+data_slice_size+half_sen_length].reshape(self.batch_size, sentence_length).T.flatten()
-					
+					mat_in, label = self.reshape(mat_in_total, label_total, j+half_sen_length, j+data_slice_size+half_sen_length, sentence_length)
 					self.rnn.train_tbptt(mat_in, label)
 			
 			if DEBUG:
@@ -130,21 +131,21 @@ class RnnLM(LMBase):
 
 	def testtext(self, text):
 
-		self.__initRnn(no_train=True)
+		self.initRnn(no_train=True)
 
 		mat_in, label = self.tids2nndata(self.tokens2ids(text), shared=False)
 
 		return self.test_model(mat_in, label)
 
 	def predict(self, text):
-		self.__initRnn(no_train=True)
+		self.initRnn(no_train=True)
 		mat_in, _ = self.tids2nndata(self.tokens2ids(text), truncate_input=False, shared=False)
 
 		return self.rnn_pred(mat_in)
 
 	def likelihood(self, text):
 
-		self.__initRnn(no_train=True)
+		self.initRnn(no_train=True)
 		mat_in, label = self.tids2nndata(self.tokens2ids(text), shared=False)
 
 		return self.rnn_prob(mat_in, label)
@@ -159,7 +160,7 @@ class RnnLM(LMBase):
 		return crossentropy
 
 	def ranks(self, text):
-		self.__initRnn(no_train=True)
+		self.initRnn(no_train=True)
 		mat_in, label = self.tids2nndata(self.tokens2ids(text), shared=False)
 
 		sort_matrix, probs = self.rnn_sort(mat_in, label)

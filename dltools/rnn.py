@@ -22,12 +22,11 @@ class RNN(object):
 	@summary: RNN model
 	'''
 
-	def __init__(self, rng, input, n_in, n_h, n_out, batch_size, lr, dropout=False, params=None, activation=T.tanh):
+	def __init__(self, rng, n_in, n_h, n_out, batch_size, lr, dropout=False, params=None, activation=T.tanh):
 		'''
 		@summary: Initial params and theano variable
 		
 		@param rng:
-		@param input:
 		@param n_in:
 		@param n_h:
 		@param n_out:
@@ -82,7 +81,6 @@ class RNN(object):
 		self.b_h = b_h
 		self.b_out = b_out
 		self.h_0 = h_0
-		self.input = input
 		self.activation = activation
 		self.batch_size = batch_size
 		self.n_out = T.as_tensor_variable(n_out)
