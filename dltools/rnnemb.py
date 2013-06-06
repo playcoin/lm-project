@@ -52,7 +52,7 @@ class RNNEMB(RNN):
 		h_t = self.activation(lin_h)
 		return h_t
 
-	def build_tbptt(self, x, y, h_init, truncate_step=5):
+	def build_tbptt(self, seq_in, seq_l, truncate_step=5):
 		'''
 		@summary: Build T-BPTT training theano function.
 		
@@ -62,6 +62,12 @@ class RNNEMB(RNN):
 		@param l_rate: learning_rate
 		@result: 
 		'''
+		x = T.imatrix()
+		y = T.imatrix()
+		h_init = T.matrix()
+		index = T.lscalar()
+
+		self.truncate_step = truncate_step
 
 		# output of hidden layer and output layer
 		part_h, _ = theano.scan(self.rnn_step, sequences=x, outputs_info=h_init)
@@ -75,9 +81,10 @@ class RNNEMB(RNN):
 		
 		#### BPTT ####
 		# cost function
-		part_p_y_given_x = part_p_y_given_x.reshape((y.shape[0], self.n_out))
+		l_y = y.flatten()
+		part_p_y_given_x = part_p_y_given_x.reshape((l_y.shape[0], self.n_out))
 		# cross-entropy loss
-		part_cost = T.mean(T.nnet.categorical_crossentropy(part_p_y_given_x, y))
+		part_cost = T.mean(T.nnet.categorical_crossentropy(part_p_y_given_x, l_y))
 		if self.dropout:
 			part_L2_sqr = (self.W_in ** 2).sum() + (self.W_h ** 2).sum() + (self.W_out ** 2).sum()
 			part_cost = part_cost + 0.000001 * part_L2_sqr
@@ -95,7 +102,25 @@ class RNNEMB(RNN):
 			updates.append((param, param - self.lr * gparam))
 
 		# BPTT for a truncate step. 
-		self.f_part_tbptt = theano.function(inputs=[x, y, h_init], outputs=out_h, updates=updates)
-		self.truncate_step = truncate_step
+		self.f_part_tbptt = theano.function(inputs=[index, h_init], 
+											outputs=out_h, 
+											updates=updates, 
+											givens = {
+												x : seq_in[index : index+truncate_step],
+												y : seq_l[index : index+truncate_step]
+											})
 
-		return self.f_part_tbptt
+	def train_tbptt(self, s_index, e_index):
+		'''
+		@summary: T-BPTT Algorithm
+		
+		@param seq_input:
+		@param seq_label:
+		@param learning_rate:
+		@param truncate_step:
+		'''
+		h_init = self.h_0.get_value(borrow=True)
+		# slice the sequence, do BPTT in each slice
+		for j in range(s_index, e_index, self.truncate_step):
+			# BPTT and reset the h_init
+			h_init = self.f_part_tbptt(j, h_init)

@@ -108,10 +108,6 @@ class RnnLM(LMBase):
 				mat_in, label = self.reshape(mat_in_total, label_total, j, j+data_slice_size, sentence_length)
 				self.rnn.train_tbptt(mat_in, label)
 
-				if (j+data_slice_size+half_sen_length) < seq_size:
-					mat_in, label = self.reshape(mat_in_total, label_total, j+half_sen_length, j+data_slice_size+half_sen_length, sentence_length)
-					self.rnn.train_tbptt(mat_in, label)
-			
 			if DEBUG:
 				err = self.testtext(test_text)[0]
 				e_time = time.clock()

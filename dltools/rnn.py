@@ -216,7 +216,7 @@ class RNN(object):
 		'''
 		h_init = self.h_0.get_value(borrow=True)
 		# slice the sequence, do BPTT in each slice
-		for j in range(0, len(seq_input), self.truncate_step):
+		for j in range(0, seq_input.shape[0], self.truncate_step):
 			# slice
 			part_in = seq_input[j:j+self.truncate_step]
 			part_y = seq_label[j*self.batch_size:(j+self.truncate_step)*self.batch_size]
