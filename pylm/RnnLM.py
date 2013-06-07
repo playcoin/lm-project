@@ -140,25 +140,38 @@ class RnnLM(LMBase):
 
 		return self.rnn_pred(mat_in)
 
-	def likelihood(self, text):
+	def likelihood(self, sentence, debug=False):
 
 		self.initRnn(no_train=True)
-		mat_in, label = self.tids2nndata(self.tokens2ids(text), shared=False)
+		sentence = '\n' + sentence.strip() + '\n'
+		mat_in, label = self.tids2nndata(self.tokens2ids(sentence), shared=False)
 
-		return self.rnn_prob(mat_in, label)
+		probs = self.rnn_prob(mat_in, label)
+
+		if debug:
+			for i in range(len(probs)):
+				print "	%s: %.5f" % (sentence[i+1] == '\n' and '<s>' or sentence[i+1], probs[i])
+
+		return probs
 
 
 	def crossentropy(self, text):
 
-		log_probs = numpy.log(self.likelihood(text))
+		# slice text to sentences
+		sents = text.split('\n')
+		log_probs = []
+		for sentence in sents:
+			if sentence != "":
+				log_probs.extend(numpy.log(self.likelihood(sentence)))
 
 		crossentropy = - numpy.mean(log_probs)
 
 		return crossentropy
 
-	def ranks(self, text):
+	def ranks(self, sentence):
 		self.initRnn(no_train=True)
-		mat_in, label = self.tids2nndata(self.tokens2ids(text), shared=False)
+		sentence = '\n' + sentence.strip() + '\n'
+		mat_in, label = self.tids2nndata(self.tokens2ids(sentence), shared=False)
 
 		sort_matrix, probs = self.rnn_sort(mat_in, label)
 
@@ -176,9 +189,20 @@ class RnnLM(LMBase):
 		@param text:
 		@result: 
 		'''
-		log_ranks = numpy.log(self.ranks(text))
+		# slice text to sentences
+		sents = text.split('\n')
+		rank_list = []
+		for sentence in sents:
+			if sentence != "":
+				rank_list.extend(self.ranks(sentence))
 
-		return numpy.mean(log_ranks)
+		f_len = float(len(rank_list))
+		count1 = len([x for x in rank_list if x == 1])
+		count5 = len([x for x in rank_list if x <= 5])
+		count10 = len([x for x in rank_list if x <= 10])
+
+		log_ranks = numpy.log(rank_list)
+		return numpy.mean(log_ranks), count1 / f_len, count5 / f_len, count10 / f_len 
 
 	def topN(self, text, N=10):
 		'''
