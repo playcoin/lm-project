@@ -11,7 +11,7 @@ import time
 import theano
 import theano.tensor as T
 import cPickle
-from dltools.mlp import MLP
+from dltools.mlp import MLP, MLPEMB
 from theano import sandbox, Out
 from LMBase import LMBase
 
@@ -21,7 +21,7 @@ class MlpNgram(LMBase):
 	@summary: Mlp version for N-gram
 	'''
 
-	def __init__(self, ndict, N = 5, n_in=30, n_hidden=40, lr=0.05, l1_reg = 0.00, l2_reg=0.0001, batch_size=40, hvalue_file="./data/MlpBigram.hiddens.obj", backup_file_path=None):
+	def __init__(self, ndict, N = 5, n_emb=50, n_hidden=200, lr=0.05, l1_reg = 0.00, l2_reg=0.0001, batch_size=40, dropout=False, emb_file_path=None, backup_file_path=None):
 		'''
 		@summary: Construct function, set some parameters.
 		
@@ -41,20 +41,28 @@ class MlpNgram(LMBase):
 
 		if backup_file_path is None:
 			self.N = N
-			self.n_in = n_in
+			self.n_in = ndict.size()
+			self.n_emb = n_emb
 			self.n_hidden = n_hidden
 			self.lr = lr
 			self.l1_reg = l1_reg
 			self.l2_reg = l2_reg
 			self.batch_size = batch_size
-			self.mlpparams = [None, None, None, None]
+			self.mlpparams = [None, None, None, None, None]
 		else:
 			self.loadmodel(backup_file_path)
 
+		# reload the embeddingfile
+		if emb_file_path:
+			f = open(emb_file_path)
+			embvalues = cPickle.load(f)
+			f.close()
+			self.mlpparams[4] = theano.shared(embvalues, borrow=True)
+
 		# mlp obj
 		self.mlp = None
-		self.hvalue_file = hvalue_file
-		self.__loadhvalues()
+		self.n_emb = n_emb
+		self.dropout = dropout
 
 	def __setTrainData(self, train_data):
 		'''
@@ -76,15 +84,18 @@ class MlpNgram(LMBase):
 		print "Init theano symbol expressions!"
 
 		index = T.lscalar()
-		x = T.matrix('x')  
+		x = T.imatrix('x')  
 		y = T.ivector('y')  # the labels are presented as 1D vector of [int] labels
 
 		rng = numpy.random.RandomState(4321)
 
 		# construct the MLP class
-		self.mlp = MLP(rng=rng, input=x, n_in=self.n_in * (self.N - 1),
-						 n_hidden=self.n_hidden, n_out=self.ndict.size(),
-						 hW=self.mlpparams[0], hb=self.mlpparams[1], oW=self.mlpparams[2], ob=self.mlpparams[3])
+		self.mlp = MLPEMB(rng = rng, input=x, n_in=self.n_in, n_token=self.N - 1,
+						 n_emb = self.n_emb, n_hidden=self.n_hidden, n_out=self.n_in,
+						 dropout = self.dropout,
+						 hW=self.mlpparams[0], hb=self.mlpparams[1], 
+						 oW=self.mlpparams[2], ob=self.mlpparams[3], 
+						 C=self.mlpparams[4])
 
 		self.mlpparams = self.mlp.params
 
@@ -119,14 +130,11 @@ class MlpNgram(LMBase):
 			gparam = T.grad(cost, param)
 			gparams.append(gparam)
 
+		self.lr = theano.shared(numpy.array(self.lr, dtype=theano.config.floatX), borrow=True)
 		updates = []
 		#	C = [(a1, b1), (a2, b2), (a3, b3), (a4, b4)]
 		for param, gparam in zip(classifier.params, gparams):
 			updates.append((param, param - self.lr * gparam))
-		# updates = {}
-		# for param in classifier.params:
-		# 	gparam = T.grad(cost, param)
-		# 	updates[param] = param - self.lr * gparam
 
 		# train model function
 		self.train_batch = theano.function(inputs=[index], 
@@ -138,14 +146,6 @@ class MlpNgram(LMBase):
 									})
 
 		print "Compile training function complete!"	
-
-	def __loadhvalues(self):
-		'''
-		@summary: Load the hidden output values of MlpNgram from given file
-		'''
-		backupfile = open(self.hvalue_file)
-		self.hvalues = cPickle.load(backupfile)
-		backupfile.close()
 
 	def tids2inputdata(self, tidseq, zero_start=True, truncate_input = True):
 		'''
@@ -162,8 +162,6 @@ class MlpNgram(LMBase):
 			in_size += 1
 		
 		# zeros used to fill the empty input
-		zeros = numpy.zeros((self.n_in,), dtype=theano.config.floatX)
-	
 		mat_in = []
 		start_index = zero_start and 1 or (self.N - 1)
 		for i in xrange(start_index, in_size):
@@ -171,59 +169,47 @@ class MlpNgram(LMBase):
 			vec = []
 			for j in idxs:
 				if j < 0:
-					hvalue = zeros.copy()
+					hvalue = 0
 				else:
-					hvalue = self.hvalues[tidseq[j]]
-				vec.extend(hvalue)
+					hvalue = tidseq[j]
+				vec.append(hvalue)
 			mat_in.append(vec)
-		mat_in = theano.shared(numpy.asarray(mat_in, dtype=theano.config.floatX), borrow=True)
+
+		mat_in = theano.shared(numpy.asarray(mat_in, dtype="int32"), borrow=True)
 
 		vec_out = zero_start and tidseq[1:] or tidseq[self.N-1:]
 		vec_out = theano.shared(numpy.asarray(vec_out, dtype="int32"), borrow=True)
 
 		return mat_in, vec_out
 
-	def traintidseq(self, tidseq, data_slice_size=100000):
-		'''
-		@summary: Train a token id sequence. Slice data for GPU transpose data
-		
-		@param tidseq:
-		@param data_slice_size:
-		'''
-		# init the share training data
-		data_slice = tidseq[:data_slice_size+1]
-		self.__setTrainData(self.tids2inputdata(data_slice))
-		# init mlp
-		self.__initMlp()
-		# train the first time
-		n_batch = int(math.ceil(data_slice_size / self.batch_size))
-		for i in xrange(n_batch):
-			self.train_batch(i)
-
-		# train the rest data slices
-		total_data_size = len(tidseq)
-		for i in xrange(data_slice_size, total_data_size, data_slice_size):
-			data_slice = tidseq[i-self.N+2:i+data_slice_size+1]
-			self.__setTrainData(self.tids2inputdata(data_slice, zero_start=False))
-
-			n_batch = int(math.ceil(data_slice_size / self.batch_size))
-			for i in xrange(n_batch):
-				self.train_batch(i)
-
-	def traintext(self, text, test_text, add_se=False, epoch=100, DEBUG=False, SAVE=False, SINDEX=1):
+	def traintext(self, text, test_text, add_se=False, epoch=100, lr_coef = -1., DEBUG=False, SAVE=False, SINDEX=1):
 		# token chars to token ids
 		tidseq = self.tokens2ids(text, add_se)
+		train_size = len(tidseq) - 1
+		n_batch = int(math.ceil(train_size / self.batch_size))
 		
-		print "MlpNgram train start!!"
+		self.__setTrainData(self.tids2inputdata(tidseq))
+		self.__initMlp()
+		test_in, test_out = self.tids2inputdata(self.tokens2ids(test_text))
+		print "MlpNgram model init complete!!"
+
 		s_time = time.clock()
 		for i in xrange(epoch):
-			self.traintidseq(tidseq)
+
+			for idx in xrange(n_batch):
+				self.train_batch(idx)
 
 			if DEBUG:
-				print "Error rate: %0.5f. Epoch: %s. Training time so far: %0.1fm" % (self.testtext(test_text), i+SINDEX, (time.clock()-s_time)/60.)
+				error = self.test_model(test_in.get_value(borrow=True), test_out.get_value(borrow=True))
+				print "Error rate: %0.5f. Epoch: %s. Training time so far: %0.1fm" % (error, i+SINDEX, (time.clock()-s_time)/60.)
 
 			if SAVE:
-				self.savemodel("./data/MlpNgram/Mlp%sgram.model.epoch%s.n_hidden%s.obj" % (self.N, i+SINDEX, self.n_hidden))
+				self.savemodel("./data/MlpNgram/Mlp%sgram.model.epoch%s.n_hidden%s.dr%s.in_size%s.obj" % (self.N, i+SINDEX, self.n_hidden, self.dropout, self.n_in))
+			
+			if lr_coef > 0:
+				# update learning_rate
+				lr = self.lr.get_value(borrow=True) * lr_coef
+				self.lr.set_value(numpy.array(lr, dtype=theano.config.floatX))
 
 		e_time = time.clock()
 
@@ -251,31 +237,40 @@ class MlpNgram(LMBase):
 		tidmat, _ = self.tids2inputdata(self.tokens2ids(text[-1]), truncate_input=False)
 		return self.mlp_predict(tidmat.get_value(borrow=True))
 
-	def likelihood(self, text):
-
-		# text length should be large than 1
-		if(len(text) < 2):
-			return None
+	def likelihood(self, sentence, debug=False):
 
 		self.__initMlp(no_train=True)
 
 		# token to NN input and label
-		mat_in, vec_out = self.tids2inputdata(self.tokens2ids(text))
-		return self.mlp_prob(mat_in.get_value(borrow=True), vec_out.get_value(borrow=True))
+		sentence = '\n' + sentence.strip() + '\n'
+		mat_in, vec_out = self.tids2inputdata(self.tokens2ids(sentence))
 
+		probs = self.mlp_prob(mat_in.get_value(borrow=True), vec_out.get_value(borrow=True))
+
+		if debug:
+			for i in range(len(probs)):
+				print "	%s: %.5f" % (sentence[i+1] == '\n' and '<s>' or sentence[i+1], probs[i])
+
+		return probs
 
 	def crossentropy(self, text, add_se=False):
 
-		log_prob = numpy.log(self.likelihood(text))
+		# slice text to sentences
+		sents = text.split('\n')
+		log_probs = []
+		for sentence in sents:
+			if sentence != "":
+				log_probs.extend(numpy.log(self.likelihood(sentence)))
 
-		crossentropy = - numpy.mean(log_prob)
+		crossentropy = - numpy.mean(log_probs)
 
 		return crossentropy
 
-	def ranks(self, text):
+	def ranks(self, sentence):
 
 		self.__initMlp(no_train=True)
-		mat_in, label = self.tids2inputdata(self.tokens2ids(text))
+		sentence = '\n' + sentence.strip() + '\n'
+		mat_in, label = self.tids2inputdata(self.tokens2ids(sentence))
 
 		sort_matrix, probs = self.mlp_sort(mat_in.get_value(borrow=True), label.get_value(borrow=True))
 
@@ -294,9 +289,20 @@ class MlpNgram(LMBase):
 		@param text:
 		@result: 
 		'''
-		log_ranks = numpy.log(self.ranks(text))
+		# slice text to sentences
+		sents = text.split('\n')
+		rank_list = []
+		for sentence in sents:
+			if sentence != "":
+				rank_list.extend(self.ranks(sentence))
 
-		return numpy.mean(log_ranks)
+		f_len = float(len(rank_list))
+		count1 = len([x for x in rank_list if x == 1])
+		count5 = len([x for x in rank_list if x <= 5])
+		count10 = len([x for x in rank_list if x <= 10])
+
+		log_ranks = numpy.log(rank_list)
+		return numpy.mean(log_ranks), count1 / f_len, count5 / f_len, count10 / f_len 
 
 	def topN(self, text, N=10):
 		'''
@@ -318,7 +324,7 @@ class MlpNgram(LMBase):
 	def savemodel(self, filepath="./data/MlpNgram/MlpNgram.model.obj"):
 
 		backupfile = open(filepath, 'w')
-		cPickle.dump((self.batch_size, self.N, self.n_in, self.n_hidden, self.lr, self.l1_reg, self.l2_reg, self.mlpparams), backupfile)
+		cPickle.dump((self.batch_size, self.N, self.n_in, self.n_hidden, self.lr.get_value(), self.l1_reg, self.l2_reg, self.mlpparams), backupfile)
 		backupfile.close()
 		print "Save model complete! Filepath:", filepath
 

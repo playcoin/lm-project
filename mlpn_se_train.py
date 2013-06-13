@@ -24,21 +24,26 @@ f.close()
 nlpdict = NlpDict()
 nlpdict.buildfromtext(text, freq_thres=0)
 print "NlpDict size is:", nlpdict.size()
-nlpdict.transEmbedding('./data/pku_closed_word_embedding.ltxt', "./data/pku_embedding_c1.obj")
+# nlpdict.transEmbedding('./data/pku_closed_word_embedding.ltxt', "./data/pku_embedding.obj")
+train_text = text
+test_text = text[:40000]
 
 # use gpu
 theano.sandbox.cuda.use('gpu0')
 
-# mlp_ngram = MlpNgram(nlpdict, N=4, n_in=50, n_hidden=150, lr=0.07, batch_size=50, hvalue_file="./data/MlpBigram.hiddens.obj")
-# mlp_ngram = MlpNgram(nlpdict, N=5, n_in=50, n_hidden=200, lr=0.07, batch_size=50, hvalue_file="./data/pku_embedding_c1.obj")
-mlp_ngram = MlpNgram(nlpdict, backup_file_path="./data/MlpNgram/Mlp4gram.model.epoch20.n_hidden150.obj", hvalue_file="./data/pku_embedding.obj")
-# mlp_ngram.lr = 0.05
 
-train_text = text[:-20000]
-test_text = text[-20000:]
 
-# print "Train size is: %s, testing size is: %s" % (len(train_text), len(test_text))
-# mlp_ngram.traintext(train_text, test_text, DEBUG=True, SAVE=False, SINDEX=1, epoch=20)
+mlp_ngram = MlpNgram(nlpdict, N=5, n_emb=50, n_hidden=1000, lr=0.5, batch_size=150, dropout=True,
+		emb_file_path='./data/pku_embedding.obj')
+
+# mlp_ngram = MlpNgram(nlpdict, N=5, n_emb=50, n_hidden=600, lr=0.7, batch_size=150, dropout=True,
+# 		backup_file_path='./data/MlpNgram/Mlp5gram.model.epoch3.n_hidden600.drTrue.in_size4702.obj')
+
+# mlp_ngram.lr = 0.7 * 0.96 ** 3
+
+
+print "Train size is: %s, testing size is: %s" % (len(train_text), len(test_text))
+mlp_ngram.traintext(train_text, test_text, DEBUG=True, SAVE=True, SINDEX=1, epoch=100, lr_coef=0.96)
 
 # ce = mlp_ngram.crossentropy(test_text)
 # print "Cross-entropy is:", ce
@@ -46,9 +51,9 @@ test_text = text[-20000:]
 
 # print "Log rank is:", mlp_ngram.logaverank(test_text) 
 
-s_prefix = u"拥挤"
-top_tids, top_probs = mlp_ngram.topN(s_prefix, 10)
-for x in top_tids:
-	print nlpdict.gettoken(x),
-print 
-print top_probs
+# s_prefix = u"拥挤"
+# top_tids, top_probs = mlp_ngram.topN(s_prefix, 10)
+# for x in top_tids:
+# 	print nlpdict.gettoken(x),
+# print 
+# print top_probs

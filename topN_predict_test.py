@@ -7,7 +7,7 @@ Created on 2013-04-28 15:53
 
 from nlpdict.NlpDict import NlpDict
 from pylm.RnnLM import RnnLM
-from pylm.RnnEmbLM import RnnEmbLM
+from pylm.RnnEmbLM import RnnEmbLM, RnnEmbTrLM
 from pylm.MlpNgram import MlpNgram
 from pylm.MlpBigram import MlpBigram
 from pylm.Ngram import Ngram
@@ -26,26 +26,31 @@ f.close()
 
 
 nlpdict = NlpDict()
-nlpdict.buildfromtext(text, freq_thres=1)
+nlpdict.buildfromtext(text, freq_thres=0)
 print "NlpDict size is:", nlpdict.size()
 
 # rnnlm = RnnLM(nlpdict, n_hidden=120, lr=0.05, batch_size=40, truncate_step=6, backup_file_path="./data/RnnLM/RnnLM.model.epoch71.n_hidden120.truncstep6.obj")
 # mlp_bigram = MlpBigram(nlpdict, n_hidden=50, lr=0.13, batch_size=50, backup_file_path="./data/MlpBigram/MlpBigram.model.epoch500.n_hidden50.obj")
 # mlp_ngram = MlpNgram(nlpdict, backup_file_path="./data/MlpNgram/Mlp4gram.model.epoch20.n_hidden150.obj", hvalue_file="./data/pku_embedding.obj")
 
-rnnlm = RnnEmbLM(nlpdict, 
-		n_hidden=300, 
-		lr=0.5, 
-		batch_size=50, 
-		truncate_step=4,
-		dropout=True, 
-		backup_file_path="./data/RnnEmbLM/RnnEmbLM.model.epoch17.n_hidden300.ss20.truncstep4.obj"
+# rnnlm = RnnEmbLM(nlpdict, 
+# 		n_hidden=300, 
+# 		lr=0.5, 
+# 		batch_size=50, 
+# 		truncate_step=4,
+# 		dropout=True, 
+# 		backup_file_path="./data/RnnEmbLM/RnnEmbLM.model.epoch17.n_hidden300.ss20.truncstep4.obj"
+# 	)
+# rnnlm.loadEmbeddings("./data/pku_embedding_rnn_c1.obj")
+
+theano.sandbox.cuda.use('gpu1')
+rnnlm = RnnEmbTrLM(nlpdict, n_hidden=800, lr=0.5, batch_size=100, truncate_step=4, 
+		train_emb=True, dropout=True,
+		backup_file_path="./data/RnnEmbTrLM/RnnEmbTrLM.model.epoch99.n_hidden800.ssl20.truncstep4.drTrue.obj"
 	)
-rnnlm.loadEmbeddings("./data/pku_embedding_rnn_c1.obj")
 
-# theano.sandbox.cuda.use('gpu0')
 
-f = file("./test/RnnEmbLM.model.epoch17.n_hidden300.ss20.truncstep4.txt", 'wb')
+f = file("./test/RnnEmbTrLM.model.epoch99.n_hidden800.ssl20.truncstep4.drTrue.txt", 'wb')
 
 def topN_predict(s_prefix):
 	print >> f, "Test text:", s_prefix.encode("utf-8")

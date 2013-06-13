@@ -26,17 +26,17 @@ len_text = len(train_text)
 
 nlpdict = NlpDict()
 nlpdict.buildfromtext(train_text)
-nlpdict.transEmbedding('./data/pku_closed_word_embedding.ltxt', "./data/pku_embedding_s.obj")
+nlpdict.transEmbedding('./data/pku_closed_word_embedding100.ltxt', "./data/pku_embedding_s100.obj")
 print "Dict size is: %s, Train size is: %s" % (nlpdict.size(), len_text)
 
 # use gpu
 theano.sandbox.cuda.use('gpu0')
-rnnlm = RnnEmbTrLM(nlpdict, n_hidden=200, lr=0.5, batch_size=100, truncate_step=4, 
-	emb_file_path="./data/pku_embedding_s.obj", dropout=False)
+rnnlm = RnnEmbTrLM(nlpdict, n_hidden=600, lr=0.2, batch_size=100, truncate_step=4, 
+	emb_file_path="./data/pku_embedding_s100.obj", dropout=False)
 # rnnlm = RnnLM(nlpdict, n_hidden=200, lr=0.5, batch_size=10, truncate_step=4, dropout=True, backup_file_path="./data/simple_rnn_model.epoch150.n_hidden200.ts4.dylr.dropout.obj")
 
-rnnlm.traintext(train_text, test_text, add_se=False, sen_slice_length=10, epoch=5, lr_coef=0.96, DEBUG=True)
-# rnnlm.savemodel("./data/simple_rnnembtr_model.epoch5.n_hidden200.ts4.dylr.obj")
+rnnlm.traintext(train_text, test_text, add_se=False, sen_slice_length=20, epoch=5, lr_coef=0.96, DEBUG=True)
+# rnnlm.savemodel("./data/simple_rnnembtr_model.epoch5.n_hidden200.ts4.dylr.drFalse.obj")
 # 
 # rnnlm = RnnEmbTrLM(nlpdict, n_hidden=200, lr=0.5, batch_size=10, truncate_step=4, dropout=False, backup_file_path="./data/simple_rnnembtr_model.epoch5.n_hidden200.ts4.dylr.obj")
 # rnnlm.traintext(train_text, test_text, add_se=False, sen_slice_length=10, epoch=5, lr_coef=0.96, DEBUG=True, SINDEX=6)

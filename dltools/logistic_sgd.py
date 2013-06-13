@@ -56,7 +56,7 @@ class LogisticRegression(object):
     determine a class membership probability.
     """
 
-    def __init__(self, input, n_in, n_out, W=None, b=None):
+    def __init__(self, input, n_in, n_out, dropout=False, W=None, b=None):
         """ Initialize the parameters of the logistic regression
 
         :type input: theano.tensor.TensorType
@@ -96,7 +96,11 @@ class LogisticRegression(object):
 
         # compute prediction as class whose probability is maximal in
         # symbolic form
-        self.y_pred = T.argmax(self.p_y_given_x, axis=1)
+        p_y_given_x = self.p_y_given_x
+        if dropout:
+            p_y_given_x = T.nnet.softmax(T.dot(input, self.W / 2.) + self.b)
+
+        self.y_pred = T.argmax(p_y_given_x, axis=1)
 
         # parameters of the model
         self.params = [self.W, self.b]

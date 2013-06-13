@@ -143,10 +143,9 @@ class RnnEmbTrLM(RnnLM):
 		vec_in = numpy.asarray(tidseq[:seq_size], dtype="int32")
 		vec_out = numpy.asarray(tidseq[1:], dtype="int32")
 
-		if shared:
-			return theano.shared(vec_in, borrow=True).get_value(), theano.shared(vec_out, borrow=True).get_value()
+		# for CUDA
+		return theano.shared(vec_in, borrow=True).get_value(), theano.shared(vec_out, borrow=True).get_value()
 
-		return vec_in, vec_out
 
 	def reshape(self, in_data, l_data):
 		s_in = in_data.reshape(self.batch_size, in_data.shape[0] / self.batch_size).T
@@ -187,12 +186,12 @@ class RnnEmbTrLM(RnnLM):
 			if DEBUG:
 				err = self.test_model(t_in, t_l)[0]
 				e_time = time.clock()
-				print "Error rate in epoch %s, is %.3f. Training time so far is: %.2fm" % ( i+SINDEX, err, (e_time-s_time) / 60.)
+				print "Error rate in epoch %s, is %.5f. Training time so far is: %.2fm" % ( i+SINDEX, err, (e_time-s_time) / 60.)
 				# print ''.join([self.ndict.gettoken(x) for x in r_labels])
 
 			if SAVE:
 				class_name = self.__class__.__name__
-				self.savemodel("./data/%s/%s.model.epoch%s.n_hidden%s.ssl%s.truncstep%s.dr%s.obj" % (class_name, class_name, i+SINDEX, self.n_hidden, sen_slice_length, self.truncate_step, self.dropout))
+				self.savemodel("./data/%s/%s.model.epoch%s.n_hidden%s.ssl%s.truncstep%s.dr%s.embsize%s.in_size%s.obj" % (class_name, class_name, i+SINDEX, self.n_hidden, sen_slice_length, self.truncate_step, self.dropout, self.embsize, self.in_size))
 
 			if lr_coef > 0:
 				# update learning_rate

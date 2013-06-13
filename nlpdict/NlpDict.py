@@ -31,7 +31,7 @@ class NlpDict(object):
 		'''
 		self.ndict = {}	# token to ID
 		self.ndict_inv = [] # ID to token
-		# 专用的token
+		# special token, '$_START_$' and '$_END_$' is useless in training now.
 		self.ndict_inv.extend(["$_UNKNOWN_$", "$_START_$", "$_END_$"])
 		for elm in self.ndict_inv:
 			self.ndict[elm] = len(self.ndict)
@@ -207,7 +207,17 @@ class NlpDict(object):
 		ev_map = {}
 		for i in xrange(len(lines)):
 			units = lines[i].split(', ')
-			units[0] = units[0] == "$EN$" and '\n' or units[0]
+			units[0] = (units[0] == "$_SENT_$") and '\n' or units[0]		# for sentence end
+
+			if units[0] == '$EN$':	# for English characters
+				ev_values = [float(x) for x in units[1:-1]]
+				import string
+				for char in string.letters:
+					if char in self.ndict:
+						ev_map[char] = ev_values
+
+				continue	# skip to next token
+
 			if len(units) > 1 and units[0] in self.ndict:
 				ev_map[units[0]] = [float(x) for x in units[1:-1]]
 
