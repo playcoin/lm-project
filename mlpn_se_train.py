@@ -24,22 +24,19 @@ f.close()
 nlpdict = NlpDict()
 nlpdict.buildfromtext(text, freq_thres=0)
 print "NlpDict size is:", nlpdict.size()
-# nlpdict.transEmbedding('./data/pku_closed_word_embedding.ltxt', "./data/pku_embedding.obj")
+# nlpdict.transEmbedding('./data/pku_closed_word_embedding100.ltxt', "./data/pku_embedding_100.obj")
 train_text = text
-test_text = text[:40000]
+test_text = text[:40001]
 
 # use gpu
-theano.sandbox.cuda.use('gpu0')
+theano.sandbox.cuda.use('gpu1')
+mlp_ngram = MlpNgram(nlpdict, N=7, n_emb=100, n_hidden=1200, lr=0.5, batch_size=300, dropout=True,
+		emb_file_path='./data/pku_embedding_100.obj')
 
+# mlp_ngram = MlpNgram(nlpdict, N=5, n_emb=50, n_hidden=1000, lr=0.5, batch_size=150, dropout=True,
+# 		backup_file_path='./data/MlpNgram/Mlp5gram.model.epoch63.n_hidden1000.drTrue.in_size4702.obj')
 
-
-mlp_ngram = MlpNgram(nlpdict, N=5, n_emb=50, n_hidden=1000, lr=0.5, batch_size=150, dropout=True,
-		emb_file_path='./data/pku_embedding.obj')
-
-# mlp_ngram = MlpNgram(nlpdict, N=5, n_emb=50, n_hidden=600, lr=0.7, batch_size=150, dropout=True,
-# 		backup_file_path='./data/MlpNgram/Mlp5gram.model.epoch3.n_hidden600.drTrue.in_size4702.obj')
-
-# mlp_ngram.lr = 0.7 * 0.96 ** 3
+# mlp_ngram.lr = 0.5 * 0.96 ** 63
 
 
 print "Train size is: %s, testing size is: %s" % (len(train_text), len(test_text))

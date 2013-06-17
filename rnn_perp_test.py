@@ -59,9 +59,18 @@ print "Train size is: %s" % len(train_text)
 # print rnnlm.testtext(train_text[:40000])
 
 theano.sandbox.cuda.use('gpu1')
-rnnlm = RnnEmbTrLM(nlpdict, n_hidden=1200, lr=0.6, batch_size=120, truncate_step=6, 
-		train_emb=True, dropout=True,
-		backup_file_path="./data/RnnEmbTrLM/RnnEmbTrLM.model.epoch100.n_hidden1200.ssl20.truncstep6.drTrue.embsize100.in_size4702.obj"
+# rnnlm = RnnEmbTrLM(nlpdict, n_hidden=1200, lr=0.5, batch_size=120, truncate_step=5, 
+# 		train_emb=True, dropout=True,
+# 		backup_file_path="./data/RnnEmbTrLM/RnnEmbTrLM.model.epoch30.n_hidden1200.ssl20.truncstep5.drTrue.embsize100.in_size4702.obj"
+# 	)
+rnnlm = RnnEmbTrLM(nlpdict, 
+		n_hidden=120, 
+		lr=0.13, 
+		batch_size=40, 
+		truncate_step=4, 
+		train_emb=False,
+		dropout=False,
+		backup_file_path="./data/RnnLM/RnnLM.model.epoch71.n_hidden120.truncstep6.obj"
 	)
 
 # tt = u"天津市首届检察官艺术节音乐会日前举行。图为天津市检察官大合唱《检察官之歌》。（新华社记者李昌元摄）"

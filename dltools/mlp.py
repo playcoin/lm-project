@@ -39,7 +39,7 @@ from logistic_sgd import LogisticRegression, load_data
 
 class HiddenLayer(object):
 	def __init__(self, rng, input, n_in, n_out, W=None, b=None,
-				 activation=T.tanh):
+				 activation=T.tanh, one_hot=False):
 		"""
 		Typical hidden layer of a MLP: units are fully-connected and have
 		sigmoidal activation function. Weight matrix W is of shape (n_in,n_out)
@@ -52,8 +52,8 @@ class HiddenLayer(object):
 		:type rng: numpy.random.RandomState
 		:param rng: a random number generator used to initialize weights
 
-		:type input: theano.tensor.dmatrix
-		:param input: a symbolic tensor of shape (n_examples, n_in)
+		:type input: theano.tensor.matrix or theano.tensor.vector
+		:param input: a symbolic tensor of shape (n_examples, n_in) or (n_examples,)
 
 		:type n_in: int
 		:param n_in: dimensionality of input
@@ -96,7 +96,10 @@ class HiddenLayer(object):
 		self.W = W
 		self.b = b
 
-		lin_output = T.dot(input, self.W) + self.b
+		if not one_hot: 
+			lin_output = T.dot(input, self.W) + self.b
+		else:
+			lin_output = self.W[input] + self.b
 		self.output = (lin_output if activation is None
 					   else activation(lin_output))
 		# parameters of the model
@@ -143,7 +146,7 @@ class MLP(object):
 		# implementing any other nonlinearity
 		self.hiddenLayer = HiddenLayer(rng=rng, input=input,
 									   n_in=n_in, n_out=n_hidden, W=hW, b=hb,
-									   activation=T.tanh)
+									   activation=T.tanh, one_hot=True)
 
 		# The logistic regression layer gets as input the hidden units
 		# of the hidden layer
@@ -211,7 +214,7 @@ class MLPEMB(object):
 					high=numpy.sqrt(6. / (n_in + n_emb)),
 					size=(n_in, n_emb)), dtype=theano.config.floatX)
 
-			C = theano.shared(value=C_values, name='W', borrow=True)
+			C = theano.shared(value=C_values, name='C', borrow=True)
 
 		self.C = C
 

@@ -204,7 +204,7 @@ class MlpNgram(LMBase):
 				print "Error rate: %0.5f. Epoch: %s. Training time so far: %0.1fm" % (error, i+SINDEX, (time.clock()-s_time)/60.)
 
 			if SAVE:
-				self.savemodel("./data/MlpNgram/Mlp%sgram.model.epoch%s.n_hidden%s.dr%s.in_size%s.obj" % (self.N, i+SINDEX, self.n_hidden, self.dropout, self.n_in))
+				self.savemodel("./data/MlpNgram/Mlp%sgram.model.epoch%s.n_hidden%s.dr%s.n_emb%s.in_size%s.obj" % (self.N, i+SINDEX, self.n_hidden, self.dropout, self.n_emb, self.n_in))
 			
 			if lr_coef > 0:
 				# update learning_rate
@@ -253,19 +253,6 @@ class MlpNgram(LMBase):
 
 		return probs
 
-	def crossentropy(self, text, add_se=False):
-
-		# slice text to sentences
-		sents = text.split('\n')
-		log_probs = []
-		for sentence in sents:
-			if sentence != "":
-				log_probs.extend(numpy.log(self.likelihood(sentence)))
-
-		crossentropy = - numpy.mean(log_probs)
-
-		return crossentropy
-
 	def ranks(self, sentence):
 
 		self.__initMlp(no_train=True)
@@ -281,28 +268,6 @@ class MlpNgram(LMBase):
 			rank_list.append(dict_size - sort_matrix[i].searchsorted(probs[i]))
 
 		return rank_list
-
-	def logaverank(self, text):
-		'''
-		@summary: Return the average log rank
-		
-		@param text:
-		@result: 
-		'''
-		# slice text to sentences
-		sents = text.split('\n')
-		rank_list = []
-		for sentence in sents:
-			if sentence != "":
-				rank_list.extend(self.ranks(sentence))
-
-		f_len = float(len(rank_list))
-		count1 = len([x for x in rank_list if x == 1])
-		count5 = len([x for x in rank_list if x <= 5])
-		count10 = len([x for x in rank_list if x <= 10])
-
-		log_ranks = numpy.log(rank_list)
-		return numpy.mean(log_ranks), count1 / f_len, count5 / f_len, count10 / f_len 
 
 	def topN(self, text, N=10):
 		'''

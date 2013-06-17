@@ -26,18 +26,18 @@ nlpdict.buildfromtext(text, freq_thres=0)
 print "NlpDict size is:", nlpdict.size()
 
 # use gpu
-theano.sandbox.cuda.use('gpu0')
+theano.sandbox.cuda.use('gpu1')
 
-# mlp_bigram = MlpBigram(nlpdict, n_hidden=50, lr=0.13, batch_size=50)
-mlp_bigram = MlpBigram(nlpdict, n_hidden=50, lr=0.13, batch_size=50, backup_file_path="./data/MlpBigram/MlpBigram.model.epoch500.n_hidden50.obj")
+mlp_bigram = MlpBigram(nlpdict, n_hidden=50, lr=0.13, batch_size=100)
+# mlp_bigram = MlpBigram(nlpdict, n_hidden=50, lr=0.13, batch_size=50, backup_file_path="./data/MlpBigram/MlpBigram.model.epoch500.n_hidden50.obj")
 
-train_text = text[:-20000]
-test_text = text[-20000:]
+train_text = text
+test_text = text[:40000]
 
 
 # print "Train size is: %s, testing size is: %s" % (len(train_text), len(test_text))
 # mlp_bigram.lr = 0.01
-# mlp_bigram.traintext(train_text, test_text, DEBUG=True, SAVE=True, SINDEX=417, epoch=500)
+mlp_bigram.traintext(train_text, test_text, DEBUG=True, SAVE=False, SINDEX=1, epoch=5)
 
 # ce, logs = mlp_bigram.crossentropy(test_text)
 # print "Cross-entropy is:", ce
@@ -70,9 +70,9 @@ test_text = text[-20000:]
 #############
 # rank test #
 #############
-s_prefix = u"主"
-top_tids, top_probs = mlp_bigram.topN(s_prefix, 20)
-for x in top_tids:
-	print nlpdict.gettoken(x),
-print 
-print top_probs
+# s_prefix = u"主"
+# top_tids, top_probs = mlp_bigram.topN(s_prefix, 20)
+# for x in top_tids:
+# 	print nlpdict.gettoken(x),
+# print 
+# print top_probs

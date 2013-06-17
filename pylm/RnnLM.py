@@ -56,7 +56,16 @@ class RnnLM(LMBase):
 		h_init = T.matrix('h_init')
 
 		rng = numpy.random.RandomState(213234)
-		rnn = RNN(rng, self.in_size, self.n_hidden, self.out_size, self.batch_size, self.lr, dropout=self.dropout, params=self.rnnparams)
+		rnn = RNN(rng, 
+				self.in_size, 
+				self.n_hidden, 
+				self.out_size, 
+				self.batch_size, 
+				self.lr, 
+				dropout=self.dropout, 
+				params=self.rnnparams
+			)
+		
 		self.rnn = rnn
 		self.rnnparams = rnn.params
 
@@ -154,20 +163,6 @@ class RnnLM(LMBase):
 
 		return probs
 
-
-	def crossentropy(self, text):
-
-		# slice text to sentences
-		sents = text.split('\n')
-		log_probs = []
-		for sentence in sents:
-			if sentence != "":
-				log_probs.extend(numpy.log(self.likelihood(sentence)))
-
-		crossentropy = - numpy.mean(log_probs)
-
-		return crossentropy
-
 	def ranks(self, sentence):
 		self.initRnn(no_train=True)
 		sentence = '\n' + sentence.strip() + '\n'
@@ -182,28 +177,6 @@ class RnnLM(LMBase):
 
 		return rank_list
 		
-	def logaverank(self, text):
-		'''
-		@summary: Return the average log rank
-		
-		@param text:
-		@result: 
-		'''
-		# slice text to sentences
-		sents = text.split('\n')
-		rank_list = []
-		for sentence in sents:
-			if sentence != "":
-				rank_list.extend(self.ranks(sentence))
-
-		f_len = float(len(rank_list))
-		count1 = len([x for x in rank_list if x == 1])
-		count5 = len([x for x in rank_list if x <= 5])
-		count10 = len([x for x in rank_list if x <= 10])
-
-		log_ranks = numpy.log(rank_list)
-		return numpy.mean(log_ranks), count1 / f_len, count5 / f_len, count10 / f_len 
-
 	def topN(self, text, N=10):
 		'''
 		@summary: Return the top N predict char of the history tids

@@ -144,10 +144,8 @@ class RNN(object):
 		@param y: labels
 		'''
 		h, _ = theano.scan(self.rnn_step, sequences=u, outputs_info=self.h_0[0])
-		if self.dropout:
-			self.y_prob = T.nnet.softmax(T.dot(h, self.W_out / 2.) + self.b_out)
-		else:
-			self.y_prob = T.nnet.softmax(T.dot(h, self.W_out) + self.b_out)
+
+		self.y_prob = T.nnet.softmax(T.dot(h, self.W_out) + self.b_out)
 
 		self.y_pred = T.argmax(self.y_prob, axis=1)
 

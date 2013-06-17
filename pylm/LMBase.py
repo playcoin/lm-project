@@ -107,7 +107,16 @@ class LMBase(object):
 		return
 
 	@abstractmethod
-	def crossentropy(self, text, add_se=False):
+	def ranks(self, sentence):
+		'''
+		@summary: Return the rank list of each char in a sentence. 
+		
+		@param sentence:
+		@result: 
+		'''
+		return
+
+	def crossentropy(self, text):
 		'''
 		@summary: Return the cross-entropy of the text.
 			Use the equation: H(W) = - 1. / N * (\sum P(w_1 w_2 ... w_N))
@@ -115,7 +124,38 @@ class LMBase(object):
 		@param text:
 		@result: cross entropy
 		'''
-		return
+		# slice text to sentences
+		sents = text.split('\n')
+		log_probs = []
+		for sentence in sents:
+			if sentence != "":
+				log_probs.extend(numpy.log(self.likelihood(sentence)))
+
+		crossentropy = - numpy.mean(log_probs)
+
+		return crossentropy
+
+	def logaverank(self, text):
+		'''
+		@summary: Return the average log rank
+		
+		@param text:
+		@result: 
+		'''
+		# slice text to sentences
+		sents = text.split('\n')
+		rank_list = []
+		for sentence in sents:
+			if sentence != "":
+				rank_list.extend(self.ranks(sentence))
+
+		f_len = float(len(rank_list))
+		count1 = len([x for x in rank_list if x == 1])
+		count5 = len([x for x in rank_list if x <= 5])
+		count10 = len([x for x in rank_list if x <= 10])
+
+		log_ranks = numpy.log(rank_list)
+		return numpy.mean(log_ranks), count1 / f_len, count5 / f_len, count10 / f_len 
 
 	@abstractmethod
 	def savemodel(self, backup_file_path):

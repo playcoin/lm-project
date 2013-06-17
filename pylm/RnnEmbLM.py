@@ -109,7 +109,7 @@ class RnnEmbTrLM(RnnLM):
 				self.in_size,
 				self.embsize, 
 				self.n_hidden, 
-				self.ndict.size(),
+				self.out_size,
 				self.batch_size,
 				self.lr,
 				self.dropout,
@@ -134,18 +134,20 @@ class RnnEmbTrLM(RnnLM):
 		self.rnn_pred = theano.function([u], [rnn.y_pred[-1], rnn.y_prob[-1]])
 		print "Compile predict function complete!"
 
-	def tids2nndata(self, tidseq, truncate_input = True, shared=False):
+	def tids2nndata(self, tidseq, truncate_input = True, shared=True):
 		# print tidseq.shape
 		seq_size = len(tidseq)
 		if truncate_input:
 			seq_size -= 1
 
-		vec_in = numpy.asarray(tidseq[:seq_size], dtype="int32")
-		vec_out = numpy.asarray(tidseq[1:], dtype="int32")
-
 		# for CUDA
-		return theano.shared(vec_in, borrow=True).get_value(), theano.shared(vec_out, borrow=True).get_value()
+		vec_in = theano.shared(numpy.asarray(tidseq[:seq_size], dtype="int32"), borrow=True)
+		vec_out = theano.shared(numpy.asarray(tidseq[1:], dtype="int32"), borrow=True)
 
+		if shared:
+			return vec_in, vec_out
+		else:
+			return vec_in.get_value(borrow=True), vec_out.get_value(borrow=True)
 
 	def reshape(self, in_data, l_data):
 		s_in = in_data.reshape(self.batch_size, in_data.shape[0] / self.batch_size).T
@@ -165,7 +167,7 @@ class RnnEmbTrLM(RnnLM):
 		data_slice_size = sentence_length * self.batch_size
 		data_size = seq_size / data_slice_size * data_slice_size
 
-		mat_in_total, label_total = self.tids2nndata(tidseq, shared=True)
+		mat_in_total, label_total = self.tids2nndata(tidseq, shared=False)
 		re_mat_in, re_label = self.reshape(mat_in_total[:data_size], label_total[:data_size])
 		self.rnn.build_tbptt(re_mat_in, re_label, self.truncate_step, self.train_emb)
 		print "Compile Truncate-BPTT Algorithm complete!"
@@ -203,12 +205,22 @@ class RnnEmbTrLM(RnnLM):
 
 	def savemodel(self, filepath):
 		backupfile = open(filepath, 'w')
-		cPickle.dump((self.batch_size, self.n_hidden, self.lr, self.truncate_step, self.rnnparams, self.rnn.C.get_value()), backupfile)
+		dumpdata = (self.batch_size, self.n_hidden, self.lr, self.truncate_step, self.rnnparams)
+		if self.rnn.C:
+			dumpdata.append(self.rnn.C.get_value())
+
+		cPickle.dump(dumpdata, backupfile)
 		backupfile.close()
 		print "Save model complete! Filepath:", filepath
 
 	def loadmodel(self, filepath):
 		backupfile = open(filepath)
-		self.batch_size, self.n_hidden, self.lr, self.truncate_step, self.rnnparams, self.embvalues = cPickle.load(backupfile)
+		dumpdata = cPickle.load(backupfile)
+		self.batch_size, self.n_hidden, self.lr, self.truncate_step, self.rnnparams = dumpdata[:5]
+		if len(dumpdata) > 5:
+			self.embvalues = dumpdata[5]
+		else:
+			self.embvalues = None
+
 		backupfile.close()
 		print "Load model complete! Filepath:", filepath

@@ -40,10 +40,18 @@ class RNNEMB(RNN):
 			activation = activation)
 
 		# init embeddings
-		if embeddings is None:
-			embeddings = numpy.identity(n_in, dtype=theano.config.floatX)
+		if n_emb >= n_in:	# n_emb >= n_in indicate never use embedding
+			self.C = None
+		elif embeddings is None:	# else if embedding is None, then init the embedding randomly
+			C_values = numpy.asarray(rng.uniform(
+					low=-numpy.sqrt(6. / (n_in + n_emb)),
+					high=numpy.sqrt(6. / (n_in + n_emb)),
+					size=(n_in, n_emb)), dtype=theano.config.floatX)
 
-		self.C = theano.shared(value=embeddings, name='C', borrow=True)
+			self.C = theano.shared(value=C_values, name='C', borrow=True)
+			print "random init!"
+		else:
+			self.C = theano.shared(value=embeddings, name='C', borrow=True)
 
 	def rnn_step(self, u_tm, h_tm):
 		'''
@@ -55,6 +63,40 @@ class RNNEMB(RNN):
 		lin_h = T.dot(self.C[u_tm], self.W_in) + T.dot(h_tm, self.W_h) + self.b_h
 		h_t = self.activation(lin_h)
 		return h_t
+
+	def rnn_step_noemb(self, u_tm, h_tm):
+		'''
+		@summary: iter function of scan op
+		
+		@param u_tm: current input
+		@param h_tm: last output of hidden layer
+		'''
+		lin_h = self.W_in[u_tm] + T.dot(h_tm, self.W_h) + self.b_h
+		h_t = self.activation(lin_h)
+		return h_t
+
+	def errors(self, u, y):
+		'''
+		@summary: Errors count
+		
+		@param u: TensorVariable, matrix
+		@param y: labels
+		'''
+		if not self.C:
+			h, _ = theano.scan(self.rnn_step_noemb, sequences=u, outputs_info=self.h_0[0])
+		else:
+			h, _ = theano.scan(self.rnn_step, sequences=u, outputs_info=self.h_0[0])
+
+		if self.dropout and self.C:
+			self.y_prob = T.nnet.softmax(T.dot(h, self.W_out / 2.) + self.b_out)
+		else:
+			self.y_prob = T.nnet.softmax(T.dot(h, self.W_out) + self.b_out)
+
+		self.y_pred = T.argmax(self.y_prob, axis=1)
+
+		self.y_sort_matrix = T.sort(self.y_prob, axis=1)
+
+		return T.mean(T.neq(self.y_pred, y))
 
 	def build_tbptt(self, seq_in, seq_l, truncate_step=5, train_emb=False):
 		'''
@@ -74,7 +116,12 @@ class RNNEMB(RNN):
 		self.truncate_step = truncate_step
 
 		# output of hidden layer and output layer
-		part_h, _ = theano.scan(self.rnn_step, sequences=x, outputs_info=h_init)
+		if not self.C:
+			part_h, _ = theano.scan(self.rnn_step_noemb, sequences=x, outputs_info=h_init)
+		else:
+			part_h, _ = theano.scan(self.rnn_step, sequences=x, outputs_info=h_init)
+			
+
 		if self.dropout:
 			part_h = self.corrupt(part_h, 0.5)
 
@@ -88,13 +135,14 @@ class RNNEMB(RNN):
 		part_p_y_given_x = part_p_y_given_x.reshape((l_y.shape[0], self.n_out))
 		# cross-entropy loss
 		part_cost = T.mean(T.nnet.categorical_crossentropy(part_p_y_given_x, l_y))
+		# add L2 norm if use dropout
 		if self.dropout:
 			part_L2_sqr = (self.W_in ** 2).sum() + (self.W_h ** 2).sum() + (self.W_out ** 2).sum()
 			part_cost = part_cost + 0.000001 * part_L2_sqr
 		# update params
 		params = [self.W_in, self.W_h, self.W_out, self.b_h, self.b_out]
 		# check whether to train the embedding
-		if train_emb:
+		if train_emb and self.C:
 			params.append(self.C)
 
 		gparams = []

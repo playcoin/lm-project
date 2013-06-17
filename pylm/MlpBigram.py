@@ -55,7 +55,7 @@ class MlpBigram(LMBase):
 		print "Init theano symbol expressions!"
 
 		index = T.lscalar()
-		x = T.matrix('x')  
+		x = T.ivector('x')  
 		y = T.ivector('y')  # the labels are presented as 1D vector of [int] labels
 
 		rng = numpy.random.RandomState(1234)
@@ -121,30 +121,36 @@ class MlpBigram(LMBase):
 
 		print "Compile training function complete!"
 
-	def traintidseq(self, tidseq, data_slice_size=40000):
+	def tids2nndata(self, tidseq, truncate_input = True, shared=True):
+		# print tidseq.shape
+		seq_size = len(tidseq)
+		if truncate_input:
+			seq_size -= 1
 
-		# train all slices of data. train_data and label_data will be reset to new slice
-		total_data_size = len(tidseq)
-		for i in xrange(0, total_data_size, data_slice_size):
-			data_slice = tidseq[i:i+data_slice_size+1]
-			self.train_data, self.label_data = self.tids2nndata(data_slice)
-			# print self.train_data, self.label_data
-			# print self.train_data[1:2]
-			self.__initMlp()
+		# for CUDA
+		vec_in = theano.shared(numpy.asarray(tidseq[:seq_size], dtype="int32"), borrow=True)
+		vec_out = theano.shared(numpy.asarray(tidseq[1:], dtype="int32"), borrow=True)
 
-			n_batch = int(math.ceil(data_slice_size / self.batch_size))
-			for i in xrange(n_batch):
-				self.train_batch(i)
+		if shared:
+			return vec_in, vec_out
+		else:
+			return vec_in.get_value(borrow=True), vec_out.get_value(borrow=True)
 		
 	def traintext(self, text, test_text, add_se=False, epoch=100, DEBUG=False, SAVE=False, SINDEX=1):
 		
 		# token chars to token ids
 		tidseq = self.tokens2ids(text, add_se)
+		self.train_data, self.label_data = self.tids2nndata(tidseq, shared=True)
+		self.__initMlp()
+		data_size = len(tidseq)
+		n_batch = int(math.ceil(data_size / self.batch_size))
 		
 		print "MlpBigram train start!!"
 		s_time = time.clock()
 		for i in xrange(epoch):
-			self.traintidseq(tidseq)
+			
+			for j in xrange(n_batch):
+				self.train_batch(j)
 
 			if DEBUG:
 				print "Error rate: %0.5f. Epoch: %s. Training time so far: %0.1fm" % (self.testtext(test_text), i+SINDEX, (time.clock()-s_time)/60.)
@@ -181,37 +187,22 @@ class MlpBigram(LMBase):
 		tidmat, _ = self.tids2nndata(self.tokens2ids(text[-1]), truncate_input=False)
 		return self.mlp_predict(tidmat.get_value(borrow=True))
 
-	def likelihood(self, text):
-
-		# text length should be large than 1
-		if(len(text) < 2):
-			return None
+	def likelihood(self, sentence):
 
 		self.__initMlp(no_train=True)
+		sentence = '\n' + sentence.strip() + '\n'
 
 		# token to NN input and label
-		mat_in, vec_out = self.tids2nndata(self.tokens2ids(text[-2:]))
-		return self.mlp_prob(mat_in.get_value(borrow=True), vec_out.get_value(borrow=True))
+		mat_in, vec_out = self.tids2nndata(self.tokens2ids(sentence), shared=False)
+		return self.mlp_prob(mat_in, vec_out)
 
-	def crossentropy(self, text, add_se=False):
-
-		log_prob = []
-		len_seq = len(text)
-		for i in xrange(len_seq-1):
-			sub_seq = text[i:i+2]
-
-			log_prob.append(numpy.log(self.likelihood(sub_seq)))
-
-		crossentropy = - numpy.mean(log_prob)
-
-		return crossentropy, log_prob
-
-	def ranks(self, text):
+	def ranks(self, sentence):
 
 		self.__initMlp(no_train=True)
-		mat_in, label = self.tids2nndata(self.tokens2ids(text), shared=False)
+		sentence = '\n' + sentence.strip() + '\n'
+		mat_in, label = self.tids2nndata(self.tokens2ids(sentence), shared=False)
 
-		sort_matrix, probs = self.mlp_sort(mat_in.get_value(borrow=True), label.get_value(borrow=True))
+		sort_matrix, probs = self.mlp_sort(mat_in, label)
 
 		rank_list = []
 		dict_size = self.ndict.size()
@@ -219,17 +210,6 @@ class MlpBigram(LMBase):
 			rank_list.append(dict_size - sort_matrix[i].searchsorted(probs[i]))
 
 		return rank_list
-
-	def logaverank(self, text):
-		'''
-		@summary: Return the average log rank
-		
-		@param text:
-		@result: 
-		'''
-		log_ranks = numpy.log(self.ranks(text))
-
-		return numpy.mean(log_ranks)
 
 	def topN(self, text, N=10):
 		'''

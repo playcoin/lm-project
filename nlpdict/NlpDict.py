@@ -223,7 +223,12 @@ class NlpDict(object):
 
 		emvalues = []
 		for i in xrange(self.size()):
-			ev = ev_map[self.gettoken(i)]
+			char = self.gettoken(i)
+			if char in ev_map:
+				ev = ev_map[char]
+			else:
+				ev = ev_map['$_UNKNOWN_$']
+
 			emvalues.append(ev)
 
 		emvalues = numpy.asarray(emvalues, dtype="float32")
