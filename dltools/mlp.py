@@ -31,10 +31,8 @@ import numpy
 
 import theano
 import theano.tensor as T
-from theano.tensor.shared_randomstreams import RandomStreams
 
-
-from logistic_sgd import LogisticRegression, load_data
+from logistic_sgd import LogisticRegression
 
 
 class HiddenLayer(object):
@@ -151,6 +149,7 @@ class MLP(object):
 		# The logistic regression layer gets as input the hidden units
 		# of the hidden layer
 		self.logRegressionLayer = LogisticRegression(
+			rng=rng,
 			input=self.hiddenLayer.output,
 			n_in=n_hidden,
 			n_out=n_out,
@@ -205,8 +204,6 @@ class MLPEMB(object):
 
 		"""
 
-		self.theano_rng = RandomStreams(rng.randint(2 ** 30))
-
 		# look up table C
 		if not C:
 			C_values = numpy.asarray(rng.uniform(
@@ -233,10 +230,9 @@ class MLPEMB(object):
 		# The logistic regression layer gets as input the hidden units
 		# of the hidden layer
 		h_out = self.hiddenLayer.output
-		if dropout:
-			h_out = self.corrupt(h_out)
 
 		self.logRegressionLayer = LogisticRegression(
+			rng=rng,
 			input=h_out,
 			n_in=n_hidden,
 			n_out=n_out,
@@ -264,15 +260,3 @@ class MLPEMB(object):
 		# the parameters of the model are the parameters of the two layer it is
 		# made out of
 		self.params = self.hiddenLayer.params + self.logRegressionLayer.params + [self.C]
-
-	def corrupt(self, input, corruption_level=.5):
-		'''
-		@summary: For dropout
-		
-		@param input:
-		@param corruption_level:
-		@result: 
-		'''
-		return self.theano_rng.binomial(size=input.shape, n=1,
-										p=1 - corruption_level,
-										dtype=theano.config.floatX) * input

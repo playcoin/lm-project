@@ -33,8 +33,12 @@ print "Train size is: %s" % len(train_text)
 
 theano.sandbox.cuda.use('gpu1')
 
-mlp_ngram = MlpNgram(nlpdict, N=6, n_emb=50, n_hidden=1000, lr=0.5, batch_size=200, dropout=True,
-		backup_file_path='./data/MlpNgram/Mlp6gram.model.epoch100.n_hidden1000.drTrue.n_emb50.in_size4702.obj')
+mlp_ngram = MlpNgram(nlpdict, N=5, n_emb=100, n_hidden=400, lr=0.5, batch_size=200, dropout=False,
+		backup_file_path='./data/MlpNgram/Mlp5gram.model.epoch52.n_hidden400.drFalse.n_emb100.in_size4702.obj')
+
+# mlp_ngram = MlpNgram(nlpdict, N=8, n_emb=50, n_hidden=200, lr=0.5, batch_size=200, dropout=False,
+# 		backup_file_path='./data/MlpNgram/Mlp8gram.model.epoch20.n_hidden200.obj',
+# 		emb_file_path="./data/pku_embedding.obj")
 
 f = file('./data/pku_test.txt')
 # f = file('./data/msr_test.ltxt')

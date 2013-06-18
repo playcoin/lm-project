@@ -43,7 +43,7 @@ rnnlm = RnnEmbTrLM(nlpdict,
 		truncate_step=4, 
 		train_emb=True,
 		dropout=True,
-		backup_file_path="./data/SOHU/RnnEmbTrLM/RnnEmbTrLM.model.epoch64.n_hidden1200.ssl20.truncstep4.drTrue.embsize100.in_size5005.obj"
+		backup_file_path="./data/SOHU/RnnEmbTrLM/RnnEmbTrLM.model.epoch68.n_hidden1200.ssl20.truncstep4.drTrue.embsize100.in_size5005.obj"
 	)
 
 
