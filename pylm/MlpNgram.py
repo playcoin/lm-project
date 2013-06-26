@@ -62,6 +62,8 @@ class MlpNgram(LMBase):
 			else:
 				self.mlpparams[4] = theano.shared(embvalues, borrow=True)
 
+			print "Load embedding from ", emb_file_path
+
 		# mlp obj
 		self.mlp = None
 		self.n_emb = n_emb
@@ -185,7 +187,7 @@ class MlpNgram(LMBase):
 
 		return mat_in, vec_out
 
-	def traintext(self, text, test_text, add_se=False, epoch=100, lr_coef = -1., DEBUG=False, SAVE=False, SINDEX=1):
+	def traintext(self, text, test_text, add_se=False, epoch=100, lr_coef = -1., DEBUG=False, SAVE=False, SINDEX=1, r_init=True):
 		# token chars to token ids
 		tidseq = self.tokens2ids(text, add_se)
 		train_size = len(tidseq) - 1
@@ -207,7 +209,7 @@ class MlpNgram(LMBase):
 				print "Error rate: %0.5f. Epoch: %s. Training time so far: %0.1fm" % (error, i+SINDEX, (time.clock()-s_time)/60.)
 
 			if SAVE:
-				self.savemodel("./data/MlpNgram/Mlp%sgram.model.epoch%s.n_hidden%s.dr%s.n_emb%s.in_size%s.obj" % (self.N, i+SINDEX, self.n_hidden, self.dropout, self.n_emb, self.n_in))
+				self.savemodel("./data/MlpNgram/Mlp%sgram.model.epoch%s.n_hidden%s.dr%s.n_emb%s.in_size%s.r%s.obj" % (self.N, i+SINDEX, self.n_hidden, self.dropout, self.n_emb, self.n_in, r_init))
 			
 			if lr_coef > 0:
 				# update learning_rate
@@ -302,6 +304,14 @@ class MlpNgram(LMBase):
 		self.batch_size, self.N, self.n_in, self.n_hidden, self.lr, self.l1_reg, self.l2_reg, self.mlpparams = cPickle.load(backupfile)
 		backupfile.close()
 		print "Load model complete! Filepath:", filepath
+
+	def dumpembedding(self, filepath):
+
+		dumpfile = open(filepath, 'wb')
+		cPickle.dump(self.mlpparams[-1].get_value(), dumpfile)
+		dumpfile.close()
+		print "Dump the embedding out! Filepath:", filepath
+
 
 
 

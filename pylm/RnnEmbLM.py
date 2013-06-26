@@ -63,7 +63,7 @@ class RnnEmbTrLM(RnnLM):
 	@summary: Rnn language Model use Character Embedding, and ajust embedding in the training time.
 	'''
 
-	def __init__(self, ndict, n_hidden, lr, batch_size, train_emb=True, emb_file_path = None, dropout=False, truncate_step=5, backup_file_path=None):
+	def __init__(self, ndict, n_emb, n_hidden, lr, batch_size, l2_reg=0.000001, train_emb=True, emb_file_path = None, dropout=False, truncate_step=5, backup_file_path=None):
 
 		LMBase.__init__(self, ndict)
 
@@ -81,6 +81,8 @@ class RnnEmbTrLM(RnnLM):
 		self.dropout = dropout
 		self.train_emb = train_emb
 		self.in_size = self.out_size  = ndict.size()
+		self.n_emb = n_emb
+		self.l2_reg = l2_reg
 
 		if emb_file_path:
 			f = open(emb_file_path)
@@ -88,8 +90,6 @@ class RnnEmbTrLM(RnnLM):
 			f.close()
 			self.embvalues = self.embvalues.astype(theano.config.floatX)
 			
-		self.embsize = (self.embvalues is None) and self.in_size or self.embvalues.shape[1]
-
 	def initRnn(self, no_train=False):
 		'''
 		@summary: Initiate RNNEMB model 
@@ -107,7 +107,7 @@ class RnnEmbTrLM(RnnLM):
 		rng = numpy.random.RandomState(213234)
 		rnn = RNNEMB(rng, 
 				self.in_size,
-				self.embsize, 
+				self.n_emb, 
 				self.n_hidden, 
 				self.out_size,
 				self.batch_size,
@@ -154,7 +154,9 @@ class RnnEmbTrLM(RnnLM):
 		s_l = l_data.reshape(self.batch_size,  l_data.shape[0] / self.batch_size).T
 		return theano.shared(s_in, borrow=True), theano.shared(s_l, borrow=True)
 
-	def traintext(self, text, test_text, add_se=True, sen_slice_length=4, epoch=200, lr_coef = -1., DEBUG = False, SAVE=False, SINDEX=1):
+	def traintext(self, text, test_text, 
+			add_se=True, sen_slice_length=4, epoch=200, lr_coef = -1., 
+			DEBUG = False, SAVE=False, SINDEX=1, r_init=False):
 
 		self.initRnn()
 
@@ -169,11 +171,11 @@ class RnnEmbTrLM(RnnLM):
 
 		mat_in_total, label_total = self.tids2nndata(tidseq, shared=False)
 		re_mat_in, re_label = self.reshape(mat_in_total[:data_size], label_total[:data_size])
-		self.rnn.build_tbptt(re_mat_in, re_label, self.truncate_step, self.train_emb)
+		self.rnn.build_tbptt(re_mat_in, re_label, self.truncate_step, self.train_emb, l2_reg=self.l2_reg)
 		print "Compile Truncate-BPTT Algorithm complete!"
 
 		ttids = self.tokens2ids(test_text, add_se)
-		t_in, t_l = self.tids2nndata(ttids, shared=True)
+		t_in, t_l = self.tids2nndata(ttids, shared=False)
 
 		# total sentence length after reshape
 		total_sent_len = data_size / self.batch_size
@@ -193,7 +195,7 @@ class RnnEmbTrLM(RnnLM):
 
 			if SAVE:
 				class_name = self.__class__.__name__
-				self.savemodel("./data/%s/%s.model.epoch%s.n_hidden%s.ssl%s.truncstep%s.dr%s.embsize%s.in_size%s.obj" % (class_name, class_name, i+SINDEX, self.n_hidden, sen_slice_length, self.truncate_step, self.dropout, self.embsize, self.in_size))
+				self.savemodel("./data/%s/%s.model.epoch%s.n_hidden%s.ssl%s.truncstep%s.dr%s.embsize%s.in_size%s.r%s.obj" % (class_name, class_name, i+SINDEX, self.n_hidden, sen_slice_length, self.truncate_step, self.dropout, self.n_emb, self.in_size, r_init))
 
 			if lr_coef > 0:
 				# update learning_rate
@@ -205,7 +207,7 @@ class RnnEmbTrLM(RnnLM):
 
 	def savemodel(self, filepath):
 		backupfile = open(filepath, 'w')
-		dumpdata = (self.batch_size, self.n_hidden, self.lr, self.truncate_step, self.rnnparams)
+		dumpdata = [self.batch_size, self.n_hidden, self.lr, self.truncate_step, self.rnnparams]
 		if self.rnn.C:
 			dumpdata.append(self.rnn.C.get_value())
 

@@ -49,7 +49,7 @@ class RNNEMB(RNN):
 					size=(n_in, n_emb)), dtype=theano.config.floatX)
 
 			self.C = theano.shared(value=C_values, name='C', borrow=True)
-			print "random init!"
+			print "Embedding random init!"
 		else:
 			self.C = theano.shared(value=embeddings, name='C', borrow=True)
 
@@ -87,7 +87,7 @@ class RNNEMB(RNN):
 		else:
 			h, _ = theano.scan(self.rnn_step, sequences=u, outputs_info=self.h_0[0])
 
-		if self.dropout and self.C:
+		if self.dropout:
 			self.y_prob = T.nnet.softmax(T.dot(h, self.W_out / 2.) + self.b_out)
 		else:
 			self.y_prob = T.nnet.softmax(T.dot(h, self.W_out) + self.b_out)
@@ -98,14 +98,13 @@ class RNNEMB(RNN):
 
 		return T.mean(T.neq(self.y_pred, y))
 
-	def build_tbptt(self, seq_in, seq_l, truncate_step=5, train_emb=False):
+	def build_tbptt(self, seq_in, seq_l, truncate_step=5, train_emb=False, l2_reg=0.000001):
 		'''
 		@summary: Build T-BPTT training theano function.
 		
 		@param x: theano variable for input vectors
 		@param y: theano variable for correct labels
 		@param h_init: theano variable for initial hidden layer value
-		@param l_rate: learning_rate
 		@result: 
 		'''
 		x = T.imatrix()
@@ -135,10 +134,11 @@ class RNNEMB(RNN):
 		part_p_y_given_x = part_p_y_given_x.reshape((l_y.shape[0], self.n_out))
 		# cross-entropy loss
 		part_cost = T.mean(T.nnet.categorical_crossentropy(part_p_y_given_x, l_y))
-		# add L2 norm if use dropout
-		if self.dropout:
-			part_L2_sqr = (self.W_in ** 2).sum() + (self.W_h ** 2).sum() + (self.W_out ** 2).sum()
-			part_cost = part_cost + 0.000001 * part_L2_sqr
+		# add L2 norm
+		part_L2_sqr = (self.W_in ** 2).sum() + (self.W_h ** 2).sum() + (self.W_out ** 2).sum()
+		part_cost = part_cost + l2_reg * part_L2_sqr
+		# print l2_reg
+		# if self.dropout:
 		# update params
 		params = [self.W_in, self.W_h, self.W_out, self.b_h, self.b_out]
 		# check whether to train the embedding
