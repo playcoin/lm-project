@@ -32,56 +32,19 @@ print "Train size is: %s, testing size is: %s" % (len(train_text), len(test_text
 # use gpu
 theano.sandbox.cuda.use('gpu0')
 # test random init
-mlp_ngram = MlpNgram(nlpdict, N=5, n_emb=50, n_hidden=800, lr=0.5, batch_size=200, 
-	dropout=False, emb_file_path=None)
-
-mlp_ngram.traintext(train_text, test_text, DEBUG=True, SAVE=True, SINDEX=1, epoch=100, lr_coef=0.96)
-
-# test random init
-mlp_ngram = MlpNgram(nlpdict, N=5, n_emb=400, n_hidden=800, lr=0.5, batch_size=200, 
-	dropout=False, emb_file_path=None)
-
-mlp_ngram.traintext(train_text, test_text, DEBUG=True, SAVE=True, SINDEX=1, epoch=100, lr_coef=0.96)
-
-# test random init
-mlp_ngram = MlpNgram(nlpdict, N=5, n_emb=300, n_hidden=800, lr=0.5, batch_size=200, 
-	dropout=False, emb_file_path=None)
-
-mlp_ngram.traintext(train_text, test_text, DEBUG=True, SAVE=True, SINDEX=1, epoch=100, lr_coef=0.96)
-
-# test random init
-mlp_ngram = MlpNgram(nlpdict, N=5, n_emb=100, n_hidden=800, lr=0.5, batch_size=200, 
-	dropout=False, emb_file_path=None)
-
-mlp_ngram.traintext(train_text, test_text, DEBUG=True, SAVE=True, SINDEX=1, epoch=100, lr_coef=0.96)
-
-# test random init
-mlp_ngram = MlpNgram(nlpdict, N=5, n_emb=200, n_hidden=800, lr=0.5, batch_size=200, 
-	dropout=False, emb_file_path=None)
-
-mlp_ngram.traintext(train_text, test_text, DEBUG=True, SAVE=True, SINDEX=1, epoch=100, lr_coef=0.96)
-
-# test random init 
-# mlp_ngram = MlpNgram(nlpdict, N=7, n_emb=300, n_hidden=1200, lr=0.5, batch_size=200, 
-# 	dropout=False,
-# 	backup_file_path='./data/MlpNgram/Mlp7gram.model.epoch96.n_hidden1200.drFalse.n_emb300.in_size4633.rTrue.obj')
-
-# mlp_ngram.lr = 0.5 * 0.96 ** 96
-# mlp_ngram.traintext(train_text, test_text, 
-# 	DEBUG=True, SAVE=True, SINDEX=97, r_init=True,
-# 	epoch=4, lr_coef=0.96)
-
-# test random init 
-# store the embeddings
-# mlp_ngram = MlpNgram(nlpdict, N=5, n_emb=200, n_hidden=600, lr=0.5, batch_size=200, dropout=False,
-# 		backup_file_path='./data/MlpNgram/Mlp5gram.model.epoch100.n_hidden600.drFalse.n_emb200.in_size4633.rTrue.obj')
-# mlp_ngram.dumpembedding('./data/5gram.emb200.h600.d4633.emb.obj')
-
-# Training example 5
-# mlp_ngram = MlpNgram(nlpdict, N=5, n_emb=200, n_hidden=1600, lr=0.5, batch_size=200, dropout=False,
-# 		emb_file_path='./data/5gram.emb200.h600.d4633.emb.obj')
+# mlp_ngram = MlpNgram(nlpdict, N=5, n_emb=50, n_hidden=800, lr=0.5, batch_size=200, 
+# 	dropout=False, emb_file_path=None)
 
 # mlp_ngram.traintext(train_text, test_text, DEBUG=True, SAVE=True, SINDEX=1, epoch=100, lr_coef=0.96)
+
+
+# test random init
+mlp_ngram = MlpNgram(nlpdict, N=7, n_emb=300, n_hidden=1200, lr=0.5, batch_size=200, 
+	dropout=False, 
+	backup_file_path="./data/MlpNgram/Mlp7gram.model.epoch96.n_hidden1200.drFalse.n_emb300.in_size4633.rTrue.obj")
+
+mlp_ngram.lr = 0.5 * 0.96 ** 96
+mlp_ngram.traintext(train_text, test_text, DEBUG=True, SAVE=True, SINDEX=97, epoch=4, lr_coef=0.96)
 
 ###########
 # Dropout #

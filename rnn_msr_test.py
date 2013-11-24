@@ -38,12 +38,16 @@ theano.sandbox.cuda.use('gpu1')
 # 		backup_file_path='./data/MlpNgram/Mlp7gram.model.epoch90.n_hidden1200.drFalse.n_emb200.in_size5127.rTrue.MSR.obj')
 # mlp_ngram.dumpembedding('./data/7gram.emb200.h1200.d5172.emb.obj')
 
-rnnlm = RnnEmbTrLM(nlpdict, n_emb=200, n_hidden=1200, lr=0.5, batch_size=150, truncate_step=4, 
+rnnlm = RnnEmbTrLM(nlpdict, n_emb=200, n_hidden=1000, lr=0.5, batch_size=150, truncate_step=4, 
 	train_emb=True, dropout=True,
-	backup_file_path="./data/RnnEmbTrLM/RnnEmbTrLM.model.epoch7.n_hidden1200.ssl20.truncstep4.drTrue.embsize200.in_size5127.r7ge200.MSR.obj")
+	# emb_file_path="./data/7gram.emb200.h1200.d5172.emb.obj")
+	backup_file_path="./data/RnnEmbTrLM/RnnEmbTrLM.model.epoch41.n_hidden1000.ssl20.truncstep4.drTrue.embsize200.in_size5127.r7ge200.c94.MSR.obj")
 
-rnnlm.lr = 0.5 * 0.95 ** 7
+# rnnlm = RnnEmbTrLM(nlpdict, n_emb=nlpdict.size(), n_hidden=300, lr=0.5, batch_size=150, truncate_step=4, 
+# 	train_emb=False, dropout=False,
+# )
+rnnlm.lr = 0.5 * 0.94 ** 41
 rnnlm.traintext(train_text, test_text, 
-		add_se=False, sen_slice_length=20, epoch=93, lr_coef=0.95, 
-		DEBUG=True, SAVE=True, SINDEX=8, r_init="7ge200.MSR"
+		add_se=False, sen_slice_length=20, epoch=9, lr_coef=0.94, 
+		DEBUG=True, SAVE=True, SINDEX=42, r_init="7ge200.c94.MSR"
 	)
