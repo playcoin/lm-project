@@ -8,6 +8,9 @@ Created on 2013-04-28 15:53
 from nlpdict.NlpDict import NlpDict
 from pylm.MlpBigram import MlpBigram
 import numpy
+import theano.sandbox.cuda
+
+# theano.sandbox.cuda.use('gpu')
 
 nlpdict = NlpDict()
 nlpdict.buildfromfile('./data/text.txt')
