@@ -226,3 +226,14 @@ class RnnEmbTrLM(RnnLM):
 
 		backupfile.close()
 		print "Load model complete! Filepath:", filepath
+
+	def dumpembeddings(self, filepath):
+		backupfile = open(filepath, 'w')
+		if self.rnn:
+			dumpdata = self.rnn.C.get_value()
+		else:
+			dumpdata = self.embvalues
+
+		cPickle.dump(dumpdata, backupfile)
+		backupfile.close()
+		print "Dump embeddings complete! Filepath:", filepath

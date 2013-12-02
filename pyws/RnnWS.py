@@ -12,6 +12,7 @@ import time
 import theano
 import theano.tensor as T
 from dltools.rnnemb import RNNEMB
+from tagutil import formtext
 
 class RnnWS(object):
 
@@ -84,7 +85,7 @@ class RnnWS(object):
 		self.rnn_sort = theano.function([u, y], [rnn.y_sort_matrix, probs])
 		print "Compile argsort function complete!"
 
-		self.rnn_pred = theano.function([u], [rnn.y_pred[-1], rnn.y_prob[-1]])
+		self.rnn_pred = theano.function([u], rnn.y_pred)
 		print "Compile predict function complete!"
 
 
@@ -145,7 +146,7 @@ class RnnWS(object):
 				err = self.test_model(t_in, t_l)[0]
 				e_time = time.clock()
 				print "Error rate in epoch %s, is %.5f. Training time so far is: %.2fm" % ( i+SINDEX, err, (e_time-s_time) / 60.)
-				# print ''.join([self.ndict.gettoken(x) for x in r_labels])
+				# print formtext(test_text, self.rnn_pred(t_in))
 
 			if SAVE:
 				class_name = self.__class__.__name__
@@ -158,6 +159,18 @@ class RnnWS(object):
 
 		e_time = time.clock()
 		print "RnnLM train over!! The total training time is %.2fm." % ((e_time - s_time) / 60.) 
+
+	def testtext(self, test_text, test_tags, show_result = True):
+		'''
+		@summary: 测试错误率
+		'''
+		self.initRnn()
+
+		t_in, t_l = self.tokens2nndata(test_text, test_tags)
+		err = self.test_model(t_in, t_l)[0]
+		if show_result:
+			print formtext(test_text, self.rnn_pred(t_in))
+		print "Error rate %.5f" % err
 
 	def savemodel(self, filepath):
 		backupfile = open(filepath, 'w')
