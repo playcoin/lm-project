@@ -1,9 +1,10 @@
 # -*- coding: utf-8 -*-
 '''
-Created on 2013-11-28 12:27
-@summary: Word Segmentation Module by RNN
+Created on 2013-12-02 20:17
+@summary: 带前缀的RNN
 @author: egg
 '''
+
 import math
 import numpy
 import cPickle
@@ -11,39 +12,16 @@ import time
 
 import theano
 import theano.tensor as T
-from dltools.rnnemb import RNNEMB
+from dltools.rnnemb import RNNEMBWF
 from tagutil import formtext
+from RnnWS import RnnWS
 
-class RnnWS(object):
+class RnnWFWS(RnnWS):
 
 	def __init__(self, ndict, n_emb, n_hidden, lr, batch_size, l2_reg=0.000001, train_emb=True, emb_file_path = None, dropout=False, truncate_step=4, backup_file_path=None):
 
-		self.ndict = ndict
+		super(RnnWFWS, self).__init__(ndict, n_emb, n_hidden, lr, batch_size, l2_reg, train_emb, emb_file_path, dropout, truncate_step, backup_file_path)
 
-		if backup_file_path is None:
-			self.n_hidden = n_hidden
-			self.lr = lr
-			self.batch_size = batch_size
-			self.truncate_step = truncate_step
-			self.rnnparams = None
-			self.embvalues = None
-		else:
-			self.loadmodel(backup_file_path)
-
-		self.rnn = None
-		self.dropout = dropout
-		self.train_emb = train_emb
-		self.in_size = ndict.size()
-		self.out_size = 4
-		self.n_emb = n_emb
-		self.l2_reg = l2_reg
-
-		if emb_file_path:
-			f = open(emb_file_path)
-			self.embvalues = cPickle.load(f)
-			f.close()
-			self.embvalues = self.embvalues.astype(theano.config.floatX)
-			
 	def initRnn(self, no_train=False):
 		'''
 		@summary: Initiate RNNEMB model 
@@ -53,12 +31,13 @@ class RnnWS(object):
 
 		print "RnnWS init start!"
 		u = T.ivector('u')
+		uf = T.ivector('uf')
 		y = T.ivector('y')
 		l = T.imatrix('l')
 		h_init = T.matrix('h_init')
 
 		rng = numpy.random.RandomState(213234)
-		rnn = RNNEMB(rng, 
+		rnn = RNNEMBWF(rng, 
 				self.in_size,
 				self.n_emb, 
 				self.n_hidden, 
@@ -73,38 +52,40 @@ class RnnWS(object):
 		self.rnn = rnn
 		self.rnnparams = rnn.params
 
-		error = rnn.errors(u,y)
-		self.test_model = theano.function([u, y], [error])
+		error = rnn.errors(u,uf,y)
+		self.test_model = theano.function([u, uf, y], error)
 		print "Compile Test function complete!"
 
 		probs = rnn.y_prob[T.arange(y.shape[0]), y]
-		self.rnn_prob = theano.function([u, y], probs)
+		self.rnn_prob = theano.function([u, uf, y], probs)
 		print "Compile likelihood function complete!"
 
-		self.rnn_pred = theano.function([u], rnn.y_pred)
+		self.rnn_pred = theano.function([u, uf], rnn.y_pred)
 		print "Compile predict function complete!"
-
 
 	def tokens2nndata(self, train_text, train_tags):
 		'''
 		@summary: 将输入文本转化为id序列
 		'''
 		# 将训练文本再预处理一下, 单个回车符编程两个，回车符的标签为0
-		train_text = train_text.replace("\n", "\n\n") + "\n"
-		train_tags = "0" + train_tags.replace("\n", "00")
+		train_text = train_text.replace("\n", "\n\n")
+		train_tags = train_tags.replace("\n", "00")
 
 		tids = [self.ndict[token] for token in train_text]
 		tags = [int(tag) for tag in train_tags]
 
-		vec_in = theano.shared(numpy.asarray(tids, dtype="int32"), borrow=True)
-		vec_out = theano.shared(numpy.asarray(tags, dtype="int32"), borrow=True)
 
-		return vec_in.get_value(borrow=True), vec_out.get_value(borrow=True)
+		vec_in = theano.shared(numpy.asarray(tids[:-1], dtype="int32"), borrow=True)
+		vec_in_f = theano.shared(numpy.asarray(tids[1:], dtype="int32"), borrow=True)
+		vec_out = theano.shared(numpy.asarray(tags[:-1], dtype="int32"), borrow=True)
 
-	def reshape(self, in_data, l_data):
+		return vec_in.get_value(borrow=True), vec_in_f.get_value(borrow=True), vec_out.get_value(borrow=True)
+
+	def reshape(self, in_data, in_data_f, l_data):
 		s_in = in_data.reshape(self.batch_size, in_data.shape[0] / self.batch_size).T
+		s_in_f = in_data_f.reshape(self.batch_size, in_data.shape[0] / self.batch_size).T
 		s_l = l_data.reshape(self.batch_size,  l_data.shape[0] / self.batch_size).T
-		return theano.shared(s_in, borrow=True), theano.shared(s_l, borrow=True)
+		return theano.shared(s_in, borrow=True), theano.shared(s_in_f, borrow=True), theano.shared(s_l, borrow=True)
 
 	def traintext(self, train_text, train_tags, test_text, test_tags, 
 			sen_slice_length=4, epoch=200, lr_coef = -1., 
@@ -120,13 +101,13 @@ class RnnWS(object):
 		data_slice_size = sentence_length * self.batch_size
 		data_size = seq_size / data_slice_size * data_slice_size
 
-		mat_in_total, label_total = self.tokens2nndata(train_text, train_tags)
-		re_mat_in, re_label = self.reshape(mat_in_total[:data_size], label_total[:data_size])
-		self.rnn.build_tbptt(re_mat_in, re_label, self.truncate_step, self.train_emb, l2_reg=self.l2_reg)
+		mat_in_total, mat_in_f_total, label_total = self.tokens2nndata(train_text, train_tags)
+		re_mat_in, re_mat_in_f, re_label = self.reshape(mat_in_total[:data_size], mat_in_f_total[:data_size], label_total[:data_size])
+		self.rnn.build_tbptt(re_mat_in, re_mat_in_f, re_label, self.truncate_step, self.train_emb, l2_reg=self.l2_reg)
 		print "Compile Truncate-BPTT Algorithm complete!"
 
 		# for test
-		t_in, t_l = self.tokens2nndata(test_text, test_tags)
+		t_in, t_in_f, t_l = self.tokens2nndata(test_text, test_tags)
 
 		# total sentence length after reshape
 		total_sent_len = data_size / self.batch_size
@@ -139,7 +120,7 @@ class RnnWS(object):
 				self.rnn.train_tbptt(j, j+sentence_length)
 
 			if DEBUG:
-				err = self.test_model(t_in, t_l)[0]
+				err = self.test_model(t_in, t_in_f, t_l)
 				e_time = time.clock()
 				print "Error rate in epoch %s, is %.5f. Training time so far is: %.2fm" % ( i+SINDEX, err, (e_time-s_time) / 60.)
 				# print formtext(test_text, self.rnn_pred(t_in))
@@ -155,37 +136,3 @@ class RnnWS(object):
 
 		e_time = time.clock()
 		print "RnnLM train over!! The total training time is %.2fm." % ((e_time - s_time) / 60.) 
-
-	def testtext(self, test_text, test_tags, show_result = True):
-		'''
-		@summary: 测试错误率
-		'''
-		self.initRnn()
-
-		t_in, t_l = self.tokens2nndata(test_text, test_tags)
-		err = self.test_model(t_in, t_l)[0]
-		if show_result:
-			print formtext(test_text, self.rnn_pred(t_in))
-		print "Error rate %.5f" % err
-
-	def savemodel(self, filepath):
-		backupfile = open(filepath, 'w')
-		dumpdata = [self.batch_size, self.n_hidden, self.lr, self.truncate_step, self.rnnparams]
-		if self.rnn.C:
-			dumpdata.append(self.rnn.C.get_value())
-
-		cPickle.dump(dumpdata, backupfile)
-		backupfile.close()
-		print "Save model complete! Filepath:", filepath
-
-	def loadmodel(self, filepath):
-		backupfile = open(filepath)
-		dumpdata = cPickle.load(backupfile)
-		self.batch_size, self.n_hidden, self.lr, self.truncate_step, self.rnnparams = dumpdata[:5]
-		if len(dumpdata) > 5:
-			self.embvalues = dumpdata[5]
-		else:
-			self.embvalues = None
-
-		backupfile.close()
-		print "Load model complete! Filepath:", filepath

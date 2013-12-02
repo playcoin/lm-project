@@ -8,6 +8,7 @@ Created on 2013-11-28 13:33
 
 from nlpdict.NlpDict import NlpDict
 from pyws.RnnWS import RnnWS
+from pyws.RnnWFWS import RnnWFWS
 from pylm.RnnEmbLM import RnnEmbTrLM
 import numpy
 import time
@@ -56,12 +57,12 @@ valid_tags = valid_tags.replace(" ", "").replace("\n", "")
 f.close()
 
 # rnnws.testtext(valid_text[:1000], valid_tags[:1000])
-rnnws = RnnWS(nlpdict, n_emb=50, n_hidden=300, lr=0.2, batch_size=50, 
+rnnws = RnnWFWS(nlpdict, n_emb=50, n_hidden=200, lr=0.2, batch_size=50, 
 	l2_reg=0.000001, truncate_step=4, train_emb=False, dropout=False,
 	emb_file_path="./data/RnnEmbTrLM.n_hidden600.embsize50.in_size4633.emb.obj"
 )
 
-rnnws.traintext(train_text, train_tags, valid_text[:2000], valid_tags[:2000], 
+rnnws.traintext(train_text, train_tags, train_text[:4000], train_tags[:4000], 
 	sen_slice_length=20, epoch=50, lr_coef=0.93, 
-	DEBUG=True, SAVE=True, SINDEX=1, r_init="ntemb.7g50.c93"
+	DEBUG=True, SAVE=False, SINDEX=1, r_init="ntemb.7g50.c93"
 )

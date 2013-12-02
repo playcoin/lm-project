@@ -30,7 +30,16 @@ train_tags = unicode(f.read(), 'utf-8')
 train_tags = train_tags.replace(" ", "")
 f.close()
 
-mlp_ws = MlpWS(nlpdict, chunk_size=5, n_emb=50, n_hidden=200, lr=0.2, batch_size=50, dropout=False,
+f = file('./data/pku_test_ws.ltxt')
+test_text = unicode(f.read(), 'utf-8').replace(" ", "")
+f.close()
+
+# tags
+f = file('./data/pku_test_ws_tag.ltxt')
+test_tags = unicode(f.read(), 'utf-8').replace(" ", "")
+f.close()
+
+mlp_ws = MlpWS(nlpdict, chunk_size=5, n_emb=50, n_hidden=200, lr=0.2, batch_size=10, dropout=False,
 		emb_file_path='data/7gram.emb50.h900.d4633.emb.obj')
 
-mlp_ws.traintext(train_text[:11000], train_tags[:11000], train_text[:11000], train_tags[:11000], DEBUG=True, SAVE=False, SINDEX=1, epoch=100, lr_coef=0.94)
+mlp_ws.traintext(train_text[:2000], train_tags[:2000], train_text[:1000], train_tags[:1000], DEBUG=True, SAVE=False, SINDEX=1, epoch=100, lr_coef=0.94)

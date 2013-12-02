@@ -35,6 +35,9 @@ class MlpWS(MlpNgram):
 		vec_out = []
 		# 逐句处理
 		for i in range(len(lines)):
+			if len(lines[i]) != len(taglines[i]):
+				print lines[i]
+				print taglines[i]
 			line = "\n\n%s\n\n" % lines[i]
 			lids = [self.ndict[x] for x in line]
 			# 变成向量

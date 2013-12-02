@@ -12,6 +12,7 @@ def text2tags(srcFile, descFile):
 	fin = file(srcFile)
 	text = unicode(fin.read(), "utf-8")
 	fin.close()
+	text = text.replace("   ", "  ")
 
 	tout = ""
 
@@ -19,6 +20,7 @@ def text2tags(srcFile, descFile):
 	lout = []
 
 	for line in lines:
+		line = line.strip()
 		# split to tokens
 		tokens = line.split('  ')
 		# for out put tags
@@ -55,4 +57,4 @@ def formtext(text, tags):
 
 
 if __name__ == "__main__":
-	text2tags("data/pku_valid_ws.ltxt", "data/pku_valid_ws_tag.ltxt")
+	text2tags("data/pku_test_ws.ltxt", "data/pku_test_ws_tag.ltxt")

@@ -42,18 +42,18 @@ class RNN(object):
 		if None in (W_in, W_h, W_out, b_h, b_out, h_0):
 			# Weight initial
 			W_in_values = numpy.asarray(rng.uniform(
-				low  = -numpy.sqrt(6.0 / (n_in + n_out)),
-				high  = numpy.sqrt(6.0 / (n_in + n_out)),
+				low  = -numpy.sqrt(6.0 / (n_in + n_h)),
+				high  = numpy.sqrt(6.0 / (n_in + n_h)),
 				size = (n_in, n_h)), dtype = theano.config.floatX
 			)
 			W_h_values = numpy.asarray(rng.uniform(
-				low  = -numpy.sqrt(6.0 / (n_in + n_out)),
-				high  = numpy.sqrt(6.0 / (n_in + n_out)),
+				low  = -numpy.sqrt(6.0 / (n_h + n_h)),
+				high  = numpy.sqrt(6.0 / (n_h + n_h)),
 				size = (n_h, n_h)), dtype = theano.config.floatX
 			)
 			W_out_values = numpy.asarray(rng.uniform(
-				low  = -numpy.sqrt(6.0 / (n_in + n_out)),
-				high  = numpy.sqrt(6.0 / (n_in + n_out)),
+				low  = -numpy.sqrt(6.0 / (n_h + n_out)),
+				high  = numpy.sqrt(6.0 / (n_h + n_out)),
 				size = (n_h, n_out)), dtype = theano.config.floatX
 			)
 			# if the activation is sigmoid, the W_in_values should multiply 4
