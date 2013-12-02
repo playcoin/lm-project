@@ -32,7 +32,6 @@ def text2tags(srcFile, descFile):
 				tagline.extend(["2" for x in xrange(slen)])
 				tagline.append("3")
 			# tagline.append("  ")
-		tagline.append("0") # for '\n' character
 		lout.append("".join(tagline))
 
 	fout = file(descFile, "wb")
@@ -56,4 +55,4 @@ def formtext(text, tags):
 
 
 if __name__ == "__main__":
-	text2tags("../data/pku_train_ws.ltxt", "../data/pku_train_ws_tag.ltxt")
+	text2tags("data/pku_valid_ws.ltxt", "data/pku_valid_ws_tag.ltxt")

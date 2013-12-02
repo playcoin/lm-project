@@ -24,7 +24,6 @@ train_text = unicode(f.read(), 'utf-8')
 train_text = train_text.replace(" ", "")
 nlpdict = NlpDict()
 nlpdict.buildfromtext(train_text)	# 要先构造字典，把回车符给加进去
-# train_text = train_text.replace("\n", "")	# 再把回车符给清空了
 print "Dict size is: %s, Train size is: %s" % (nlpdict.size(), len(train_text))
 f.close()
 
@@ -32,7 +31,7 @@ f.close()
 f = file('./data/pku_train_ws_tag.ltxt')
 train_tags = unicode(f.read(), 'utf-8')
 # 清空空格和回车
-train_tags = train_tags.replace(" ", "").replace("\n", "")
+train_tags = train_tags.replace(" ", "")
 f.close()
 
 #############

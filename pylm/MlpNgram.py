@@ -68,15 +68,9 @@ class MlpNgram(LMBase):
 		self.mlp = None
 		self.n_emb = n_emb
 		self.dropout = dropout
+		self.n_out = self.n_in
 
-	def __setTrainData(self, train_data):
-		'''
-		@summary: Set the trainging data, data should be Theano.SharedVariable for GPU.
-		'''
-		self.train_data = train_data[0]
-		self.label_data = train_data[1]
-
-	def __initMlp(self, no_train=False):
+	def initMlp(self, no_train=False):
 		'''
 		@summary: Initiate mlp, build theano function of trainging and test. 
 		
@@ -96,7 +90,7 @@ class MlpNgram(LMBase):
 
 		# construct the MLP class
 		self.mlp = MLPEMB(rng = rng, input=x, n_in=self.n_in, n_token=self.N - 1,
-						 n_emb = self.n_emb, n_hidden=self.n_hidden, n_out=self.n_in,
+						 n_emb = self.n_emb, n_hidden=self.n_hidden, n_out=self.n_out,
 						 dropout = self.dropout,
 						 hW=self.mlpparams[0], hb=self.mlpparams[1], 
 						 oW=self.mlpparams[2], ob=self.mlpparams[3], 
@@ -152,6 +146,13 @@ class MlpNgram(LMBase):
 
 		print "Compile training function complete!"	
 
+	def setTrainData(self, train_data):
+		'''
+		@summary: Set the trainging data, data should be Theano.SharedVariable for GPU.
+		'''
+		self.train_data = train_data[0]
+		self.label_data = train_data[1]
+
 	def tids2inputdata(self, tidseq, zero_start=True, truncate_input = True):
 		'''
 		@summary: Specific data preprocess for MlpNgram. Concat N-1 vectors
@@ -193,8 +194,8 @@ class MlpNgram(LMBase):
 		train_size = len(tidseq) - 1
 		n_batch = int(math.ceil(train_size / self.batch_size))
 		
-		self.__setTrainData(self.tids2inputdata(tidseq))
-		self.__initMlp()
+		self.setTrainData(self.tids2inputdata(tidseq))
+		self.initMlp()
 		test_in, test_out = self.tids2inputdata(self.tokens2ids(test_text))
 		print "MlpNgram model init complete!!"
 

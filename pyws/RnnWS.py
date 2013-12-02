@@ -92,10 +92,12 @@ class RnnWS(object):
 	def tokens2nndata(self, train_text, train_tags):
 		'''
 		@summary: 将输入文本转化为id序列
-		
-		@param text:
-		@result: 
 		'''
+		# 将训练文本再预处理一下, 单个回车符编程两个，回车符的标签为0
+		train_text.replace("\n", "\n\n")
+		train_tags.replace("\n", "00")
+		train_text = train_text + "\n"
+		train_tags = "0" + train_tags
 
 		tids = [self.ndict[token] for token in train_text]
 		tags = [int(tag) for tag in train_tags]
