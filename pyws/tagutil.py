@@ -57,4 +57,4 @@ def formtext(text, tags):
 
 
 if __name__ == "__main__":
-	text2tags("data/pku_test_ws.ltxt", "data/pku_test_ws_tag.ltxt")
+	text2tags("data/pku_valid_ws.ltxt", "data/pku_valid_ws_tag.ltxt")

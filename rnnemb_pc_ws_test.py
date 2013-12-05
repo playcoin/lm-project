@@ -8,7 +8,7 @@ Created on 2013-11-28 13:33
 
 from nlpdict.NlpDict import NlpDict
 from pyws.RnnWS import RnnWS
-from pyws.RnnWFWS import RnnWFWS
+from pyws.RnnWFWS import RnnWFWS, RnnWFWS2
 from pylm.RnnEmbLM import RnnEmbTrLM
 import numpy
 import time
@@ -43,26 +43,25 @@ f.close()
 # 	backup_file_path="./data/RnnWS/RnnWS.model.epoch45.n_hidden200.ssl20.truncstep4.drFalse.embsize50.in_size4633.r7g50.c93.obj"
 # )
 
-f = file('./data/pku_valid_ws.ltxt')
-valid_text = unicode(f.read(), 'utf-8')
+f = file('./data/pku_test_ws.ltxt')
+test_text = unicode(f.read(), 'utf-8')
 # 清空空格和回车
-valid_text = valid_text.replace(" ", "")
+test_text = test_text.replace(" ", "")
 f.close()
 
 # tags
-f = file('./data/pku_valid_ws_tag.ltxt')
-valid_tags = unicode(f.read(), 'utf-8')
+f = file('./data/pku_test_ws_tag.ltxt')
+test_tags = unicode(f.read(), 'utf-8')
 # 清空空格和回车
-valid_tags = valid_tags.replace(" ", "").replace("\n", "")
+test_tags = test_tags.replace(" ", "")
 f.close()
 
-# rnnws.testtext(valid_text[:1000], valid_tags[:1000])
-rnnws = RnnWFWS(nlpdict, n_emb=50, n_hidden=200, lr=0.2, batch_size=50, 
+rnnws = RnnWFWS2(nlpdict, n_emb=50, n_hidden=200, lr=0.2, batch_size=10, 
 	l2_reg=0.000001, truncate_step=4, train_emb=False, dropout=False,
 	emb_file_path="./data/RnnEmbTrLM.n_hidden600.embsize50.in_size4633.emb.obj"
 )
 
-rnnws.traintext(train_text, train_tags, train_text[:4000], train_tags[:4000], 
-	sen_slice_length=20, epoch=50, lr_coef=0.93, 
+rnnws.traintext(train_text[:2000], train_tags[:2000], train_text[:1000], train_tags[:1000], 
+	sen_slice_length=20, epoch=70, lr_coef=0.93, 
 	DEBUG=True, SAVE=False, SINDEX=1, r_init="ntemb.7g50.c93"
 )
