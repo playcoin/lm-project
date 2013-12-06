@@ -74,7 +74,7 @@ class RnnWS(object):
 		self.rnnparams = rnn.params
 
 		error = rnn.errors(u,y)
-		self.test_model = theano.function([u, y], [error])
+		self.test_model = theano.function([u, y], error)
 		print "Compile Test function complete!"
 
 		probs = rnn.y_prob[T.arange(y.shape[0]), y]
@@ -101,10 +101,16 @@ class RnnWS(object):
 
 		return vec_in.get_value(borrow=True), vec_out.get_value(borrow=True)
 
-	def reshape(self, in_data, l_data):
-		s_in = in_data.reshape(self.batch_size, in_data.shape[0] / self.batch_size).T
-		s_l = l_data.reshape(self.batch_size,  l_data.shape[0] / self.batch_size).T
-		return theano.shared(s_in, borrow=True), theano.shared(s_l, borrow=True)
+	def reshape(self, dataset, data_size):
+		'''
+		@summary: 将训练数据按batch_size进行reshape
+		'''
+		out_dataset = []
+		for x in dataset:
+			x = x[:data_size]
+			s_x = x.reshape(self.batch_size, x.shape[0] / self.batch_size).T
+			out_dataset.append(theano.shared(s_x, borrow=True))
+		return out_dataset
 
 	def traintext(self, train_text, train_tags, test_text, test_tags, 
 			sen_slice_length=4, epoch=200, lr_coef = -1., 
@@ -120,13 +126,14 @@ class RnnWS(object):
 		data_slice_size = sentence_length * self.batch_size
 		data_size = seq_size / data_slice_size * data_slice_size
 
-		mat_in_total, label_total = self.tokens2nndata(train_text, train_tags)
-		re_mat_in, re_label = self.reshape(mat_in_total[:data_size], label_total[:data_size])
-		self.rnn.build_tbptt(re_mat_in, re_label, self.truncate_step, self.train_emb, l2_reg=self.l2_reg)
+		dataset = self.tokens2nndata(train_text, train_tags)
+		tbptt_args = self.reshape(dataset, data_size)
+		tbptt_args.extend([self.truncate_step, self.train_emb, self.l2_reg])
+		self.rnn.build_tbptt(*tbptt_args)
 		print "Compile Truncate-BPTT Algorithm complete!"
 
 		# for test
-		t_in, t_l = self.tokens2nndata(test_text, test_tags)
+		test_dataset = self.tokens2nndata(test_text, test_tags)
 
 		# total sentence length after reshape
 		total_sent_len = data_size / self.batch_size
@@ -139,7 +146,7 @@ class RnnWS(object):
 				self.rnn.train_tbptt(j, j+sentence_length)
 
 			if DEBUG:
-				err = self.test_model(t_in, t_l)[0]
+				err = self.test_model(*test_dataset)
 				e_time = time.clock()
 				print "Error rate in epoch %s, is %.5f. Training time so far is: %.2fm" % ( i+SINDEX, err, (e_time-s_time) / 60.)
 				# print formtext(test_text, self.rnn_pred(t_in))
@@ -154,7 +161,7 @@ class RnnWS(object):
 				self.rnn.lr.set_value(numpy.array(lr, dtype=theano.config.floatX))
 
 		e_time = time.clock()
-		print "RnnLM train over!! The total training time is %.2fm." % ((e_time - s_time) / 60.) 
+		print "%s train over!! The total training time is %.2fm." % (self.__class__.__name__, (e_time - s_time) / 60.) 
 
 	def testtext(self, test_text, test_tags, show_result = True):
 		'''

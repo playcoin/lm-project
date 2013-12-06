@@ -209,23 +209,12 @@ class RNNEMBWF(RNNEMB):
 		self.W_in_f = W_in_f
 
 	def rnn_step(self, u_tm, uf_tm, h_tm):
-		'''
-		@summary: iter function of scan op
-		
-		@param u_tm: current input
-		@param h_tm: last output of hidden layer
-		'''
+
 		lin_h = T.dot(self.C[u_tm], self.W_in) + T.dot(self.C[uf_tm], self.W_in_f) + T.dot(h_tm, self.W_h) + self.b_h
 		h_t = self.activation(lin_h)
 		return h_t
 
 	def errors(self, u, uf, y):
-		'''
-		@summary: Errors count
-		
-		@param u: TensorVariable, matrix
-		@param y: labels
-		'''
 		h, _ = theano.scan(self.rnn_step, sequences=[u, uf], outputs_info=self.h_0[0])
 
 		if self.dropout:
@@ -240,14 +229,6 @@ class RNNEMBWF(RNNEMB):
 		return T.mean(T.neq(self.y_pred, y))
 
 	def build_tbptt(self, seq_in, seq_in_f, seq_l, truncate_step=5, train_emb=False, l2_reg=0.000001):
-		'''
-		@summary: Build T-BPTT training theano function.
-		
-		@param x: theano variable for input vectors
-		@param y: theano variable for correct labels
-		@param h_init: theano variable for initial hidden layer value
-		@result: 
-		'''
 		x = T.imatrix()
 		xf = T.imatrix()
 		y = T.imatrix()
@@ -256,7 +237,6 @@ class RNNEMBWF(RNNEMB):
 
 		self.truncate_step = truncate_step
 
-		# output of hidden layer and output layer
 		part_h, _ = theano.scan(self.rnn_step, sequences=[x, xf], outputs_info=h_init)
 			
 
@@ -276,11 +256,8 @@ class RNNEMBWF(RNNEMB):
 		# add L2 norm
 		part_L2_sqr = (self.W_in ** 2).sum() + (self.W_h ** 2).sum() + (self.W_out ** 2).sum()
 		part_cost = part_cost + l2_reg * part_L2_sqr
-		# print l2_reg
-		# if self.dropout:
-		# update params
+
 		params = [self.W_in, self.W_in_f, self.W_h, self.W_out, self.b_h, self.b_out]
-		# check whether to train the embedding
 		if train_emb and self.C:
 			params.append(self.C)
 
@@ -288,9 +265,7 @@ class RNNEMBWF(RNNEMB):
 		for param in params:
 			gparam = T.grad(part_cost, param)
 			gparams.append(gparam)
-
 		updates = []
-		#	C = [(a1, b1), (a2, b2), (a3, b3), (a4, b4)]
 		for param, gparam in zip(params, gparams):
 			updates.append((param, param - self.lr * gparam))
 
@@ -343,23 +318,11 @@ class RNNEMBWF2(RNNEMBWF):
 		self.W_in_f_2 = W_in_f_2
 
 	def rnn_step(self, u_tm, uf_tm, uf_2_tm, h_tm):
-		'''
-		@summary: iter function of scan op
-		
-		@param u_tm: current input
-		@param h_tm: last output of hidden layer
-		'''
 		lin_h = T.dot(self.C[u_tm], self.W_in) + T.dot(self.C[uf_tm], self.W_in_f) + T.dot(self.C[uf_2_tm], self.W_in_f_2) + T.dot(h_tm, self.W_h) + self.b_h
 		h_t = self.activation(lin_h)
 		return h_t
 
 	def errors(self, u, uf, uf_2, y):
-		'''
-		@summary: Errors count
-		
-		@param u: TensorVariable, matrix
-		@param y: labels
-		'''
 		h, _ = theano.scan(self.rnn_step, sequences=[u, uf, uf_2], outputs_info=self.h_0[0])
 
 		if self.dropout:
@@ -374,14 +337,7 @@ class RNNEMBWF2(RNNEMBWF):
 		return T.mean(T.neq(self.y_pred, y))
 
 	def build_tbptt(self, seq_in, seq_in_f, seq_in_f_2, seq_l, truncate_step=5, train_emb=False, l2_reg=0.000001):
-		'''
-		@summary: Build T-BPTT training theano function.
-		
-		@param x: theano variable for input vectors
-		@param y: theano variable for correct labels
-		@param h_init: theano variable for initial hidden layer value
-		@result: 
-		'''
+
 		x = T.imatrix()
 		xf = T.imatrix()
 		xf_2 = T.imatrix()
@@ -409,21 +365,16 @@ class RNNEMBWF2(RNNEMBWF):
 		# add L2 norm
 		part_L2_sqr = (self.W_in ** 2).sum() + (self.W_h ** 2).sum() + (self.W_out ** 2).sum()
 		part_cost = part_cost + l2_reg * part_L2_sqr
-		# print l2_reg
-		# if self.dropout:
-		# update params
+
 		params = [self.W_in, self.W_in_f, self.W_in_f_2, self.W_h, self.W_out, self.b_h, self.b_out]
 		# check whether to train the embedding
 		if train_emb and self.C:
 			params.append(self.C)
-
 		gparams = []
 		for param in params:
 			gparam = T.grad(part_cost, param)
 			gparams.append(gparam)
-
 		updates = []
-		#	C = [(a1, b1), (a2, b2), (a3, b3), (a4, b4)]
 		for param, gparam in zip(params, gparams):
 			updates.append((param, param - self.lr * gparam))
 

@@ -56,7 +56,7 @@ test_tags = unicode(f.read(), 'utf-8')
 test_tags = test_tags.replace(" ", "")
 f.close()
 
-rnnws = RnnWFWS2(nlpdict, n_emb=50, n_hidden=200, lr=0.2, batch_size=10, 
+rnnws = RnnWFWS(nlpdict, n_emb=50, n_hidden=200, lr=0.2, batch_size=10, 
 	l2_reg=0.000001, truncate_step=4, train_emb=False, dropout=False,
 	emb_file_path="./data/RnnEmbTrLM.n_hidden600.embsize50.in_size4633.emb.obj"
 )
