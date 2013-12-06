@@ -97,7 +97,7 @@ class RnnWFWS(RnnWS):
 
 		# variables for slice sentence
 		sentence_length = sen_slice_length * self.truncate_step
-		half_sen_length = sentence_length / 2
+		sen_length_padding = sentence_length / 2
 		data_slice_size = sentence_length * self.batch_size
 		data_size = seq_size / data_slice_size * data_slice_size
 
@@ -115,7 +115,7 @@ class RnnWFWS(RnnWS):
 		s_time = time.clock()
 		for i in xrange(epoch):
 
-			for j in xrange(0, total_sent_len - half_sen_length, half_sen_length):
+			for j in xrange(0, total_sent_len - sen_length_padding, sen_length_padding):
 				# reshape to matrix: [SEQ][BATCH][FRAME]
 				self.rnn.train_tbptt(j, j+sentence_length)
 
@@ -220,9 +220,9 @@ class RnnWFWS2(RnnWS):
 		seq_size = len(train_text)
 
 		# variables for slice sentence
-		sentence_length = sen_slice_length * self.truncate_step
-		half_sen_length = sentence_length / 2
-		data_slice_size = sentence_length * self.batch_size
+		sen_length = sen_slice_length * self.truncate_step
+		sen_length_padding = sen_length / 2
+		data_slice_size = sen_length * self.batch_size
 		data_size = seq_size / data_slice_size * data_slice_size
 
 		mat_in_total, mat_in_f_total, mat_in_f_2_total, label_total = self.tokens2nndata(train_text, train_tags)
@@ -234,14 +234,14 @@ class RnnWFWS2(RnnWS):
 		t_in, t_in_f, t_in_f_2, t_l = self.tokens2nndata(test_text, test_tags)
 
 		# total sentence length after reshape
-		total_sent_len = data_size / self.batch_size
-		print "Actural training data size: %s, with total sentence length: %s" % (data_size, total_sent_len)
+		total_sen_len = data_size / self.batch_size
+		print "Actural training data size: %s, with total sentence length: %s" % (data_size, total_sen_len)
 		s_time = time.clock()
 		for i in xrange(epoch):
 
-			for j in xrange(0, total_sent_len - half_sen_length, half_sen_length):
+			for j in xrange(0, total_sen_len - sen_length_padding, sen_length_padding):
 				# reshape to matrix: [SEQ][BATCH][FRAME]
-				self.rnn.train_tbptt(j, j+sentence_length)
+				self.rnn.train_tbptt(j, j+sen_length)
 
 			if DEBUG:
 				err = self.test_model(t_in, t_in_f, t_in_f_2, t_l)
