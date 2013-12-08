@@ -207,6 +207,7 @@ class RNNEMBWF(RNNEMB):
 			W_in_f = params[-1]
 
 		self.W_in_f = W_in_f
+		self.params.append(self.W_in_f)
 
 	def rnn_step(self, u_tm, uf_tm, h_tm):
 
@@ -254,7 +255,7 @@ class RNNEMBWF(RNNEMB):
 		# cross-entropy loss
 		part_cost = T.mean(T.nnet.categorical_crossentropy(part_p_y_given_x, l_y))
 		# add L2 norm
-		part_L2_sqr = (self.W_in ** 2).sum() + (self.W_h ** 2).sum() + (self.W_out ** 2).sum()
+		part_L2_sqr = (self.W_in ** 2).sum() + (self.W_in_f ** 2).sum() + (self.W_h ** 2).sum() + (self.W_out ** 2).sum()
 		part_cost = part_cost + l2_reg * part_L2_sqr
 
 		params = [self.W_in, self.W_in_f, self.W_h, self.W_out, self.b_h, self.b_out]
@@ -311,11 +312,13 @@ class RNNEMBWF2(RNNEMBWF):
 			)
 			W_in_f_2 = theano.shared(value = W_in_f_2_values, name='W_in', borrow=True)
 		else:
-			W_in_f = params[-1]
-			W_in_f_2 = params[-2]
+			W_in_f = params[-2]
+			W_in_f_2 = params[-1]
 
 		self.W_in_f = W_in_f
 		self.W_in_f_2 = W_in_f_2
+		self.params.append(self.W_in_f)
+		self.params.append(self.W_in_f_2)
 
 	def rnn_step(self, u_tm, uf_tm, uf_2_tm, h_tm):
 		lin_h = T.dot(self.C[u_tm], self.W_in) + T.dot(self.C[uf_tm], self.W_in_f) + T.dot(self.C[uf_2_tm], self.W_in_f_2) + T.dot(h_tm, self.W_h) + self.b_h
@@ -337,21 +340,17 @@ class RNNEMBWF2(RNNEMBWF):
 		return T.mean(T.neq(self.y_pred, y))
 
 	def build_tbptt(self, seq_in, seq_in_f, seq_in_f_2, seq_l, truncate_step=5, train_emb=False, l2_reg=0.000001):
-
 		x = T.imatrix()
 		xf = T.imatrix()
 		xf_2 = T.imatrix()
 		y = T.imatrix()
 		h_init = T.matrix()
 		index = T.lscalar()
-
-		self.truncate_step = truncate_step
-
 		# output of hidden layer and output layer
 		part_h, _ = theano.scan(self.rnn_step, sequences=[x, xf, xf_2], outputs_info=h_init)
 		if self.dropout:
 			part_h = self.corrupt(part_h, 0.5)
-
+			
 		part_p_y_given_x, _ = theano.scan(self.rnn_softmax, sequences=part_h)
 		# apply the last output of hidden layer as the next input 
 		out_h = part_h[-1]
@@ -363,7 +362,7 @@ class RNNEMBWF2(RNNEMBWF):
 		# cross-entropy loss
 		part_cost = T.mean(T.nnet.categorical_crossentropy(part_p_y_given_x, l_y))
 		# add L2 norm
-		part_L2_sqr = (self.W_in ** 2).sum() + (self.W_h ** 2).sum() + (self.W_out ** 2).sum()
+		part_L2_sqr = (self.W_in ** 2).sum() + (self.W_in_f ** 2).sum() + (self.W_in_f_2 ** 2).sum() + (self.W_h ** 2).sum() + (self.W_out ** 2).sum()
 		part_cost = part_cost + l2_reg * part_L2_sqr
 
 		params = [self.W_in, self.W_in_f, self.W_in_f_2, self.W_h, self.W_out, self.b_h, self.b_out]
@@ -388,3 +387,5 @@ class RNNEMBWF2(RNNEMBWF):
 												xf_2 : seq_in_f_2[index : index+truncate_step],
 												y : seq_l[index : index+truncate_step]
 											})
+
+		self.truncate_step = truncate_step
