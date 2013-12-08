@@ -56,12 +56,11 @@ test_tags = unicode(f.read(), 'utf-8')
 test_tags = test_tags.replace(" ", "")
 f.close()
 
-rnnws = RnnWFWS(nlpdict, n_emb=50, n_hidden=200, lr=0.2, batch_size=10, 
-	l2_reg=0.000001, truncate_step=4, train_emb=False, dropout=False,
-	emb_file_path="./data/RnnEmbTrLM.n_hidden600.embsize50.in_size4633.emb.obj"
+rnnws = RnnWFWS2(nlpdict, n_emb=200, n_hidden=1200, lr=0.5, batch_size=150, 
+	l2_reg=0.000001, truncate_step=4, train_emb=True, dropout=True,
+	backup_file_path="./data/RnnWFWS2.model.epoch30.n_hidden1200.ssl20.truncstep4.drTrue.embsize200.in_size4633.r7g200.c93.obj"
 )
 
-rnnws.traintext(train_text[:2000], train_tags[:2000], train_text[:1000], train_tags[:1000], 
-	sen_slice_length=20, epoch=70, lr_coef=0.93, 
-	DEBUG=True, SAVE=False, SINDEX=1, r_init="ntemb.7g50.c93"
-)
+sents = test_text.split('\n')
+test_sen = sents[1022]
+print rnnws.segment(test_sen, False)

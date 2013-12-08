@@ -46,14 +46,12 @@ def formtext(text, tags):
 	'''
 	lidx = 0
 	otext = []
-	tags = tags[1:]
 	for i in range(len(tags)):
 		if tags[i] == 0 or tags[i] == 3:
 			otext.append(text[lidx:i+1])
-			otext.append("  ")
 			lidx = i+1
 
-	return "".join(otext)
+	return "  ".join(otext)
 
 
 if __name__ == "__main__":

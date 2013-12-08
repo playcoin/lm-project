@@ -76,30 +76,29 @@ class RnnWS(object):
 		error = rnn.errors(u,y)
 		self.test_model = theano.function([u, y], error)
 		print "Compile Test function complete!"
-
-		probs = rnn.y_prob[T.arange(y.shape[0]), y]
-		self.rnn_prob = theano.function([u, y], probs)
-		print "Compile likelihood function complete!"
-
+		self.rnn_prob_matrix = theano.function([u], rnn.y_prob)
+		print "Compile probabilities matrix function complete!"
 		self.rnn_pred = theano.function([u], rnn.y_pred)
 		print "Compile predict function complete!"
 
 
-	def tokens2nndata(self, train_text, train_tags):
+	def tokens2nndata(self, train_text, train_tags=None):
 		'''
 		@summary: 将输入文本转化为id序列
 		'''
 		# 将训练文本再预处理一下, 单个回车符编程两个，回车符的标签为0
 		train_text = train_text.replace("\n", "\n\n") + "\n"
-		train_tags = "0" + train_tags.replace("\n", "00")
-
 		tids = [self.ndict[token] for token in train_text]
-		tags = [int(tag) for tag in train_tags]
-
 		vec_in = theano.shared(numpy.asarray(tids, dtype="int32"), borrow=True)
-		vec_out = theano.shared(numpy.asarray(tags, dtype="int32"), borrow=True)
 
-		return vec_in.get_value(borrow=True), vec_out.get_value(borrow=True)
+		if train_tags:
+			train_tags = "0" + train_tags.replace("\n", "00")
+			tags = [int(tag) for tag in train_tags]
+			vec_out = theano.shared(numpy.asarray(tags, dtype="int32"), borrow=True)
+
+			return vec_in.get_value(borrow=True), vec_out.get_value(borrow=True)
+
+		return vec_in.get_value(borrow=True)
 
 	def reshape(self, dataset, data_size):
 		'''
@@ -149,7 +148,6 @@ class RnnWS(object):
 				err = self.test_model(*test_dataset)
 				e_time = time.clock()
 				print "Error rate in epoch %s, is %.5f. Training time so far is: %.2fm" % ( i+SINDEX, err, (e_time-s_time) / 60.)
-				# print formtext(test_text, self.rnn_pred(t_in))
 
 			if SAVE:
 				class_name = self.__class__.__name__
@@ -174,6 +172,52 @@ class RnnWS(object):
 		if show_result:
 			print formtext(test_text, self.rnn_pred(t_in))
 		print "Error rate %.5f" % err
+
+	def segment(self, text, decode=True, unform_text=None):
+		'''
+		@summary: 分词 BMES tag, S:0, B:1, M:2, E:3
+				先解码，在格式化
+		'''
+		self.initRnn()
+		data_input = self.tokens2nndata(text)
+		unform_text = unform_text or text
+
+		if not decode:
+			tags = self.rnn_pred(*data_input)
+			return formtext(unform_text, tags)
+
+		prob_matrix = self.rnn_prob_matrix(*data_input)
+		# 解码
+		tags = []
+		# 第一个只可能是 S, B
+		prob_matrix[0][2] = 0.
+		prob_matrix[0][3] = 0.
+		for i in xrange(1, len(prob_matrix)):
+			prob_matrix[i][0] += max(prob_matrix[i-1][0], prob_matrix[i-1][3])
+			prob_matrix[i][1] += max(prob_matrix[i-1][0], prob_matrix[i-1][3])
+			prob_matrix[i][2] += max(prob_matrix[i-1][1], prob_matrix[i-1][2])
+			prob_matrix[i][3] += max(prob_matrix[i-1][1], prob_matrix[i-1][2])
+
+		c0=0
+		c1=3	#two choice
+		for i in xrange(len(prob_matrix)-1, -1, -1):
+			if(prob_matrix[i][c0] < prob_matrix[i][c1]):
+				c0 = c1
+
+			tags.append(c0)
+			if c0 == 0:
+				c1 = 3 
+			elif c0 == 1:
+				c0 = 0
+				c1 = 3
+			elif c0 == 2:
+				c1 = 1
+			else:
+				c0 = 1
+				c1 = 2
+
+		tags.reverse()
+		return formtext(unform_text, tags)
 
 	def savemodel(self, filepath):
 		backupfile = open(filepath, 'w')
