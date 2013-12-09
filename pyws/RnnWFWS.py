@@ -148,3 +148,28 @@ class RnnWFWS2(RnnWS):
 			return vec_in.get_value(borrow=True), vec_in_f.get_value(borrow=True), vec_in_f_2.get_value(borrow=True), vec_out.get_value(borrow=True)
 		else:
 			return vec_in.get_value(borrow=True), vec_in_f.get_value(borrow=True), vec_in_f_2.get_value(borrow=True)
+
+class RnnWFWBWS(RnnWFWS2):	
+
+	def tokens2nndata(self, train_text, train_tags=None):
+		'''
+		@summary: 将输入文本转化为id序列
+		'''
+		# 将训练文本再预处理一下, 单个回车符编程两个，回车符的标签为0
+		train_text = train_text.strip()
+		train_text = '\n' + train_text.replace("\n", "\n\n") + '\n'
+		tids = [self.ndict[token] for token in train_text]
+		# input
+		vec_in = theano.shared(numpy.asarray(tids[:-2], dtype="int32"), borrow=True)
+		vec_in_f = theano.shared(numpy.asarray(tids[1:-1], dtype="int32"), borrow=True)
+		vec_in_f_2 = theano.shared(numpy.asarray(tids[2:], dtype="int32"), borrow=True)
+		# tag
+		if train_tags:
+			train_tags = train_tags.strip()
+			train_tags = train_tags.replace("\n", "00")
+			tags = [int(tag) for tag in train_tags]
+			vec_out = theano.shared(numpy.asarray(tags[:-2], dtype="int32"), borrow=True)
+	
+			return vec_in.get_value(borrow=True), vec_in_f.get_value(borrow=True), vec_in_f_2.get_value(borrow=True), vec_out.get_value(borrow=True)
+		else:
+			return vec_in.get_value(borrow=True), vec_in_f.get_value(borrow=True), vec_in_f_2.get_value(borrow=True)

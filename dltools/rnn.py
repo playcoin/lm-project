@@ -38,42 +38,52 @@ class RNN(object):
 
 		W_in, W_h, W_out, b_h, b_out, h_0 = params or (None, None, None, None, None, None)
 
-		# If there is a 'None' in params, initial all params anyway.
-		if None in (W_in, W_h, W_out, b_h, b_out, h_0):
-			# Weight initial
+		# Weight initial
+		if not W_in:
 			W_in_values = numpy.asarray(rng.uniform(
 				low  = -numpy.sqrt(6.0 / (n_in + n_h)),
 				high  = numpy.sqrt(6.0 / (n_in + n_h)),
 				size = (n_in, n_h)), dtype = theano.config.floatX
 			)
+			W_in = theano.shared(value = W_in_values, name='W_in', borrow=True)
+			# if the activation is sigmoid, the W_in_values should multiply 4
+			# if activation == theano.tensor.nnet.sigmoid:
+			# 	W_in_values *= 4
+			# 	W_h_values *= 4
+			# 	W_out_values *= 4
+
+		if not W_h:
 			W_h_values = numpy.asarray(rng.uniform(
 				low  = -numpy.sqrt(6.0 / (n_h + n_h)),
 				high  = numpy.sqrt(6.0 / (n_h + n_h)),
 				size = (n_h, n_h)), dtype = theano.config.floatX
 			)
+			W_h = theano.shared(value = W_h_values, name='W_h', borrow=True)
+
+		if not W_out:
 			W_out_values = numpy.asarray(rng.uniform(
 				low  = -numpy.sqrt(6.0 / (n_h + n_out)),
 				high  = numpy.sqrt(6.0 / (n_h + n_out)),
 				size = (n_h, n_out)), dtype = theano.config.floatX
 			)
-			# if the activation is sigmoid, the W_in_values should multiply 4
-			if activation == theano.tensor.nnet.sigmoid:
-				W_in_values *= 4
-				W_h_values *= 4
-				W_out_values *= 4
-
-			W_in = theano.shared(value = W_in_values, name='W_in', borrow=True)
-			W_h = theano.shared(value = W_h_values, name='W_h', borrow=True)
 			W_out = theano.shared(value = W_out_values, name='W_out', borrow=True)
 
-			# biases and h_0 initialed by 0.
+		if not b_h:
 			b_h_values = numpy.zeros((n_h,), dtype = theano.config.floatX)
-			b_out_values = numpy.zeros((n_out,), dtype = theano.config.floatX)
-			h_0_values = numpy.zeros((batch_size, n_h), dtype = theano.config.floatX)
-
 			b_h = theano.shared(value = b_h_values, name='b_h', borrow=True)
+
+		if not b_out:
+			b_out_values = numpy.zeros((n_out,), dtype = theano.config.floatX)
 			b_out = theano.shared(value = b_out_values, name='b_out', borrow=True)
+
+		if not h_0:
+			# biases and h_0 initialed by 0.
+			h_0_values = numpy.zeros((batch_size, n_h), dtype = theano.config.floatX)
 			h_0 = theano.shared(value = h_0_values, name='h_0', borrow=True)
+			
+			
+
+
 
 		self.W_in = W_in
 		self.W_h = W_h
