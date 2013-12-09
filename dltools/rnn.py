@@ -82,9 +82,6 @@ class RNN(object):
 			h_0 = theano.shared(value = h_0_values, name='h_0', borrow=True)
 			
 			
-
-
-
 		self.W_in = W_in
 		self.W_h = W_h
 		self.W_out = W_out

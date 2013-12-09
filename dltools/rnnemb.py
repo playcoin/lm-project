@@ -280,7 +280,7 @@ class RNNEMBWF(RNNEMB):
 												y : seq_l[index : index+truncate_step]
 											})
 
-class RNNEMBWF2(RNNEMBWF):
+class RNNEMBWF2(RNNEMB):
 	'''
 	@summary: Rnn with character Embedding. Ajust embedding in the training time.
 	'''
@@ -291,13 +291,15 @@ class RNNEMBWF2(RNNEMBWF):
 		'''
 
 		# RNN init 
-		super(RNNEMBWF, self).__init__(rng, 
+		super(RNNEMBWF2, self).__init__(rng, 
 			n_in, n_emb, n_h, n_out, batch_size, lr, dropout,  
 			params = (params and params[:-2] or None), 
 			activation = activation, embeddings = embeddings)
 
 		# 再初始化一个前看权值矩阵
-		if params is None:
+		W_in_f = params and params[-2] or None
+		W_in_f_2 = params and params[-1] or None
+		if W_in_f is None:
 			W_in_f_values = numpy.asarray(rng.uniform(
 				low  = -numpy.sqrt(6.0 / (n_emb + n_h)),
 				high  = numpy.sqrt(6.0 / (n_emb + n_h)),
@@ -305,15 +307,13 @@ class RNNEMBWF2(RNNEMBWF):
 			)
 			W_in_f = theano.shared(value = W_in_f_values, name='W_in', borrow=True)
 
+		if W_in_f_2 is None:
 			W_in_f_2_values = numpy.asarray(rng.uniform(
 				low  = -numpy.sqrt(6.0 / (n_emb + n_h)),
 				high  = numpy.sqrt(6.0 / (n_emb + n_h)),
 				size = (n_emb, n_h)), dtype = theano.config.floatX
 			)
 			W_in_f_2 = theano.shared(value = W_in_f_2_values, name='W_in', borrow=True)
-		else:
-			W_in_f = params[-2]
-			W_in_f_2 = params[-1]
 
 		self.W_in_f = W_in_f
 		self.W_in_f_2 = W_in_f_2
