@@ -16,15 +16,13 @@ import theano.sandbox.cuda
 #############
 # text
 f = file('./data/pku_train.ltxt')
-text = unicode(f.read(), 'utf-8')
-text = text.replace(" ", "")
+text = unicode(f.read(), 'utf-8').replace(" ", "")
 f.close()
 
 # NlpDict
-nlpdict = NlpDict()
+nlpdict = NlpDict(comb=True)
 nlpdict.buildfromtext(text, freq_thres=0)
 print "NlpDict size is:", nlpdict.size()
-# nlpdict.transEmbedding('./data/pku_closed_word_embedding100.ltxt', "./data/pku_embedding_100.obj")
 train_text = text
 test_text = text[:501]
 print "Train size is: %s, testing size is: %s" % (len(train_text), len(test_text))
@@ -39,12 +37,22 @@ theano.sandbox.cuda.use('gpu0')
 
 
 # test random init
-mlp_ngram = MlpNgram(nlpdict, N=7, n_emb=300, n_hidden=1200, lr=0.5, batch_size=200, 
-	dropout=False, 
-	backup_file_path="./data/MlpNgram/Mlp7gram.model.epoch96.n_hidden1200.drFalse.n_emb300.in_size4633.rTrue.obj")
+mlp_ngram = MlpNgram(nlpdict, N=7, n_emb=200, n_hidden=1200, lr=0.5, batch_size=200, 
+	dropout=False, emb_file_path=None)
 
-mlp_ngram.lr = 0.5 * 0.96 ** 96
-mlp_ngram.traintext(train_text, test_text, DEBUG=True, SAVE=True, SINDEX=97, epoch=4, lr_coef=0.96)
+mlp_ngram.traintext(train_text, test_text, DEBUG=True, SAVE=True, SINDEX=1, epoch=100, lr_coef=0.96)
+
+# 100
+mlp_ngram = MlpNgram(nlpdict, N=7, n_emb=100, n_hidden=1200, lr=0.5, batch_size=200, 
+	dropout=False, emb_file_path=None)
+
+mlp_ngram.traintext(train_text, test_text, DEBUG=True, SAVE=True, SINDEX=1, epoch=100, lr_coef=0.96)
+
+# 50
+mlp_ngram = MlpNgram(nlpdict, N=7, n_emb=100, n_hidden=900, lr=0.5, batch_size=200, 
+	dropout=False, emb_file_path=None)
+
+mlp_ngram.traintext(train_text, test_text, DEBUG=True, SAVE=True, SINDEX=1, epoch=100, lr_coef=0.96)
 
 ###########
 # Dropout #

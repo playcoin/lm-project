@@ -8,17 +8,28 @@ import cPickle
 import re
 import numpy
 
+
+UNKNOWN_STR = "$_UNKNOWN_$"
+SDIGIT_STR = "$_SDIGIT_$"
+BDIGIT_STR = "$_BDIGIT_$"
+
+SDIGIT_SET = {"0", "1", "2", "3", "4", "5", "6", "7", "8", "9"}
+BDIGIT_SET = {u"０", u"１", u"２", u"３", u"４", u"５", u"６", u"７", u"８", u"９"}
+
 class NlpDict(object):
 	'''
 	@summary: 字典类，包括一些基本的字典操作，存放token的ID
 	'''
 
-	def __init__(self, dict_file_path=None):
+	def __init__(self, dict_file_path=None, comb=False):
 		'''
 		@summary: 构造函数，允许接收一个字符串作为词典备份路径作为参数。如果该参数不为空，则需要加载
 
 		@param dict_file_path:
+		@param comb: 是否合并数字
 		'''
+		self.comb = comb
+
 		if dict_file_path:
 			# 调用load方法，并赋值给self
 			self.loadNlpDict(dict_file_path)
@@ -32,9 +43,19 @@ class NlpDict(object):
 		self.ndict = {}	# token to ID
 		self.ndict_inv = [] # ID to token
 		# special token, '$_START_$' and '$_END_$' is useless in training now.
-		self.ndict_inv.extend(["$_UNKNOWN_$", "$_START_$", "$_END_$"])
+		self.ndict_inv.append(UNKNOWN_STR)
+		if self.comb:
+			self.ndict_inv.extend([SDIGIT_STR, BDIGIT_STR])
 		for elm in self.ndict_inv:
 			self.ndict[elm] = len(self.ndict)
+
+	def __combdigit(self, char):
+		if char in SDIGIT_SET:
+			return SDIGIT_STR
+		elif char in BDIGIT_SET:
+			return BDIGIT_STR
+		else:
+			return char
 
 	def __len__(self):
 		'''
@@ -62,7 +83,7 @@ class NlpDict(object):
 		if index >= 0 and index <= len(self.ndict_inv):
 			return self.ndict_inv[index]
 		else:
-			return "$_UNKNOWN_$"
+			return UNKNOWN_STR
 
 	def getindex(self, token):
 		'''
@@ -70,11 +91,13 @@ class NlpDict(object):
 		
 		@param token: token 文本
 		'''
+		if self.comb: # 检查是否要合并
+			token = self.__combdigit(token)
 
 		if token in self.ndict:
 			return self.ndict[token]
 		else:
-			return self.ndict["$_UNKNOWN_$"]
+			return self.ndict[UNKNOWN_STR]
 
 	def addtoken(self, token):
 		'''
@@ -99,21 +122,7 @@ class NlpDict(object):
 		@summary: 获取未知符的编号
 		'''
 
-		return self.getindex("$_UNKNOWN_$")
-
-	def getstartindex(self):
-		'''
-		@summary: 获取开始符的编号
-		'''
-
-		return self.getindex("$_START_$")
-
-	def getendindex(self):
-		'''
-		@summary: 获取结束符的编号
-		'''
-
-		return self.getindex("$_END_$")
+		return self.getindex(UNKNOWN_STR)
 
 	def buildfromfile(self, text_file_path, white_space=False, freq_thres=0):
 		'''
@@ -145,13 +154,14 @@ class NlpDict(object):
 		# 处理空白字符，如果需要的话，就留着
 		if not white_space:
 			text = re.sub(r'\t| ', '', text)
-		# 暂时先不清楚换行符
-		# text = unicode(re.sub(r'\n', '', text), 'utf-8')
 		# 清理低频词
 		if freq_thres > 0:
 			# 计算词频
 			ndict = {}
 			for char in text:
+				if self.comb:	# 检查是否要合并数字
+					char = self.__combdigit(char)
+
 				if char in ndict:
 					ndict[char] += 1
 				else:
@@ -165,6 +175,9 @@ class NlpDict(object):
 				self.addtoken(char)
 		else:	# 阈值为0的话，直接添加即可
 			for char in text:
+				# 检查是否要合并数字
+				if self.comb:
+					char = self.__combdigit(char)
 				self.addtoken(char)
 
 
