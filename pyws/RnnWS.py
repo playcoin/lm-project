@@ -51,7 +51,7 @@ class RnnWS(object):
 		if self.rnn is not None:
 			return
 
-		print "RnnWS init start!"
+		print "%s init start!" % self.__class__.__name__
 		u = T.ivector('u')
 		y = T.ivector('y')
 		l = T.imatrix('l')

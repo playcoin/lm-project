@@ -18,10 +18,6 @@ from RnnWS import RnnWS
 
 class RnnWFWS(RnnWS):
 
-	def __init__(self, ndict, n_emb, n_hidden, lr, batch_size, l2_reg=0.000001, train_emb=True, emb_file_path = None, dropout=False, truncate_step=4, backup_file_path=None):
-
-		super(RnnWFWS, self).__init__(ndict, n_emb, n_hidden, lr, batch_size, l2_reg, train_emb, emb_file_path, dropout, truncate_step, backup_file_path)
-
 	def initRnn(self, no_train=False):
 		'''
 		@summary: Initiate RNNEMB model 
@@ -29,7 +25,7 @@ class RnnWFWS(RnnWS):
 		if self.rnn is not None:
 			return
 
-		print "RnnWFWS init start!"
+		print "%s init start!" % self.__class__.__name__
 		u = T.ivector('u')
 		uf = T.ivector('uf')
 		y = T.ivector('y')
@@ -83,10 +79,6 @@ class RnnWFWS(RnnWS):
 
 class RnnWFWS2(RnnWS):
 
-	def __init__(self, ndict, n_emb, n_hidden, lr, batch_size, l2_reg=0.000001, train_emb=True, emb_file_path = None, dropout=False, truncate_step=4, backup_file_path=None):
-
-		super(RnnWFWS2, self).__init__(ndict, n_emb, n_hidden, lr, batch_size, l2_reg, train_emb, emb_file_path, dropout, truncate_step, backup_file_path)
-
 	def initRnn(self, no_train=False):
 		'''
 		@summary: Initiate RNNEMB model 
@@ -94,7 +86,7 @@ class RnnWFWS2(RnnWS):
 		if self.rnn is not None:
 			return
 
-		print "RnnWFWS2 init start!"
+		print "%s init start!" % self.__class__.__name__
 		u = T.ivector('u')
 		uf = T.ivector('uf')
 		uf_2 = T.ivector('uf_2')
@@ -168,7 +160,7 @@ class RnnWFWBWS(RnnWFWS2):
 			train_tags = train_tags.strip()
 			train_tags = train_tags.replace("\n", "00")
 			tags = [int(tag) for tag in train_tags]
-			vec_out = theano.shared(numpy.asarray(tags[:-2], dtype="int32"), borrow=True)
+			vec_out = theano.shared(numpy.asarray(tags, dtype="int32"), borrow=True)
 	
 			return vec_in.get_value(borrow=True), vec_in_f.get_value(borrow=True), vec_in_f_2.get_value(borrow=True), vec_out.get_value(borrow=True)
 		else:
