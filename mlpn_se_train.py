@@ -28,7 +28,7 @@ test_text = text[:501]
 print "Train size is: %s, testing size is: %s" % (len(train_text), len(test_text))
 
 # use gpu
-theano.sandbox.cuda.use('gpu0')
+theano.sandbox.cuda.use('gpu1')
 # test random init
 # mlp_ngram = MlpNgram(nlpdict, N=5, n_emb=50, n_hidden=800, lr=0.5, batch_size=200, 
 # 	dropout=False, emb_file_path=None)
@@ -38,18 +38,6 @@ theano.sandbox.cuda.use('gpu0')
 
 # test random init
 mlp_ngram = MlpNgram(nlpdict, N=7, n_emb=200, n_hidden=1200, lr=0.5, batch_size=200, 
-	dropout=False, emb_file_path=None)
-
-mlp_ngram.traintext(train_text, test_text, DEBUG=True, SAVE=True, SINDEX=1, epoch=100, lr_coef=0.96)
-
-# 100
-mlp_ngram = MlpNgram(nlpdict, N=7, n_emb=100, n_hidden=1200, lr=0.5, batch_size=200, 
-	dropout=False, emb_file_path=None)
-
-mlp_ngram.traintext(train_text, test_text, DEBUG=True, SAVE=True, SINDEX=1, epoch=100, lr_coef=0.96)
-
-# 50
-mlp_ngram = MlpNgram(nlpdict, N=7, n_emb=100, n_hidden=900, lr=0.5, batch_size=200, 
 	dropout=False, emb_file_path=None)
 
 mlp_ngram.traintext(train_text, test_text, DEBUG=True, SAVE=True, SINDEX=1, epoch=100, lr_coef=0.96)

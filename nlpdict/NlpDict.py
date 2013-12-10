@@ -12,9 +12,25 @@ import numpy
 UNKNOWN_STR = "$_UNKNOWN_$"
 SDIGIT_STR = "$_SDIGIT_$"
 BDIGIT_STR = "$_BDIGIT_$"
+ENCHAR_STR = "$_ENCHAR_$"
 
 SDIGIT_SET = {"0", "1", "2", "3", "4", "5", "6", "7", "8", "9"}
 BDIGIT_SET = {u"０", u"１", u"２", u"３", u"４", u"５", u"６", u"７", u"８", u"９"}
+ENCHAR_SET = {
+	"a", "b", "c", "d", "e", "f", "g", "h", "i", "j",\
+	"k", "l", "m", "n", "o", "p", "q", "r", "s", "t",\
+	"u", "v", "w", "x", "y", "z",\
+	"A", "B", "C", "D", "E", "F", "G", "H", "I", "J",\
+	"K", "L", "M", "N", "O", "P", "Q", "R", "S", "T",\
+	"U", "V", "W", "X", "Y", "Z",\
+	u"ａ", u"ｂ", u"ｃ", u"ｄ", u"ｅ", u"ｆ", u"ｇ", u"ｈ", u"ｉ", u"ｊ",\
+	u"ｋ", u"ｌ", u"ｍ", u"ｎ", u"ｏ", u"ｐ", u"ｑ", u"ｒ", u"ｓ", u"ｔ",\
+	u"ｕ", u"ｖ", u"ｗ", u"ｘ", u"ｙ", u"ｚ",\
+	u"Ａ", u"Ｂ", u"Ｃ", u"Ｄ", u"Ｅ", u"Ｆ", u"Ｇ", u"Ｈ", u"Ｉ", u"Ｊ",\
+	u"Ｋ", u"Ｌ", u"Ｍ", u"Ｎ", u"Ｏ", u"Ｐ", u"Ｑ", u"Ｒ", u"Ｓ", u"Ｔ",\
+	u"Ｕ", u"Ｖ", u"Ｗ", u"Ｘ", u"Ｙ", u"Ｚ"
+}
+
 
 class NlpDict(object):
 	'''
@@ -54,6 +70,8 @@ class NlpDict(object):
 			return SDIGIT_STR
 		elif char in BDIGIT_SET:
 			return BDIGIT_STR
+		elif char in ENCHAR_SET:
+			return ENCHAR_STR
 		else:
 			return char
 
