@@ -11,17 +11,14 @@ import numpy
 import time
 import theano.sandbox.cuda
 
-nlpdict = NlpDict()
-nlpdict.buildfromfile('./data/pku_train_nw.ltxt')
-
-
 #############
 # Trainging #
 #############
+nlpdict = NlpDict(comb=True)
+nlpdict.buildfromfile('./data/pku_train.ltxt')
 # text
 f = file('./data/pku_train_nw.ltxt')
-text = unicode(f.read(), 'utf-8')
-text = text.replace(" ", "")
+text = unicode(f.read(), 'utf-8').replace(" ", "")
 f.close()
 
 len_text = len(text)
@@ -33,10 +30,10 @@ print "Train size is: %s" % len_text
 
 # mlp_ngram = MlpNgram(nlpdict, hvalue_file="./data/pku_embedding.obj", backup_file_path="./data/MlpNgram/Mlp8gram.model.epoch20.n_hidden200.obj")
 # mlp_ngram.traintext(train_text, test_text, DEBUG=True, SAVE=False)
-mlp_ngram = MlpNgram(nlpdict, N=7, n_emb=50, n_hidden=900, lr=0.5, batch_size=200, 
+mlp_ngram = MlpNgram(nlpdict, N=7, n_emb=200, n_hidden=1200, lr=0.5, batch_size=200, 
 	dropout=False, 
-	backup_file_path="./data/Mlp7gram.model.epoch100.n_hidden900.drFalse.n_emb100.in_size4633.rTrue.obj")
-mlp_ngram.dumpembedding("7gram.emb100.h1200.d4633.emb.obj")
+	backup_file_path="./data/MlpNgram/Mlp7gram.model.epoch100.n_hidden1200.drFalse.n_emb200.in_size4613.rTrue")
+mlp_ngram.dumpembedding("7gram.emb200.h1200.d4613.emb.obj")
 
 #############
 #  Testing  #
