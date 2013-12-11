@@ -37,7 +37,7 @@ class NlpDict(object):
 	@summary: 字典类，包括一些基本的字典操作，存放token的ID
 	'''
 
-	def __init__(self, dict_file_path=None, comb=False):
+	def __init__(self, dict_file_path=None, comb=False, comben=True):
 		'''
 		@summary: 构造函数，允许接收一个字符串作为词典备份路径作为参数。如果该参数不为空，则需要加载
 
@@ -45,6 +45,7 @@ class NlpDict(object):
 		@param comb: 是否合并数字
 		'''
 		self.comb = comb
+		self.comben = comben
 
 		if dict_file_path:
 			# 调用load方法，并赋值给self
@@ -70,7 +71,7 @@ class NlpDict(object):
 			return SDIGIT_STR
 		elif char in BDIGIT_SET:
 			return BDIGIT_STR
-		elif char in ENCHAR_SET:
+		elif self.comben and (char in ENCHAR_SET):
 			return ENCHAR_STR
 		else:
 			return char
