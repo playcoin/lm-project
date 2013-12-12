@@ -61,6 +61,8 @@ class NlpDict(object):
 		self.ndict_inv = [] # ID to token
 		# special token, '$_START_$' and '$_END_$' is useless in training now.
 		self.ndict_inv.append(UNKNOWN_STR)
+		# self.ndict_inv.append(UNKNOWN_STR+'1')
+		# self.ndict_inv.append(UNKNOWN_STR+'2')
 		if self.comb:
 			self.ndict_inv.extend([SDIGIT_STR, BDIGIT_STR])
 		for elm in self.ndict_inv:

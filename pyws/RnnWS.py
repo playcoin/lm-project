@@ -186,12 +186,12 @@ class RnnWS(object):
 			tags = self.rnn_pred(*data_input)
 			return formtext(unform_text, tags)
 
-		prob_matrix = self.rnn_prob_matrix(*data_input)
+		prob_matrix = numpy.log(self.rnn_prob_matrix(*data_input))
 		# 解码
 		tags = []
 		# 第一个只可能是 S, B
-		prob_matrix[0][2] = 0.
-		prob_matrix[0][3] = 0.
+		prob_matrix[0][2] = -999999.
+		prob_matrix[0][3] = -999999.
 		for i in xrange(1, len(prob_matrix)):
 			prob_matrix[i][0] += max(prob_matrix[i-1][0], prob_matrix[i-1][3])
 			prob_matrix[i][1] += max(prob_matrix[i-1][0], prob_matrix[i-1][3])
