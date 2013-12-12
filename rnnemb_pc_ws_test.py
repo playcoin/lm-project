@@ -58,7 +58,7 @@ f.close()
 
 rnnws = RnnWFWS2(nlpdict, n_emb=200, n_hidden=1200, lr=0.5, batch_size=150, 
 	l2_reg=0.000001, truncate_step=4, train_emb=True, dropout=True,
-	backup_file_path="./data/RnnWFWS2.model.epoch26.n_hidden1200.ssl20.truncstep4.drTrue.embsize200.in_size4613.rnd4613.7g200.c92.obj"
+	backup_file_path="./data/RnnWFWS2/RnnWFWS2.model.epoch60.n_hidden1200.ssl20.truncstep4.drTrue.embsize200.in_size4613.rnd4613.7g200.c92.obj"
 )
 
 sents = test_text.split('\n')
@@ -68,11 +68,11 @@ for sent in sents:
 	otext.append(rnnws.segment(sent, False))
 	odtext.append(rnnws.segment(sent, True))
 # tags
-f = file('./data/pku_test_output_4613.ltxt', 'wb')
+f = file('./data/pku_test_output_4613_e60.ltxt', 'wb')
 f.write('\n'.join(otext).encode('utf-8'))
 f.close()
 
 # tags
-f = file('./data/pku_test_output_decode_4613.ltxt', 'wb')
+f = file('./data/pku_test_output_decode_4613_e60.ltxt', 'wb')
 f.write('\n'.join(odtext).encode('utf-8'))
 f.close()

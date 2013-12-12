@@ -57,9 +57,18 @@ f = file('./data/pku_test_ws_tag.ltxt')
 test_tags = unicode(f.read(), 'utf-8').replace(" ", "")
 f.close()
 
+rnnlm = RnnEmbTrLM(nlpdict, n_emb=200, n_hidden=1200, lr=0.2, batch_size=150, 
+	l2_reg=0.000001, truncate_step=4, train_emb=True, dropout=True,
+	backup_file_path="./data/RnnEmbTrLM/RnnEmbTrLM.model.epoch100.n_hidden1200.ssl20.truncstep4.drTrue.embsize200.in_size4566.r7g200.c94.obj"
+)
+# 再读参数
+# init_params = (rnnlm.rnnparams[0], rnnlm.rnnparams[1], None, rnnlm.rnnparams[3], None, None, None, None)
+rnnlm.dumpembeddings("./data/RnnEmbTrLM.n_hidden1200.embsize200.in_size4566.embeddings.obj")
+
+
 rnnws = RnnWFWS2(nlpdict, n_emb=200, n_hidden=1200, lr=0.5, batch_size=158, 
 	l2_reg=0.000001, truncate_step=4, train_emb=True, dropout=True,
-	emb_file_path="./data/7gram.emb200.h1200.d4613.emb.obj"
+	emb_file_path="./data/RnnEmbTrLM.n_hidden1200.embsize200.in_size4566.embeddings.obj"
 )
 
 # 带验证集一起训练

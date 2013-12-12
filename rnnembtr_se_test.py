@@ -31,16 +31,16 @@ nlpdict.buildfromtext(train_text)
 print "Dict size is: %s, Train size is: %s" % (nlpdict.size(), len_text)
 
 # use gpu
-theano.sandbox.cuda.use('gpu0')
+theano.sandbox.cuda.use('gpu1')
 
 # training case 4
 rnnlm = RnnEmbTrLM(nlpdict, n_emb=200, n_hidden=1200, lr=0.5, batch_size=150, 
 	l2_reg=0.000001, truncate_step=4, train_emb=True, dropout=True,
-	emb_file_path="./data/7gram.emb200.h1200.d4613.emb.obj"
+	emb_file_path="./data/7gram.emb200.h1200.d4566.emb.obj"
 )
 rnnlm.traintext(train_text, test_text, 
-	add_se=False, sen_slice_length=20, epoch=100, lr_coef=0.95, 
-	DEBUG=True, SAVE=True, SINDEX=1, r_init="7g200.c95"
+	add_se=False, sen_slice_length=20, epoch=100, lr_coef=0.94, 
+	DEBUG=True, SAVE=True, SINDEX=1, r_init="7g200.c94"
 )
 # rnnlm = RnnEmbTrLM(nlpdict, n_emb=nlpdict.size(), n_hidden=300, lr=0.2, batch_size=150, 
 # 	l2_reg=0.0000001, truncate_step=4, train_emb=True, dropout=False,

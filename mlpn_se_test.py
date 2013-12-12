@@ -32,8 +32,8 @@ print "Train size is: %s" % len_text
 # mlp_ngram.traintext(train_text, test_text, DEBUG=True, SAVE=False)
 mlp_ngram = MlpNgram(nlpdict, N=7, n_emb=200, n_hidden=1200, lr=0.5, batch_size=200, 
 	dropout=False, 
-	backup_file_path="./data/MlpNgram/Mlp7gram.model.epoch100.n_hidden1200.drFalse.n_emb200.in_size4613.rTrue.obj")
-mlp_ngram.dumpembedding("7gram.emb200.h1200.d4613.emb.obj")
+	backup_file_path="./data/MlpNgram/Mlp7gram.model.epoch100.n_hidden1200.drFalse.n_emb200.in_size4566.rTrue.obj")
+mlp_ngram.dumpembedding("7gram.emb200.h1200.d4566.emb.obj")
 
 #############
 #  Testing  #
