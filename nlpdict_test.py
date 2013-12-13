@@ -3,7 +3,7 @@
 
 from nlpdict.NlpDict import NlpDict
 
-nlpdict = NlpDict(comb=True, comben=False)
+nlpdict = NlpDict(comb=True, comben=True)
 nlpdict.buildfromfile('./data/pku_train.ltxt', freq_thres=0)
 print "Nlpdict size is:", nlpdict.size()
 
