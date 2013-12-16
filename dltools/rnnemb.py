@@ -285,7 +285,7 @@ class RNNEMBWF2(RNNEMB):
 	@summary: Rnn with character Embedding. Ajust embedding in the training time.
 	'''
 
-	def __init__(self, rng, n_in, n_emb, n_h, n_out, batch_size, lr, dropout=False, params=None, activation=T.tanh, embeddings=None):
+	def __init__(self, rng, n_in, n_emb, n_h, n_out, batch_size, lr, dropout=False, params=None, activation=T.tanh, embeddings=None, dr_rate=0.5):
 		'''
 		@summary: Construct Method. Has same parameters in RNN except "embeddings"
 		'''
@@ -319,6 +319,7 @@ class RNNEMBWF2(RNNEMB):
 		self.W_in_f_2 = W_in_f_2
 		self.params.append(self.W_in_f)
 		self.params.append(self.W_in_f_2)
+		self.dr_rate = dr_rate	
 
 	def rnn_step(self, u_tm, uf_tm, uf_2_tm, h_tm):
 		lin_h = T.dot(self.C[u_tm], self.W_in) + T.dot(self.C[uf_tm], self.W_in_f) + T.dot(self.C[uf_2_tm], self.W_in_f_2) + T.dot(h_tm, self.W_h) + self.b_h
@@ -328,8 +329,9 @@ class RNNEMBWF2(RNNEMB):
 	def errors(self, u, uf, uf_2, y):
 		h, _ = theano.scan(self.rnn_step, sequences=[u, uf, uf_2], outputs_info=self.h_0[0])
 
+		inv_dr = 1. / self.dr_rate
 		if self.dropout:
-			self.y_prob = T.nnet.softmax(T.dot(h, self.W_out / 2.) + self.b_out)
+			self.y_prob = T.nnet.softmax(T.dot(h, self.W_out / inv_dr) + self.b_out)
 		else:
 			self.y_prob = T.nnet.softmax(T.dot(h, self.W_out) + self.b_out)
 
@@ -349,7 +351,7 @@ class RNNEMBWF2(RNNEMB):
 		# output of hidden layer and output layer
 		part_h, _ = theano.scan(self.rnn_step, sequences=[x, xf, xf_2], outputs_info=h_init)
 		if self.dropout:
-			part_h = self.corrupt(part_h, 0.5)
+			part_h = self.corrupt(part_h, self.dr_rate)
 			
 		part_p_y_given_x, _ = theano.scan(self.rnn_softmax, sequences=part_h)
 		# apply the last output of hidden layer as the next input 
@@ -362,9 +364,7 @@ class RNNEMBWF2(RNNEMB):
 		# cross-entropy loss
 		part_cost = T.mean(T.nnet.categorical_crossentropy(part_p_y_given_x, l_y))
 		# add L2 norm
-		part_L2_sqr = (self.W_in ** 2).sum() + (self.W_h ** 2).sum() + (self.W_out ** 2).sum()
-		# part_L2_sqr = (self.W_in_f ** 2).sum() + (self.W_in_f_2 ** 2).sum() 
-		# part_L2_sqr += (self.W_in_f ** 2).sum() + (self.W_in_f_2 ** 2).sum() 
+		part_L2_sqr = (self.W_in ** 2).sum() + (self.W_in_f ** 2).sum() + (self.W_in_f_2 ** 2).sum() + (self.W_h ** 2).sum() + (self.W_out ** 2).sum()
 		part_cost = part_cost + l2_reg * part_L2_sqr
 
 		params = [self.W_in, self.W_in_f, self.W_in_f_2, self.W_h, self.W_out, self.b_h, self.b_out]
