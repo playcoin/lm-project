@@ -329,7 +329,7 @@ class RNNEMBWF2(RNNEMB):
 	def errors(self, u, uf, uf_2, y):
 		h, _ = theano.scan(self.rnn_step, sequences=[u, uf, uf_2], outputs_info=self.h_0[0])
 
-		inv_dr = 1. / self.dr_rate
+		inv_dr = 1. / (1 - self.dr_rate)
 		if self.dropout:
 			self.y_prob = T.nnet.softmax(T.dot(h, self.W_out / inv_dr) + self.b_out)
 		else:

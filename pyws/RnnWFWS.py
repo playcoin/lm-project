@@ -79,7 +79,7 @@ class RnnWFWS(RnnWS):
 
 class RnnWFWS2(RnnWS):
 
-	def initRnn(self, no_train=False):
+	def initRnn(self, no_train=False, dr_rate=0.5):
 		'''
 		@summary: Initiate RNNEMB model 
 		'''
@@ -104,7 +104,8 @@ class RnnWFWS2(RnnWS):
 				self.lr,
 				self.dropout,
 				params = self.rnnparams,
-				embeddings = self.embvalues
+				embeddings = self.embvalues, 
+				dr_rate = dr_rate
 			)
 
 		self.rnn = rnn
