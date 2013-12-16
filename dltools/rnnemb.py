@@ -363,7 +363,7 @@ class RNNEMBWF2(RNNEMB):
 		part_cost = T.mean(T.nnet.categorical_crossentropy(part_p_y_given_x, l_y))
 		# add L2 norm
 		part_L2_sqr = (self.W_in ** 2).sum() + (self.W_h ** 2).sum() + (self.W_out ** 2).sum()
-		part_L2_sqr += 10 * (self.W_in_f ** 2).sum() + 10 * (self.W_in_f_2 ** 2).sum() 
+		# part_L2_sqr = (self.W_in_f ** 2).sum() + (self.W_in_f_2 ** 2).sum() 
 		# part_L2_sqr += (self.W_in_f ** 2).sum() + (self.W_in_f_2 ** 2).sum() 
 		part_cost = part_cost + l2_reg * part_L2_sqr
 

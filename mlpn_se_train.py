@@ -15,7 +15,7 @@ import theano.sandbox.cuda
 # Trainging #
 #############
 # text
-f = file('./data/pku_train.ltxt')
+f = file('./data/datasets/pku_train_large.ltxt')
 text = unicode(f.read(), 'utf-8').replace(" ", "")
 f.close()
 
@@ -28,7 +28,7 @@ test_text = text[:501]
 print "Train size is: %s, testing size is: %s" % (len(train_text), len(test_text))
 
 # use gpu
-theano.sandbox.cuda.use('gpu1')
+theano.sandbox.cuda.use('gpu0')
 # test random init
 # mlp_ngram = MlpNgram(nlpdict, N=5, n_emb=50, n_hidden=800, lr=0.5, batch_size=200, 
 # 	dropout=False, emb_file_path=None)
@@ -40,7 +40,7 @@ theano.sandbox.cuda.use('gpu1')
 mlp_ngram = MlpNgram(nlpdict, N=7, n_emb=200, n_hidden=1200, lr=0.5, batch_size=200, 
 	dropout=False, emb_file_path=None)
 
-mlp_ngram.traintext(train_text, test_text, DEBUG=True, SAVE=True, SINDEX=1, epoch=100, lr_coef=0.96)
+mlp_ngram.traintext(train_text, test_text, DEBUG=True, SAVE=True, SINDEX=1, epoch=100, lr_coef=0.95)
 
 ###########
 # Dropout #
