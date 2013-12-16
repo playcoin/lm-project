@@ -186,7 +186,11 @@ class RnnWS(object):
 			tags = self.rnn_pred(*data_input)
 			return formtext(unform_text, tags)
 
-		prob_matrix = numpy.log(self.rnn_prob_matrix(*data_input))
+		if type(data_input) == tuple:
+			prob_matrix = numpy.log(self.rnn_prob_matrix(*data_input))
+		else:
+			prob_matrix = numpy.log(self.rnn_prob_matrix(data_input))
+
 		# 解码
 		tags = []
 		# 第一个只可能是 S, B

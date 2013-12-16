@@ -53,12 +53,12 @@ test_tags = unicode(f.read(), 'utf-8')
 test_tags = test_tags.replace(" ", "")
 f.close()
 
-rnnws = RnnWFWS2(nlpdict, n_emb=200, n_hidden=1200, lr=0.5, batch_size=150, 
-	l2_reg=0.000001, truncate_step=4, train_emb=True, dropout=True,
+rnnws = RnnWFWS(nlpdict, n_emb=200, n_hidden=1200, lr=0.5, batch_size=150, 
+	l2_reg=0.000001, truncate_step=4, train_emb=True, dropout=True, ext_emb=2,
 	backup_file_path="./data/models/RnnWFWS2.model.epoch42.n_hidden1200.ssl20.truncstep4.drTrue.embsize200.in_size4598.rtremb.c91.obj"
 )
 
-sents = test_text.split('\n')
+sents = test_text.split('\n')[:100]
 
 print rnnws.segment(sents[0], True)
 
@@ -74,7 +74,7 @@ for sent in sents:
 # f.close()
 
 # tags
-f = file('./data/results/pku_test_output_decode_4598_e42.ltxt', 'wb')
+f = file('./data/results/pku_test_output_decode_test_1.ltxt', 'wb')
 f.write('\n'.join(odtext).encode('utf-8'))
 f.close()
 

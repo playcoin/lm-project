@@ -37,7 +37,7 @@ class RNN(object):
 		self.theano_rng = RandomStreams(rng.randint(2 ** 30))
 
 		W_in, W_h, W_out, b_h, b_out, h_0 = params or (None, None, None, None, None, None)
-
+		
 		# Weight initial
 		if not W_in:
 			W_in_values = numpy.asarray(rng.uniform(
