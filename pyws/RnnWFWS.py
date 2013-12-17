@@ -26,14 +26,14 @@ class RnnWFWS(RnnWS):
 
 		self.ext_emb = ext_emb
 
-	def initRnn(self, no_train=False):
+	def initRnn(self, no_train=False, dr_rate=0.5):
 		'''
 		@summary: Initiate RNNEMB model 
 		'''
 		if self.rnn is not None:
 			return
 
-		print "%s init start!" % self.__class__.__name__
+		print "%s with %d extra embs init start! " % (self.__class__.__name__, self.ext_emb)
 		u = T.imatrix('u')
 		y = T.ivector('y')
 		l = T.imatrix('l')
@@ -50,6 +50,7 @@ class RnnWFWS(RnnWS):
 				self.dropout,
 				params = self.rnnparams,
 				embeddings = self.embvalues,
+				dr_rate = dr_rate,
 				ext_emb = self.ext_emb
 			)
 

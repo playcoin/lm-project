@@ -8,7 +8,7 @@ Created on 2013-11-28 13:33
 
 from nlpdict.NlpDict import NlpDict
 from pyws.RnnWS import RnnWS
-from pyws.RnnWFWS import RnnWFWS, RnnWFWS2, RnnWFWBWS
+from pyws.RnnWFWS import RnnWFWS, RnnWFWS2
 from pylm.RnnEmbLM import RnnEmbTrLM
 import numpy
 import time
@@ -66,8 +66,8 @@ f.close()
 # rnnlm.dumpembeddings("./data/RnnEmbTrLM.n_hidden1200.embsize200.in_size4566.embeddings.obj")
 
 
-rnnws = RnnWFWS2(nlpdict, n_emb=200, n_hidden=1200, lr=0.5, batch_size=158, 
-	l2_reg=0.000001, truncate_step=4, train_emb=True, dropout=True,
+rnnws = RnnWFWS(nlpdict, n_emb=200, n_hidden=1200, lr=0.5, batch_size=158, 
+	l2_reg=0.000001, truncate_step=4, train_emb=True, dropout=True, ext_emb=3,
 	emb_file_path="./data/RnnEmbTrLM.n_hidden1200.embsize200.in_size4598.embeddings.obj"
 )
 rnnws.initRnn(dr_rate=0.3)
@@ -79,5 +79,5 @@ train_tags = train_tags + "\n" + valid_tags
 print "Train size is: %s" % len(train_text)
 rnnws.traintext(train_text, train_tags, test_text, test_tags, 
 	sen_slice_length=20, epoch=60, lr_coef=0.91, 
-	DEBUG=True, SAVE=True, SINDEX=1, r_init="tremb.dr30.c91"
+	DEBUG=True, SAVE=True, SINDEX=1, r_init="tremb.ext3.dr30.c91"
 )
