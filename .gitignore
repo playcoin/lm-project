@@ -38,6 +38,7 @@ nosetests.xml
 *.obj
 *.ltxt
 *.gz
+*.utf8
 
 # Other unwant push files
 mem_test.py
