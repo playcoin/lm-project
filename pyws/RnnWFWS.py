@@ -18,7 +18,9 @@ from RnnWS import RnnWS
 
 class RnnWFWS(RnnWS):
 
-	def __init__(self, ndict, n_emb, n_hidden, lr, batch_size, ext_emb=2, l2_reg=0.000001, train_emb=True, emb_file_path = None, dropout=False, truncate_step=4, backup_file_path=None):
+	def __init__(self, ndict, n_emb, n_hidden, lr, batch_size, 
+		ext_emb=2, l2_reg=0.000001, train_emb=True, emb_file_path = None, 
+		dropout=False, truncate_step=4, backup_file_path=None):
 
 		super(RnnWFWS, self).__init__(ndict, n_emb, n_hidden, lr, batch_size, 
 			l2_reg, train_emb, emb_file_path, dropout, 
@@ -81,7 +83,6 @@ class RnnWFWS(RnnWS):
 		mat_in = theano.shared(numpy.asarray(mat_in, dtype="int32"), borrow=True)
 
 		if train_tags:
-			suffix_tags = ''.join(['0' for x in range(self.ext_emb)])
 			train_tags = train_tags.strip().replace("\n", "00")
 			tags = [int(tag) for tag in train_tags]
 

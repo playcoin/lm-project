@@ -5,9 +5,9 @@ Created on 2013-06-06 12:43
 @author: Playcoin
 '''
 
-from nlpdict.NlpDict import NlpDict
-from pylm.RnnEmbLM import RnnEmbTrLM
-from pylm.MlpNgram import MlpNgram
+from nlpdict import NlpDict
+from pylm import RnnEmbTrLM
+from pylm import MlpNgram
 import numpy
 import time
 import theano.sandbox.cuda

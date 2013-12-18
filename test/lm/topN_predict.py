@@ -5,12 +5,12 @@ Created on 2013-04-28 15:53
 @author: egg
 '''
 
-from nlpdict.NlpDict import NlpDict
-from pylm.RnnLM import RnnLM
-from pylm.RnnEmbLM import RnnEmbLM, RnnEmbTrLM
-from pylm.MlpNgram import MlpNgram
-from pylm.MlpBigram import MlpBigram
-from pylm.Ngram import Ngram
+from nlpdict import NlpDict
+from pylm import RnnLM
+from pylm import  RnnEmbTrLM
+from pylm import MlpNgram
+from pylm import MlpBigram
+from pylm import Ngram
 import numpy
 import time
 import theano.sandbox.cuda

@@ -5,8 +5,8 @@ Created on 2013-06-12 14:28
 @author: Playcoin
 '''
 
-from nlpdict.NlpDict import NlpDict
-from pylm.MlpNgram import MlpNgram
+from nlpdict import NlpDict
+from pylm import MlpNgram
 import numpy
 import time
 import theano.sandbox.cuda

@@ -5,8 +5,8 @@ Created on 2013-06-24 15:53
 @author: egg
 '''
 
-from nlpdict.NlpDict import NlpDict
-from pylm.MlpNgram import MlpNgram
+from nlpdict import NlpDict
+from pylm import MlpNgram
 import numpy
 import time
 import theano.sandbox.cuda

@@ -17,53 +17,13 @@ from LMBase import LMBase
 from dltools.rnn import RNN
 from dltools.rnnemb import RNNEMB
 
-class RnnEmbLM(RnnLM):
-	'''
-	@summary: Rnn language Model use Character Embedding
-	'''
-	def __init__(self, *args, **kwargs):
-		'''
-		@summary: construct method
-		
-		@param *args:
-		@param **kwargs:
-		'''
-		super(RnnEmbLM, self).__init__(*args, **kwargs)
-
-		self.in_size = 50
-
-	def tids2nndata(self, tidseq, truncate_input = True, shared =False):
-		# print tidseq.shape
-		seq_size = len(tidseq)
-		if truncate_input:
-			seq_size -= 1
-
-		mat_in = []
-		for i in xrange(seq_size):
-			mat_in.append(numpy.array(self.embvalues[tidseq[i]], dtype=theano.config.floatX))
-
-		mat_in = numpy.asarray(mat_in)
-		vec_out = numpy.asarray(tidseq[1:], dtype="int32")
-
-		return mat_in, vec_out
-
-	def loadEmbeddings(self, filepath):
-		'''
-		@summary: load embvalues
-		
-		@param filepath:
-		@result: 
-		'''
-		backupfile = open(filepath)
-		self.embvalues = cPickle.load(backupfile)
-		backupfile.close()
 
 class RnnEmbTrLM(RnnLM):
 	'''
 	@summary: Rnn language Model use Character Embedding, and ajust embedding in the training time.
 	'''
 
-	def __init__(self, ndict, n_emb, n_hidden, lr, batch_size, l2_reg=0.000001, train_emb=True, emb_file_path = None, dropout=False, truncate_step=5, backup_file_path=None):
+	def __init__(self, ndict, n_emb, n_hidden, lr, batch_size, l2_reg=0.000001, train_emb=True, emb_file_path = None, dropout=False, dr_rate=0.5, truncate_step=5, backup_file_path=None):
 
 		LMBase.__init__(self, ndict)
 
@@ -79,6 +39,7 @@ class RnnEmbTrLM(RnnLM):
 
 		self.rnn = None
 		self.dropout = dropout
+		self.dr_rate = dr_rate
 		self.train_emb = train_emb
 		self.in_size = self.out_size  = ndict.size()
 		self.n_emb = n_emb
@@ -114,7 +75,8 @@ class RnnEmbTrLM(RnnLM):
 				self.lr,
 				self.dropout,
 				params = self.rnnparams,
-				embeddings = self.embvalues
+				embeddings = self.embvalues,
+				dr_rate = self.dr_rate
 			)
 
 		self.rnn = rnn

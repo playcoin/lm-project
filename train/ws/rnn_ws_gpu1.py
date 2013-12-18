@@ -6,10 +6,10 @@ Created on 2013-11-28 13:33
 '''
 
 
-from nlpdict.NlpDict import NlpDict
-from pyws.RnnWS import RnnWS
-from pyws.RnnWFWS import RnnWFWS, RnnWFWS2
-from pylm.RnnEmbLM import RnnEmbTrLM
+from nlpdict import NlpDict
+from pyws import RnnWS
+from pyws import RnnWFWS, RnnWFWS2
+from pylm import RnnEmbTrLM
 import numpy
 import time
 import theano.sandbox.cuda
