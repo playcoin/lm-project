@@ -183,7 +183,10 @@ class RnnWS(object):
 		unform_text = unform_text or text
 
 		if not decode:
-			tags = self.rnn_pred(*data_input)
+			if type(data_input) == tuple:
+				tags = self.rnn_pred(*data_input)
+			else:
+				tags = self.rnn_pred(data_input)
 			return formtext(unform_text, tags)
 
 		if type(data_input) == tuple:
