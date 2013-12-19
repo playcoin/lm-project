@@ -66,10 +66,13 @@ class NlpDict(object):
 		self.ndict_inv = [] # ID to token
 		# special token, '$_START_$' and '$_END_$' is useless in training now.
 		self.ndict_inv.append(UNKNOWN_STR)
-		# self.ndict_inv.append(UNKNOWN_STR+'1')
-		# self.ndict_inv.append(UNKNOWN_STR+'2')
-		if self.comb:
+		if self.comb:	#这里有个bug，忘记加ENCHAR_STR了...现在也没法改...
 			self.ndict_inv.extend([SDIGIT_STR, BDIGIT_STR])
+		else: # 老版本的字典，加了一个开始和结束符...实际上没用，但是为了字典大小一致，需要加上。
+			self.ndict_inv.append(UNKNOWN_STR+'1')
+			self.ndict_inv.append(UNKNOWN_STR+'2')
+
+
 		for elm in self.ndict_inv:
 			self.ndict[elm] = len(self.ndict)
 
