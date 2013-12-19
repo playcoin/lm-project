@@ -12,24 +12,23 @@ import numpy
 import time
 import theano.sandbox.cuda
 # use gpu
-theano.sandbox.cuda.use('gpu0')
 
 #############
 # Trainging #
 #############
 # text
-f = file('./data/datasets/pku_train_large.ltxt')
+f = file('./data/datasets/pku_train.ltxt')
 text = unicode(f.read(), 'utf-8').replace(" ", "")
 f.close()
 
-nlpdict = NlpDict(comb=True)
+nlpdict = NlpDict()
 nlpdict.buildfromtext(text)
 
-f = file('./data/datasets/pku_valid_small.ltxt')
+f = file('./data/datasets/pku_valid.ltxt')
 valid_text = unicode(f.read(), 'utf-8').replace(" ", "")
 f.close()
 
-train_text = text + '\n' + valid_text
+train_text = text# + '\n' + valid_text
 test_text = train_text[:5001]
 len_text = len(train_text)
 
@@ -37,20 +36,26 @@ len_text = len(train_text)
 print "Dict size is: %s, Train size is: %s" % (nlpdict.size(), len_text)
 
 # training case 4
-rnnlm = RnnEmbTrLM(nlpdict, n_emb=200, n_hidden=1200, lr=0.5, batch_size=158, 
-	l2_reg=0.000001, truncate_step=4, train_emb=True, dropout=True,
-	emb_file_path="./data/7gram.emb200.h1200.d4598.emb.obj"
+theano.sandbox.cuda.use('gpu0')
+rnnlm = RnnEmbTrLM(nlpdict, n_emb=200, n_hidden=1200, lr=0.5, batch_size=150, 
+	l2_reg=0.000001, truncate_step=4, train_emb=True, dropout=True, dr_rate=0.3
+	emb_file_path="./data/7gram.emb200.h1200.d4633.emb.obj"
 )
 rnnlm.traintext(train_text, test_text, 
-	add_se=False, sen_slice_length=20, epoch=100, lr_coef=0.94, 
-	DEBUG=True, SAVE=True, SINDEX=1, r_init="c94"
+	add_se=False, sen_slice_length=20, epoch=100, lr_coef=0.945, 
+	DEBUG=True, SAVE=True, SINDEX=1, r_init="dr30.c94"
 )
 
-# rnnlm = RnnEmbTrLM(nlpdict, n_emb=nlpdict.size(), n_hidden=300, lr=0.2, batch_size=150, 
-# 	l2_reg=0.0000001, truncate_step=4, train_emb=True, dropout=False,
-# 	backup_file_path="./data/RnnEmbTrLM/RnnEmbTrLM.model.epoch20.n_hidden300.ssl20.truncstep4.drFalse.embsize4633.in_size4633.rTrue.obj"
-# )
-# rnnlm.lr = 0.2 * 0.96 ** 20
+# training case 5
+theano.sandbox.cuda.use('gpu1')
+rnnlm = RnnEmbTrLM(nlpdict, n_emb=200, n_hidden=1200, lr=0.5, batch_size=150, 
+	l2_reg=0.000001, truncate_step=4, train_emb=True, dropout=True, dr_rate=0.4
+	emb_file_path="./data/7gram.emb200.h1200.d4633.emb.obj"
+)
+rnnlm.traintext(train_text, test_text, 
+	add_se=False, sen_slice_length=20, epoch=100, lr_coef=0.945, 
+	DEBUG=True, SAVE=True, SINDEX=1, r_init="dr40.c94"
+)
 
 # rnnlm = RnnEmbTrLM(nlpdict, n_emb=nlpdict.size(), n_hidden=600, lr=0.5, batch_size=150, truncate_step=4, 
 # 		train_emb=True, dropout=True,
