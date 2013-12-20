@@ -8,7 +8,7 @@ Created on 2013-11-28 13:33
 
 from nlpdict import NlpDict
 from pyws import RnnWS
-from pyws import RnnWFWS, RnnWFWS2
+from pyws import RnnWFWS, RnnWFWS2, RnnWBWF2WS
 from pylm import RnnEmbTrLM
 import numpy
 import time
@@ -77,9 +77,21 @@ print "Dict size is: %s, Train size is: %s" % (nlpdict.size(), len(train_text))
 
 # rnnlm.dumpembeddings("./data/RnnEmbTrLM.n_hidden1200.embsize200.in_size4598.embeddings.obj")
 
-# 再初始化RnnWFWS2
-rnnws = RnnWFWS(nlpdict, n_emb=200, n_hidden=1400, lr=0.5, batch_size=158, 
-	l2_reg=0.000001, truncate_step=4, train_emb=True, dropout=True, ext_emb=2,
+# # 再初始化RnnWFWS2
+# rnnws = RnnWFWS(nlpdict, n_emb=200, n_hidden=1400, lr=0.5, batch_size=158, 
+# 	l2_reg=0.000001, truncate_step=4, train_emb=True, dropout=True, ext_emb=2,
+# 	emb_file_path="./data/RnnEmbTrLM.n_hidden1200.embsize200.in_size4598.embeddings.obj"
+# )
+
+# rnnws.initRnn(dr_rate=0.3)
+
+# rnnws.traintext(train_text, train_tags, test_text, test_tags, 
+# 	sen_slice_length=20, epoch=60, lr_coef=0.91, 
+# 	DEBUG=True, SAVE=True, SINDEX=1, r_init="tremb.ext2.dr30.c91"
+# )
+
+rnnws = RnnWBWF2WS(nlpdict, n_emb=200, n_hidden=1200, lr=0.5, batch_size=158, 
+	l2_reg=0.000001, truncate_step=4, train_emb=True, dropout=True,
 	emb_file_path="./data/RnnEmbTrLM.n_hidden1200.embsize200.in_size4598.embeddings.obj"
 )
 
@@ -87,5 +99,5 @@ rnnws.initRnn(dr_rate=0.3)
 
 rnnws.traintext(train_text, train_tags, test_text, test_tags, 
 	sen_slice_length=20, epoch=60, lr_coef=0.91, 
-	DEBUG=True, SAVE=True, SINDEX=1, r_init="tremb.ext2.dr30.c91"
+	DEBUG=True, SAVE=True, SINDEX=1, r_init="wbwf2.dr30.c91"
 )

@@ -12,7 +12,7 @@ import time
 
 import theano
 import theano.tensor as T
-from dltools.rnnemb import RNNEMBWF2, RNNMULTIEMB
+from dltools.rnnemb import RNNMULTIEMB
 from tagutil import formtext
 from RnnWS import RnnWS
 
@@ -120,7 +120,7 @@ class RnnWFWS2(RnnWFWS):
 	'''
 
 	def __init__(self, *args, **kwargs):
-		super(RnnWFWS2, self).__init__(*args, **kwargs):
+		super(RnnWFWS2, self).__init__(*args, **kwargs)
 
 		self.ext_emb = 2
 		self.train_preffix = ''
@@ -133,7 +133,7 @@ class RnnWBWF2WS(RnnWFWS):
 	'''
 
 	def __init__(self, *args, **kwargs):
-		super(RnnWBWF2WS, self).__init__(*args, **kwargs):
+		super(RnnWBWF2WS, self).__init__(*args, **kwargs)
 
 		self.ext_emb = 3
 		self.train_preffix = '\n'
