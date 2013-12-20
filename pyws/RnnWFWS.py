@@ -17,6 +17,10 @@ from tagutil import formtext
 from RnnWS import RnnWS
 
 class RnnWFWS(RnnWS):
+	'''
+	@summary: 带后缀的分词器，后缀数量有ext_num变量控制
+	'''
+
 
 	def __init__(self, ndict, n_emb, n_hidden, lr, batch_size, 
 		ext_emb=2, l2_reg=0.000001, train_emb=True, emb_file_path = None, 
@@ -27,6 +31,9 @@ class RnnWFWS(RnnWS):
 			truncate_step, backup_file_path)
 
 		self.ext_emb = ext_emb
+		# 通过前后缀的文本来调整输入的偏移量
+		self.train_preffix = ''
+		self.train_suffix = ''.join(['\n' for x in range(ext_emb)])
 
 	def initRnn(self, no_train=False, dr_rate=0.5):
 		'''
@@ -72,8 +79,7 @@ class RnnWFWS(RnnWS):
 		@summary: 将输入文本转化为id序列
 		'''
 		# 将训练文本再预处理一下，根据emb_num的个数补充后续的回车符数目
-		suffix = ''.join(['\n' for x in range(self.ext_emb)])
-		train_text = train_text.strip().replace("\n", "\n\n") + suffix
+		train_text = self.train_preffix + train_text.strip().replace("\n", "\n\n") + self.train_suffix
 		tids = [self.ndict[token] for token in train_text]
 
 		mat_in = []
@@ -108,67 +114,28 @@ class RnnWFWS(RnnWS):
 			out_dataset.append(theano.shared(s_x, borrow=True))
 		return out_dataset
 
-class RnnWFWS2(RnnWS):
+class RnnWFWS2(RnnWFWS):
+	'''
+	@summary: 带两个后缀的分词器
+	'''
 
-	def initRnn(self, no_train=False, dr_rate=0.5):
-		'''
-		@summary: Initiate RNNEMB model 
-		'''
-		if self.rnn is not None:
-			return
+	def __init__(self, *args, **kwargs):
+		super(RnnWFWS2, self).__init__(*args, **kwargs):
 
-		print "%s init start!" % self.__class__.__name__
-		u = T.ivector('u')
-		uf = T.ivector('uf')
-		uf_2 = T.ivector('uf_2')
-		y = T.ivector('y')
-		l = T.imatrix('l')
-		h_init = T.matrix('h_init')
+		self.ext_emb = 2
+		self.train_preffix = ''
+		self.train_suffix = '\n\n'
 
-		rng = numpy.random.RandomState(213234)
-		rnn = RNNEMBWF2(rng, 
-				self.in_size,
-				self.n_emb, 
-				self.n_hidden, 
-				self.out_size,
-				self.batch_size,
-				self.lr,
-				self.dropout,
-				params = self.rnnparams,
-				embeddings = self.embvalues, 
-				dr_rate = dr_rate
-			)
 
-		self.rnn = rnn
-		self.rnnparams = rnn.params
+class RnnWBWF2WS(RnnWFWS):
+	'''
+	@summary: 带一个后缀和两个前缀的分词器
+	'''
 
-		error = rnn.errors(u,uf,uf_2,y)
-		self.test_model = theano.function([u, uf, uf_2, y], error)
-		print "Compile Test function complete!"
-		self.rnn_prob_matrix = theano.function([u, uf, uf_2], rnn.y_prob)
-		print "Compile probabilities matrix function complete!"
-		self.rnn_pred = theano.function([u, uf, uf_2], rnn.y_pred)
-		print "Compile predict function complete!"
+	def __init__(self, *args, **kwargs):
+		super(RnnWBWF2WS, self).__init__(*args, **kwargs):
 
-	def tokens2nndata(self, train_text, train_tags=None):
-		'''
-		@summary: 将输入文本转化为id序列
-		'''
-		# 将训练文本再预处理一下, 单个回车符编程两个，回车符的标签为0
-		train_text = train_text.strip() + '\n'
-		train_text = train_text.replace("\n", "\n\n")
-		tids = [self.ndict[token] for token in train_text]
-		# input
-		vec_in = theano.shared(numpy.asarray(tids[:-2], dtype="int32"), borrow=True)
-		vec_in_f = theano.shared(numpy.asarray(tids[1:-1], dtype="int32"), borrow=True)
-		vec_in_f_2 = theano.shared(numpy.asarray(tids[2:], dtype="int32"), borrow=True)
-		# tag
-		if train_tags:
-			train_tags = train_tags.strip() + '\n'
-			train_tags = train_tags.replace("\n", "00")
-			tags = [int(tag) for tag in train_tags]
-			vec_out = theano.shared(numpy.asarray(tags[:-2], dtype="int32"), borrow=True)
-	
-			return vec_in.get_value(borrow=True), vec_in_f.get_value(borrow=True), vec_in_f_2.get_value(borrow=True), vec_out.get_value(borrow=True)
-		else:
-			return vec_in.get_value(borrow=True), vec_in_f.get_value(borrow=True), vec_in_f_2.get_value(borrow=True)
+		self.ext_emb = 3
+		self.train_preffix = '\n'
+		self.train_suffix = '\n\n'
+
