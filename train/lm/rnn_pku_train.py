@@ -35,27 +35,27 @@ len_text = len(train_text)
 # nlpdict.transEmbedding('./data/pku_closed_word_embedding100.ltxt', "./data/pku_embedding_rnnembtr100_c1.obj")
 print "Dict size is: %s, Train size is: %s" % (nlpdict.size(), len_text)
 
-# # training case 4
-# theano.sandbox.cuda.use('gpu0')
+# training case 4
+theano.sandbox.cuda.use('gpu0')
+rnnlm = RnnEmbTrLM(nlpdict, n_emb=200, n_hidden=1200, lr=0.2, batch_size=146, 
+	l2_reg=0.000001, truncate_step=4, train_emb=True, dropout=True, dr_rate=0.3,
+	emb_file_path="./data/7gram.emb200.h1200.d4633.emb.obj"
+)
+rnnlm.traintext(train_text, test_text, 
+	add_se=False, sen_slice_length=20, epoch=100, lr_coef=0.955, 
+	DEBUG=True, SAVE=True, SINDEX=1, r_init="dr30.c955"
+)
+
+# training case 5
+# theano.sandbox.cuda.use('gpu1')
 # rnnlm = RnnEmbTrLM(nlpdict, n_emb=200, n_hidden=1200, lr=0.5, batch_size=146, 
-# 	l2_reg=0.000001, truncate_step=4, train_emb=True, dropout=True, dr_rate=0.3,
+# 	l2_reg=0.000001, truncate_step=4, train_emb=True, dropout=True, dr_rate=0.4,
 # 	emb_file_path="./data/7gram.emb200.h1200.d4633.emb.obj"
 # )
 # rnnlm.traintext(train_text, test_text, 
 # 	add_se=False, sen_slice_length=20, epoch=100, lr_coef=0.945, 
-# 	DEBUG=True, SAVE=True, SINDEX=1, r_init="dr30.c945"
+# 	DEBUG=True, SAVE=True, SINDEX=1, r_init="dr40.c945"
 # )
-
-# training case 5
-theano.sandbox.cuda.use('gpu1')
-rnnlm = RnnEmbTrLM(nlpdict, n_emb=200, n_hidden=1200, lr=0.5, batch_size=146, 
-	l2_reg=0.000001, truncate_step=4, train_emb=True, dropout=True, dr_rate=0.4,
-	emb_file_path="./data/7gram.emb200.h1200.d4633.emb.obj"
-)
-rnnlm.traintext(train_text, test_text, 
-	add_se=False, sen_slice_length=20, epoch=100, lr_coef=0.945, 
-	DEBUG=True, SAVE=True, SINDEX=1, r_init="dr40.c945"
-)
 
 # rnnlm = RnnEmbTrLM(nlpdict, n_emb=nlpdict.size(), n_hidden=600, lr=0.5, batch_size=150, truncate_step=4, 
 # 		train_emb=True, dropout=True,
