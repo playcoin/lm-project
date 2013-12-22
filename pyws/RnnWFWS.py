@@ -21,7 +21,6 @@ class RnnWFWS(RnnWS):
 	@summary: 带后缀的分词器，后缀数量有ext_num变量控制
 	'''
 
-
 	def __init__(self, ndict, n_emb, n_hidden, lr, batch_size, 
 		ext_emb=2, l2_reg=0.000001, train_emb=True, emb_file_path = None, 
 		dropout=False, truncate_step=4, backup_file_path=None):

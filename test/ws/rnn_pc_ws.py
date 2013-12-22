@@ -5,77 +5,51 @@ Created on 2013-11-28 13:33
 @author: egg
 '''
 
-
 from nlpdict import NlpDict
 from pyws import RnnWS
 from pyws import RnnWFWS, RnnWFWS2, RnnWBWF2WS
 from pylm import RnnEmbTrLM
+from fileutil import readClearFile, writeFile
+
 import numpy
 import time
 import theano.sandbox.cuda
 
-#############
-# Trainging #
-#############
-# text
-# f = file('./data/msr_training.ltxt')
-f = file('./data/datasets/pku_train_large_ws.ltxt')
-train_text = unicode(f.read(), 'utf-8').replace(" ", "")
-
-nlpdict = NlpDict(comb=True, combzh=True)
-nlpdict.buildfromtext(train_text)	# 要先构造字典，把回车符给加进去
-print "Dict size is: %s, Train size is: %s" % (nlpdict.size(), len(train_text))
-f.close()
-
-# tags
-f = file('./data/datasets/pku_train_large_ws_tag.ltxt')
-train_tags = unicode(f.read(), 'utf-8').replace(" ", "")
-f.close()
 
 #############
-# Valid 	#
+# Datafiles #
 #############
-# rnnws = RnnWS(nlpdict, n_emb=50, n_hidden=200, lr=0.2, batch_size=50, 
-# 	l2_reg=0.000001, truncate_step=4, train_emb=True, dropout=False,
-# 	backup_file_path="./data/RnnWS/RnnWS.model.epoch45.n_hidden200.ssl20.truncstep4.drFalse.embsize50.in_size4633.r7g50.c93.obj"
-# )
+# PKU small valid set
+train_text = readClearFile("./data/datasets/pku_train_large_ws.ltxt")
+nlpdict = NlpDict(comb=True, combzh=True, text=train_text)
 
-f = file('./data/datasets/pku_test_ws.ltxt')
-test_text = unicode(f.read(), 'utf-8')
-# 清空空格和回车
-test_text = test_text.replace(" ", "")
-f.close()
-
-# tags
-f = file('./data/datasets/pku_test_ws_tag.ltxt')
-test_tags = unicode(f.read(), 'utf-8')
-# 清空空格和回车
-test_tags = test_tags.replace(" ", "")
-f.close()
+test_text = readClearFile("./data/datasets/pku_test_ws.ltxt")
 
 rnnws = RnnWBWF2WS(nlpdict, n_emb=200, n_hidden=1200, lr=0.5, batch_size=150, 
 	l2_reg=0.000001, truncate_step=4, train_emb=True, dropout=True, #ext_emb=2,
 	backup_file_path="./data/RnnWBWF2WS.model.epoch1.n_hidden1200.ssl20.truncstep4.drTrue.embsize200.in_size4598.rwbwf2.dr30.c91.new1.obj"
 )
 rnnws.initRnn(dr_rate=0.3)
-sents = test_text.split('\n')[:100]
 
-print rnnws.segment(sents[0], True)
+result_file = "./data/results/decode_4598_e1.ltxt"
 
-# stime = time.clock()
-# otext = []
-# odtext = []
-# for sent in sents:
-# 	# otext.append(rnnws.segment(sent, False))
-# 	odtext.append(rnnws.segment(sent, True))
-# # tags
-# # f = file('./data/results/pku_test_output_4598_e15.ltxt', 'wb')
-# # f.write('\n'.join(otext).encode('utf-8'))
-# # f.close()
 
-# # tags
-# # f = file('./data/result/pku_test_output_decode_test_1.ltxt', 'wb')
-# # f.write('\n'.join(odtext).encode('utf-8'))
-# # f.close()
+#############
+# Main Opr  #
+#############
+def main():
 
-# print "Total time is %0.2fm." % ((time.clock() - stime) / 60.)
+	sents = test_text.split('\n')
+	print "Dict size is: %d, and sentences size is %d" % (nlpdict.size(), len(sents))
+
+	stime = time.clock()
+	odtext = []
+	for sent in sents:
+		odtext.append(rnnws.segment(sent, True))
+
+	writeFile(result_file, '\n'.join(odtext))
+
+	print "Total time is %0.2fm." % ((time.clock() - stime) / 60.)
+
+if __name__ == "__main__":
+	main()

@@ -196,7 +196,6 @@ class RnnWS(object):
 		else:
 			prob_matrix = numpy.log(self.rnn_prob_matrix(data_input))
 
-		print prob_matrix
 		# 解码
 		tags = []
 		# 第一个只可能是 S, B

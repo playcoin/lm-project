@@ -42,7 +42,7 @@ class NlpDict(object):
 	@summary: 字典类，包括一些基本的字典操作，存放token的ID
 	'''
 
-	def __init__(self, dict_file_path=None, comb=False, combzh=True):
+	def __init__(self, comb=False, combzh=True, text=None):
 		'''
 		@summary: 构造函数，允许接收一个字符串作为词典备份路径作为参数。如果该参数不为空，则需要加载
 
@@ -52,11 +52,11 @@ class NlpDict(object):
 		self.comb = comb
 		self.combzh = combzh
 
-		if dict_file_path:
-			# 调用load方法，并赋值给self
-			self.loadNlpDict(dict_file_path)
-		else:
-			self.__dictinit()
+		self.__dictinit()
+
+		if text:
+			self.buildfromtext(text)
+			
 
 	def __dictinit(self):
 		'''
@@ -209,30 +209,6 @@ class NlpDict(object):
 					char = self.__combdigit(char)
 				self.addtoken(char)
 
-
-	def storeNlpDict(self, dict_file_path):
-		'''
-		@summary: 利用cPickle将NlpDict对象序列化保存
-		
-		@param dict_file_path: 保存路径
-		'''
-
-		dict_file = open(dict_file_path, 'wb')
-
-		cPickle.dump((self.ndict, self.ndict_inv), dict_file)
-		dict_file.close()
-
-	def loadNlpDict(self, dict_file_path):
-		'''
-		@summary: 利用cPickle读取NlpDict对象
-		
-		@param dict_file_path: 读取路径
-		@result: NlpDict对象
-		'''
-		dict_file = open(dict_file_path)
-
-		self.ndict, self.ndict_inv = cPickle.load(dict_file)
-		dict_file.close()
 
 	def transEmbedding(self, embedding_file_path, hv_file_path):
 		'''
