@@ -12,6 +12,7 @@ import time
 import theano
 import theano.tensor as T
 from theano.tensor.sharedvar import TensorSharedVariable
+from theano.sandbox.cuda.var import CudaNdarraySharedVariable
 from dltools.rnnemb import RNNEMB
 from tagutil import formtext
 
@@ -232,7 +233,7 @@ class RnnWS(object):
 		# save np data, not the theano shared variable, for different cuda version
 		rnnparams = []
 		for param in self.rnnparams:
-			if type(param) == TensorSharedVariable:
+			if type(param) == TensorSharedVariable or type(param) == CudaNdarraySharedVariable:
 				param = param.get_value()
 
 			rnnparams.append(param)
@@ -256,8 +257,8 @@ class RnnWS(object):
 
 		self.rnnparams = []
 		for param in rnnparams:
-			if type(param) != TensorSharedVariable:
-				param = theano.shared(param, borrow=True)
+			if type(param) != TensorSharedVariable and type(param) != CudaNdarraySharedVariable:
+				param = theano.shared(value=param, borrow=True)
 
 			self.rnnparams.append(param)
 

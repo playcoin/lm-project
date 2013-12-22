@@ -90,14 +90,23 @@ print "Dict size is: %s, Train size is: %s" % (nlpdict.size(), len(train_text))
 # 	DEBUG=True, SAVE=True, SINDEX=1, r_init="tremb.ext2.dr30.c91"
 # )
 
+# rnnws = RnnWBWF2WS(nlpdict, n_emb=200, n_hidden=1200, lr=0.5, batch_size=158, 
+# 	l2_reg=0.000001, truncate_step=4, train_emb=True, dropout=True,
+# 	emb_file_path="./data/RnnEmbTrLM.n_hidden1200.embsize200.in_size4598.embeddings.obj"
+# )
+
+# rnnws.initRnn(dr_rate=0.3)
+
+# rnnws.traintext(train_text, train_tags, test_text, test_tags, 
+# 	sen_slice_length=20, epoch=60, lr_coef=0.91, 
+# 	DEBUG=True, SAVE=True, SINDEX=1, r_init="wbwf2.dr30.c91"
+# )
+
 rnnws = RnnWBWF2WS(nlpdict, n_emb=200, n_hidden=1200, lr=0.5, batch_size=158, 
 	l2_reg=0.000001, truncate_step=4, train_emb=True, dropout=True,
-	emb_file_path="./data/RnnEmbTrLM.n_hidden1200.embsize200.in_size4598.embeddings.obj"
+	backup_file_path="./data/RnnWBWF2WS/RnnWBWF2WS.model.epoch1.n_hidden1200.ssl20.truncstep4.drTrue.embsize200.in_size4598.rwbwf2.dr30.c91.obj"
 )
 
-rnnws.initRnn(dr_rate=0.3)
+rnnws.initRnn()
 
-rnnws.traintext(train_text, train_tags, test_text, test_tags, 
-	sen_slice_length=20, epoch=60, lr_coef=0.91, 
-	DEBUG=True, SAVE=True, SINDEX=1, r_init="wbwf2.dr30.c91"
-)
+rnnws.savemodel("./data/RnnWBWF2WS/RnnWBWF2WS.model.epoch1.n_hidden1200.ssl20.truncstep4.drTrue.embsize200.in_size4598.rwbwf2.dr30.c91.new.obj")

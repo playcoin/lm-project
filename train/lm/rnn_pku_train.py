@@ -36,14 +36,14 @@ len_text = len(train_text)
 print "Dict size is: %s, Train size is: %s" % (nlpdict.size(), len_text)
 
 # training case 4
-theano.sandbox.cuda.use('gpu0')
-rnnlm = RnnEmbTrLM(nlpdict, n_emb=200, n_hidden=1200, lr=0.2, batch_size=146, 
-	l2_reg=0.000001, truncate_step=4, train_emb=True, dropout=True, dr_rate=0.3,
+theano.sandbox.cuda.use('gpu1')
+rnnlm = RnnEmbTrLM(nlpdict, n_emb=200, n_hidden=1200, lr=0.5, batch_size=150, 
+	l2_reg=0.000001, truncate_step=4, train_emb=True, dropout=True,# dr_rate=0.5,
 	emb_file_path="./data/7gram.emb200.h1200.d4633.emb.obj"
 )
 rnnlm.traintext(train_text, test_text, 
-	add_se=False, sen_slice_length=20, epoch=100, lr_coef=0.955, 
-	DEBUG=True, SAVE=True, SINDEX=1, r_init="dr30.c955"
+	add_se=False, sen_slice_length=20, epoch=100, lr_coef=0.96, 
+	DEBUG=True, SAVE=True, SINDEX=1, r_init="dr50.bs150.c96"
 )
 
 # training case 5
