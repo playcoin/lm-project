@@ -2,15 +2,23 @@
 
 from nlpdict import NlpDict
 
-nlpdict = NlpDict(comb=True, combzh=False)
-nlpdict.buildfromfile('./data/datasets/pku_train.ltxt', freq_thres=0)
-print "Nlpdict size is:", nlpdict.size()
+f = file('./data/datasets/pku_train_large_ws.ltxt')
+train_text = unicode(f.read(), 'utf-8').replace(" ", "")
+
+nlpdict = NlpDict(comb=True, combzh=True)
+nlpdict.buildfromtext(train_text)	# 要先构造字典，把回车符给加进去
+print "Dict size is: %s, Train size is: %s" % (nlpdict.size(), len(train_text))
+f.close()
+
 
 print nlpdict["0"]
 print nlpdict[u"１"]
 
+for i in range(10):
+	print nlpdict.gettoken(i)
 
 import cPickle
-f = file("./data/RnnWBWF2WS.model.epoch60.n_hidden1200.ssl20.truncstep4.drTrue.embsize200.in_size4598.rwbwf2.dr30.c91.obj")
-data = cPickle.load(f)
+
+f = file('nddump', 'wb')
+cPickle.dump(nlpdict.ndict_inv, f)
 f.close()

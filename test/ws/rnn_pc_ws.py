@@ -8,7 +8,7 @@ Created on 2013-11-28 13:33
 
 from nlpdict import NlpDict
 from pyws import RnnWS
-from pyws import RnnWFWS, RnnWFWS2
+from pyws import RnnWFWS, RnnWFWS2, RnnWBWF2WS
 from pylm import RnnEmbTrLM
 import numpy
 import time
@@ -53,29 +53,29 @@ test_tags = unicode(f.read(), 'utf-8')
 test_tags = test_tags.replace(" ", "")
 f.close()
 
-rnnws = RnnWFWS(nlpdict, n_emb=200, n_hidden=1200, lr=0.5, batch_size=150, 
-	l2_reg=0.000001, truncate_step=4, train_emb=True, dropout=True, ext_emb=2,
-	backup_file_path="./data/models/RnnWFWS2.model.epoch42.n_hidden1200.ssl20.truncstep4.drTrue.embsize200.in_size4598.rtremb.c91.obj"
+rnnws = RnnWBWF2WS(nlpdict, n_emb=200, n_hidden=1200, lr=0.5, batch_size=150, 
+	l2_reg=0.000001, truncate_step=4, train_emb=True, dropout=True, #ext_emb=2,
+	backup_file_path="./data/RnnWBWF2WS.model.epoch1.n_hidden1200.ssl20.truncstep4.drTrue.embsize200.in_size4598.rwbwf2.dr30.c91.new1.obj"
 )
-
+rnnws.initRnn(dr_rate=0.3)
 sents = test_text.split('\n')[:100]
 
 print rnnws.segment(sents[0], True)
 
-stime = time.clock()
-otext = []
-odtext = []
-for sent in sents:
-	# otext.append(rnnws.segment(sent, False))
-	odtext.append(rnnws.segment(sent, True))
-# tags
-# f = file('./data/results/pku_test_output_4598_e15.ltxt', 'wb')
-# f.write('\n'.join(otext).encode('utf-8'))
-# f.close()
+# stime = time.clock()
+# otext = []
+# odtext = []
+# for sent in sents:
+# 	# otext.append(rnnws.segment(sent, False))
+# 	odtext.append(rnnws.segment(sent, True))
+# # tags
+# # f = file('./data/results/pku_test_output_4598_e15.ltxt', 'wb')
+# # f.write('\n'.join(otext).encode('utf-8'))
+# # f.close()
 
-# tags
-f = file('./data/results/pku_test_output_decode_test_1.ltxt', 'wb')
-f.write('\n'.join(odtext).encode('utf-8'))
-f.close()
+# # tags
+# # f = file('./data/result/pku_test_output_decode_test_1.ltxt', 'wb')
+# # f.write('\n'.join(odtext).encode('utf-8'))
+# # f.close()
 
-print "Total time is %0.2fm." % ((time.clock() - stime) / 60.)
+# print "Total time is %0.2fm." % ((time.clock() - stime) / 60.)
