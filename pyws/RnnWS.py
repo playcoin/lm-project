@@ -11,6 +11,7 @@ import time
 
 import theano
 import theano.tensor as T
+from theano.tensor.sharedvar import TensorSharedVariable
 from dltools.rnnemb import RNNEMB
 from tagutil import formtext
 
@@ -228,7 +229,15 @@ class RnnWS(object):
 
 	def savemodel(self, filepath):
 		backupfile = open(filepath, 'w')
-		dumpdata = [self.batch_size, self.n_hidden, self.lr, self.truncate_step, self.rnnparams]
+		# save np data, not the theano shared variable, for different cuda version
+		rnnparams = []
+		for param in self.rnnparams:
+			if type(param) == TensorSharedVariable:
+				param = param.get_value()
+
+			rnnparams.append(param)
+
+		dumpdata = [self.batch_size, self.n_hidden, self.lr, self.truncate_step, rnnparams]
 		if self.rnn.C:
 			dumpdata.append(self.rnn.C.get_value())
 
@@ -239,11 +248,18 @@ class RnnWS(object):
 	def loadmodel(self, filepath):
 		backupfile = open(filepath)
 		dumpdata = cPickle.load(backupfile)
-		self.batch_size, self.n_hidden, self.lr, self.truncate_step, self.rnnparams = dumpdata[:5]
+		self.batch_size, self.n_hidden, self.lr, self.truncate_step, rnnparams = dumpdata[:5]
 		if len(dumpdata) > 5:
 			self.embvalues = dumpdata[5]
 		else:
 			self.embvalues = None
+
+		self.rnnparams = []
+		for param in rnnparams:
+			if type(param) != TensorSharedVariable:
+				param = theano.shared(param, borrow=True)
+
+			self.rnnparams.append(param)
 
 		backupfile.close()
 		print "Load model complete! Filepath:", filepath
