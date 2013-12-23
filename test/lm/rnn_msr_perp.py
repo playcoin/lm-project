@@ -43,7 +43,7 @@ rnnlm = RnnEmbTrLM(nlpdict,
 		batch_size=150, 
 		truncate_step=4, 
 		train_emb=True,
-		dropout=False,
+		dr_rate=0.,
 		backup_file_path="./data/RnnEmbTrLM/RnnEmbTrLM.model.epoch50.n_hidden400.ssl20.truncstep4.drFalse.embsize200.in_size5127.r7ge200.c935.MSR.obj"
 	)
 # rnnlm = RnnEmbTrLM(nlpdict, 

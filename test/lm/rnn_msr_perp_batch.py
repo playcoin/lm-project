@@ -57,7 +57,7 @@ ppls = []
 for i in epoches:
 	modelpath = "./data/RnnEmbTrLM/RnnEmbTrLM.model.epoch%s.n_hidden600.ssl20.truncstep4.drFalse.embsize200.in_size5127.r7ge200.MSR.obj" % i
 	rnnlm = RnnEmbTrLM(nlpdict, n_emb=200, n_hidden=600, lr=0.5, batch_size=150, truncate_step=4, 
-			train_emb=True, dropout=False,
+			train_emb=True, dr_rate=0.,
 			backup_file_path=modelpath
 		)
 

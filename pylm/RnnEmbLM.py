@@ -23,7 +23,9 @@ class RnnEmbTrLM(RnnLM):
 	@summary: Rnn language Model use Character Embedding, and ajust embedding in the training time.
 	'''
 
-	def __init__(self, ndict, n_emb, n_hidden, lr, batch_size, l2_reg=0.000001, train_emb=True, emb_file_path = None, dropout=False, dr_rate=0.5, truncate_step=5, backup_file_path=None):
+	def __init__(self, ndict, n_emb, n_hidden, lr, batch_size, 
+		l2_reg=0.000001, truncate_step=4, train_emb=True, dr_rate=0.5, emb_dr_rate=0.,
+		emb_file_path = None, backup_file_path=None):
 
 		LMBase.__init__(self, ndict)
 
@@ -38,8 +40,8 @@ class RnnEmbTrLM(RnnLM):
 			self.loadmodel(backup_file_path)
 
 		self.rnn = None
-		self.dropout = dropout
 		self.dr_rate = dr_rate
+		self.emb_dr_rate = emb_dr_rate
 		self.train_emb = train_emb
 		self.in_size = self.out_size  = ndict.size()
 		self.n_emb = n_emb
@@ -58,7 +60,7 @@ class RnnEmbTrLM(RnnLM):
 		if self.rnn is not None:
 			return
 
-		print "RnnEmbTrLM!"
+		print "RnnEmbTrLM init start!"
 		x = T.imatrix('x')
 		u = T.ivector('u')
 		y = T.ivector('y')
@@ -73,10 +75,10 @@ class RnnEmbTrLM(RnnLM):
 				self.out_size,
 				self.batch_size,
 				self.lr,
-				self.dropout,
+				dr_rate = self.dr_rate,
+				emb_dr_rate = self.emb_dr_rate,
 				params = self.rnnparams,
-				embeddings = self.embvalues,
-				dr_rate = self.dr_rate
+				embeddings = self.embvalues
 			)
 
 		self.rnn = rnn

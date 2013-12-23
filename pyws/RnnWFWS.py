@@ -22,19 +22,19 @@ class RnnWFWS(RnnWS):
 	'''
 
 	def __init__(self, ndict, n_emb, n_hidden, lr, batch_size, 
-		ext_emb=2, l2_reg=0.000001, train_emb=True, emb_file_path = None, 
-		dropout=False, truncate_step=4, backup_file_path=None):
+		ext_emb=2, l2_reg=0.000001, truncate_step=4, train_emb=True, dr_rate=0.5, emb_dr_rate = 0.,
+		emb_file_path = None, backup_file_path=None):
 
 		super(RnnWFWS, self).__init__(ndict, n_emb, n_hidden, lr, batch_size, 
-			l2_reg, train_emb, emb_file_path, dropout, 
-			truncate_step, backup_file_path)
+			l2_reg, truncate_step, train_emb, dr_rate, emb_dr_rate, 
+			emb_file_path, backup_file_path)
 
 		self.ext_emb = ext_emb
 		# 通过前后缀的文本来调整输入的偏移量
 		self.train_preffix = ''
 		self.train_suffix = ''.join(['\n' for x in range(ext_emb)])
 
-	def initRnn(self, no_train=False, dr_rate=0.5):
+	def initRnn(self, no_train=False):
 		'''
 		@summary: Initiate RNNEMB model 
 		'''
@@ -55,11 +55,11 @@ class RnnWFWS(RnnWS):
 				self.out_size,
 				self.batch_size,
 				self.lr,
-				self.dropout,
+				dr_rate = self.dr_rate,
+				emb_dr_rate = self.emb_dr_rate,
+				ext_emb = self.ext_emb
 				params = self.rnnparams,
 				embeddings = self.embvalues,
-				dr_rate = dr_rate,
-				ext_emb = self.ext_emb
 			)
 
 		self.rnn = rnn

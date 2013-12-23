@@ -39,8 +39,7 @@ theano.sandbox.cuda.use('gpu1')
 # mlp_ngram.dumpembedding('./data/7gram.emb200.h1200.d5172.emb.obj')
 
 rnnlm = RnnEmbTrLM(nlpdict, n_emb=200, n_hidden=1000, lr=0.5, batch_size=150, truncate_step=4, 
-	train_emb=True, dropout=True,
-	# emb_file_path="./data/7gram.emb200.h1200.d5172.emb.obj")
+	train_emb=True, dr_rate=0.5,
 	backup_file_path="./data/RnnEmbTrLM/RnnEmbTrLM.model.epoch41.n_hidden1000.ssl20.truncstep4.drTrue.embsize200.in_size5127.r7ge200.c94.MSR.obj")
 
 # rnnlm = RnnEmbTrLM(nlpdict, n_emb=nlpdict.size(), n_hidden=300, lr=0.5, batch_size=150, truncate_step=4, 

@@ -54,7 +54,7 @@ f.close()
 
 # 再初始化RnnWFWS2
 rnnws = RnnWFWS(nlpdict, n_emb=200, n_hidden=300, lr=0.5, batch_size=10, 
-	l2_reg=0.000001, truncate_step=4, train_emb=False, dropout=False, ext_emb=2,
+	l2_reg=0.000001, truncate_step=4, train_emb=False, dr_rate=0., ext_emb=2,
 	emb_file_path="./data/embeddings/RnnEmbTrLM.n_hidden1200.embsize200.in_size4598.embeddings.obj"
 )
 

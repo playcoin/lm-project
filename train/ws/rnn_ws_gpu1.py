@@ -30,10 +30,9 @@ test_text = readClearFile("./data/datasets/pku_test_ws.ltxt")
 test_tags = readClearFile("./data/datasets/pku_test_ws_tag.ltxt")
 
 rnnws = RnnWFWS(nlpdict, n_emb=200, n_hidden=1200, lr=0.5, batch_size=158, 
-	l2_reg=0.000001, truncate_step=4, train_emb=True, dropout=True, ext_emb=3,
+	l2_reg=0.000001, truncate_step=4, train_emb=True, dr_rate=0.3, ext_emb=3,
 	emb_file_path="./data/RnnEmbTrLM.n_hidden1200.embsize200.in_size4598.embeddings.obj"
 )
-rnnws.initRnn(dr_rate=0.3)
 lr_coef = 0.91
 r_init = "tremb.ext3.dr30.c91"
 

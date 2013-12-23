@@ -18,7 +18,9 @@ from tagutil import formtext
 
 class RnnWS(object):
 
-	def __init__(self, ndict, n_emb, n_hidden, lr, batch_size, l2_reg=0.000001, train_emb=True, emb_file_path = None, dropout=False, truncate_step=4, backup_file_path=None):
+	def __init__(self, ndict, n_emb, n_hidden, lr, batch_size, 
+		l2_reg=0.000001, truncate_step=4, train_emb=True, dr_rate=0.5, emb_dr_rate = 0.,
+		emb_file_path = None, backup_file_path=None):
 
 		self.ndict = ndict
 
@@ -33,7 +35,8 @@ class RnnWS(object):
 			self.loadmodel(backup_file_path)
 
 		self.rnn = None
-		self.dropout = dropout
+		self.dr_rate = dr_rate
+		self.emb_dr_rate = emb_dr_rate
 		self.train_emb = train_emb
 		self.in_size = ndict.size()
 		self.out_size = 4
@@ -67,7 +70,8 @@ class RnnWS(object):
 				self.out_size,
 				self.batch_size,
 				self.lr,
-				self.dropout,
+				dr_rate = self.dr_rate,
+				emb_dr_rate = self.emb_dr_rate,
 				params = self.rnnparams,
 				embeddings = self.embvalues
 			)

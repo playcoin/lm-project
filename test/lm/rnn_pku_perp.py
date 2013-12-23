@@ -39,7 +39,7 @@ theano.sandbox.cuda.use('gpu0')
 # 	)
 
 rnnlm = RnnEmbTrLM(nlpdict, n_emb=nlpdict.size(), n_hidden=250, lr=0.5, batch_size=150, truncate_step=4, 
-		train_emb=False, dropout=False,
+		train_emb=False, dr_rate=0.,
 		backup_file_path="./data/RnnEmbTrLM/RnnEmbTrLM.model.epoch100.n_hidden250.ssl20.truncstep4.drFalse.embsize4633.in_size4633.rnoemb.obj"
 	)
 
