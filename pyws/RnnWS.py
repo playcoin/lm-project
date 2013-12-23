@@ -157,7 +157,7 @@ class RnnWS(object):
 
 			if SAVE:
 				class_name = self.__class__.__name__
-				self.savemodel("./data/%s/%s.model.epoch%s.n_hidden%s.ssl%s.truncstep%s.dr%s.embsize%s.in_size%s.r%s.obj" % (class_name, class_name, i+SINDEX, self.n_hidden, sen_slice_length, self.truncate_step, self.dropout, self.n_emb, self.in_size, r_init))
+				self.savemodel("./data/%s/%s.model.epoch%s.n_hidden%s.ssl%s.truncstep%s.dr%.1f.embsize%s.in_size%s.r%s.obj" % (class_name, class_name, i+SINDEX, self.n_hidden, sen_slice_length, self.truncate_step, self.dr_rate, self.n_emb, self.in_size, r_init))
 
 			if lr_coef > 0:
 				# update learning_rate

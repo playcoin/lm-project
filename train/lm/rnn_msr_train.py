@@ -17,36 +17,26 @@ import theano.sandbox.cuda
 # Trainging #
 #############
 # text
-f = file('./data/msr_train.ltxt')
-text = unicode(f.read(), 'utf-8')
-text = text.replace(" ", "")
-f.close()
+train_text = readClearFile("./data/datasets/msr_ws_train.ltxt")
+nlpdict = NlpDict(comb=True, combzh=True, text=train_text)
 
-train_text = text
-test_text = text[:501]
-len_text = len(train_text)
-
-nlpdict = NlpDict()
-nlpdict.buildfromtext(train_text, freq_thres=0)
-# nlpdict.transEmbedding('./data/pku_closed_word_embedding100_n.ltxt', "./data/sohu_embedding_rnnembtr100.obj")
-print "Dict size is: %s, Train size is: %s" % (nlpdict.size(), len_text)
-
+test_text = train_text[:5001]
+print "Dict size is: %s, Training size is: %s" % (nlpdict.size(), len(train_text))
 # use gpu
-theano.sandbox.cuda.use('gpu1')
+theano.sandbox.cuda.use('gpu0')
 
-# mlp_ngram = MlpNgram(nlpdict, N=7, n_emb=200, n_hidden=1200, lr=0.5, batch_size=200, dropout=False,
-# 		backup_file_path='./data/MlpNgram/Mlp7gram.model.epoch90.n_hidden1200.drFalse.n_emb200.in_size5127.rTrue.MSR.obj')
-# mlp_ngram.dumpembedding('./data/7gram.emb200.h1200.d5172.emb.obj')
 
-rnnlm = RnnEmbTrLM(nlpdict, n_emb=200, n_hidden=1000, lr=0.5, batch_size=150, truncate_step=4, 
+
+mlp_ngram = MlpNgram(nlpdict, N=7, n_emb=200, n_hidden=1200, lr=0.5, batch_size=200, dropout=False,
+		backup_file_path='./data/MlpNgram/Mlp7gram.model.epoch50.n_hidden1200.drTrue.n_emb200.in_size5086.rTrue.MSR.obj')
+mlp_ngram.dumpembedding('./data/7gram.emb200.h1200.d5086.emb.obj')
+
+rnnlm = RnnEmbTrLM(nlpdict, n_emb=200, n_hidden=1200, lr=0.5, batch_size=150, truncate_step=4, 
 	train_emb=True, dr_rate=0.5,
-	backup_file_path="./data/RnnEmbTrLM/RnnEmbTrLM.model.epoch41.n_hidden1000.ssl20.truncstep4.drTrue.embsize200.in_size5127.r7ge200.c94.MSR.obj")
+	emb_file_path="./data/7gram.emb200.h1200.d5086.emb.obj'"
+)
 
-# rnnlm = RnnEmbTrLM(nlpdict, n_emb=nlpdict.size(), n_hidden=300, lr=0.5, batch_size=150, truncate_step=4, 
-# 	train_emb=False, dropout=False,
-# )
-rnnlm.lr = 0.5 * 0.94 ** 41
 rnnlm.traintext(train_text, test_text, 
-		add_se=False, sen_slice_length=20, epoch=9, lr_coef=0.94, 
-		DEBUG=True, SAVE=True, SINDEX=42, r_init="7ge200.c94.MSR"
-	)
+	add_se=False, sen_slice_length=20, epoch=50, lr_coef=0.93, 
+	DEBUG=True, SAVE=True, SINDEX=1, r_init="7ge200.c93.MSR"
+)
