@@ -21,11 +21,14 @@ nlpdict = NlpDict(comb=True, combzh=True, text=nlpdict_text)
 train_text = readClearFile("./data/datasets/pku_pos_train.ltxt")
 train_tags = readFile("./data/datasets/pku_pos_train_tag.ltxt")
 
-rnnpos = RnnPOS(nlpdict, n_emb=200, n_hidden=400, lr=0.5, batch_size=5, 
-	l2_reg=0.000001, truncate_step=4, train_emb=True, dropout=True, 
-	emb_file_path="./data/RnnEmbTrLM.n_hidden1200.embsize200.in_size4598.embeddings.obj" 
+rnnpos = RnnPOS(nlpdict, n_emb=200, n_hidden=1400, lr=0.5, batch_size=10, 
+	l2_reg=0.000001, truncate_step=4, train_emb=True, dropout=True, #ext_emb=2,
+	backup_file_path="./data/model/RnnWFWS2.model.epoch60.n_hidden1400.ssl20.truncstep4.drTrue.embsize200.in_size4598.rtremb.c91.obj"
 )
-
+rnnpos.batch_size = 10
+rnnpos.rnnparams[2] = None
+rnnpos.rnnparams[4] = None
+rnnpos.rnnparams[5] = None
 
 #############
 # Main Opr  #
@@ -33,7 +36,7 @@ rnnpos = RnnPOS(nlpdict, n_emb=200, n_hidden=400, lr=0.5, batch_size=5,
 def main():
 	print "Dict size is: %s, Train size is: %s" % (nlpdict.size(), len(train_text))
 
-	rnnpos.traintext(train_text[:1000], train_tags[:1000], train_text[:400], train_tags[:400], 
+	rnnpos.traintext(train_text[:2000], train_tags[:20000], train_text[:800], train_tags[:8000], 
 		sen_slice_length=20, epoch=60, lr_coef=0.92, 
 		DEBUG=True, SAVE=False, SINDEX=1, r_init="7g200.c92"
 	)

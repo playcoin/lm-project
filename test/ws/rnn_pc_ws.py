@@ -13,6 +13,7 @@ from fileutil import readClearFile, writeFile
 
 import numpy
 import time
+import re
 import theano.sandbox.cuda
 
 
@@ -20,18 +21,18 @@ import theano.sandbox.cuda
 # Datafiles #
 #############
 # PKU small valid set
-train_text = readClearFile("./data/datasets/pku_train_large_ws.ltxt")
+train_text = readClearFile("./data/datasets/pku_ws_train_large.ltxt")
 nlpdict = NlpDict(comb=True, combzh=True, text=train_text)
 
-test_text = readClearFile("./data/datasets/pku_test_ws.ltxt")
+test_text = readClearFile("./data/datasets/pku_ws_test.ltxt")
 
-rnnws = RnnWBWF2WS(nlpdict, n_emb=200, n_hidden=1200, lr=0.5, batch_size=150, 
+rnnws = RnnWFWS2(nlpdict, n_emb=200, n_hidden=1400, lr=0.5, batch_size=150, 
 	l2_reg=0.000001, truncate_step=4, train_emb=True, dropout=True, #ext_emb=2,
-	backup_file_path="./data/RnnWBWF2WS.model.epoch1.n_hidden1200.ssl20.truncstep4.drTrue.embsize200.in_size4598.rwbwf2.dr30.c91.new1.obj"
+	backup_file_path="./data/model/RnnWFWS2.model.epoch60.n_hidden1400.ssl20.truncstep4.drTrue.embsize200.in_size4598.rtremb.c91.obj"
 )
-rnnws.initRnn(dr_rate=0.3)
+rnnws.initRnn(dr_rate=0.5)
 
-result_file = "./data/results/decode_4598_e1.ltxt"
+result_file = "./data/result/decode_4598_1400_dr50_ext2.ltxt"
 
 
 #############
@@ -46,6 +47,8 @@ def main():
 	odtext = []
 	for sent in sents:
 		odtext.append(rnnws.segment(sent, True))
+
+	# text = re.sub(r"(\d)  \.  (\d)", r"\1.\2", '\n'.join(odtext))
 
 	writeFile(result_file, '\n'.join(odtext))
 

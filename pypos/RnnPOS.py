@@ -36,6 +36,7 @@ class RnnPOS(RnnWFWS):
 		for i in xrange(0, len(tids) - self.ext_emb):
 			mat_in.append(tids[i:i+self.ext_emb+1])
 
+		mat_size = len(mat_in)
 		mat_in = theano.shared(numpy.asarray(mat_in, dtype="int32"), borrow=True)
 
 		if train_tags:
@@ -44,7 +45,7 @@ class RnnPOS(RnnWFWS):
 			train_tags = train_tags.strip().replace("\n", repstr)
 			# 切分并变为数字
 			train_tag_nums = re.split(r"\s+", train_tags)
-			tags = [int(tag) for tag in train_tag_nums]
+			tags = [int(tag) for tag in train_tag_nums[:mat_size]]
 
 			vec_out = theano.shared(numpy.asarray(tags, dtype="int32"), borrow=True)
 	
