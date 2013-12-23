@@ -16,7 +16,7 @@ import theano.sandbox.cuda
 # Trainging #
 #############
 # text
-train_text = readClearFile("./data/datasets/msr_lm_train.ltxt")
+train_text = readClearFile("./data/datasets/msr_ws_train.ltxt")
 nlpdict = NlpDict(comb=True, combzh=True, text=train_text)
 
 test_text = train_text[:5001]
