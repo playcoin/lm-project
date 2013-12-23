@@ -20,10 +20,10 @@ import theano.sandbox.cuda
 # Datafiles #
 #############
 # PKU small valid set
-train_text = readClearFile("./data/datasets/pku_train_large_ws.ltxt")
+train_text = readClearFile("./data/datasets/pku_ws_train_large.ltxt")
 nlpdict = NlpDict(comb=True, combzh=True, text=train_text)
 
-test_text = readClearFile("./data/datasets/pku_test_ws.ltxt")
+test_text = readClearFile("./data/datasets/pku_ws_test.ltxt")
 
 rnnws = RnnWBWF2WS(nlpdict, n_emb=200, n_hidden=1200, lr=0.5, batch_size=150, 
 	l2_reg=0.000001, truncate_step=4, train_emb=True, dropout=True, #ext_emb=2,
