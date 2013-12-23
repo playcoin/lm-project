@@ -13,7 +13,7 @@ import time
 import theano.sandbox.cuda
 
 
-train_file_path = './data/datasets/pku_train.ltxt'
+train_file_path = './data/datasets/pku_lm_train.ltxt'
 print "Training file path:", train_file_path
 # text
 f = file(train_file_path)
@@ -31,7 +31,7 @@ print "Train size is: %s" % len(train_text)
 
 theano.sandbox.cuda.use('gpu1')
 # f = file('./data/pku_valid.ltxt')
-f = file('./data/datasets/pku_test.ltxt')
+f = file('./data/datasets/pku_lm_test.ltxt')
 tt = unicode(f.read(), 'utf-8')
 f.close()
 
@@ -56,7 +56,7 @@ epoches = [1, 10, 20, 30, 40, 50, 60, 70, 80, 85, 90, 95, 100]
 epoches.reverse()
 ppls = []
 for i in epoches:
-	modelpath = "./data/RnnEmbTrLM/RnnEmbTrLM.model.epoch%d.n_hidden1200.ssl20.truncstep4.drTrue.embsize200.in_size4633.rdr50.c96.obj" % i
+	modelpath = "./data/RnnEmbTrLM/RnnEmbTrLM.model.epoch%d.n_hidden1200.ssl20.truncstep4.drTrue.embsize200.in_size4633.rdr50.bs150.c96.obj" % i
 	rnnlm = RnnEmbTrLM(nlpdict, n_emb=200, n_hidden=1200, lr=0.5, batch_size=150, truncate_step=4, 
 			train_emb=True, dropout=True, dr_rate=0.5,
 			backup_file_path=modelpath

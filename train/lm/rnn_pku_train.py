@@ -40,7 +40,7 @@ rnnlm = RnnEmbTrLM(nlpdict, n_emb=200, n_hidden=1200, lr=0.5, batch_size=150,
 )
 rnnlm.traintext(train_text, test_text, 
 	add_se=False, sen_slice_length=20, epoch=100, lr_coef=0.96, 
-	DEBUG=True, SAVE=True, SINDEX=1, r_init="dr50.bs150.c96"
+	DEBUG=True, SAVE=True, SINDEX=1, r_init="init.dr50.c96"
 )
 
 # training case 5

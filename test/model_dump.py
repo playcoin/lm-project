@@ -16,7 +16,7 @@ nlpdict = NlpDict(comb=True, combzh=True, text=train_text)
 
 rnnws = RnnWFWS2(nlpdict, n_emb=200, n_hidden=1400, lr=0.5, batch_size=150, 
 	l2_reg=0.000001, truncate_step=4, train_emb=True, dropout=True, #ext_emb=2,
-	backup_file_path="./data/RnnWFWS2.model.epoch60.n_hidden1400.ssl20.truncstep4.drTrue.embsize200.in_size4598.rtremb.c91.obj"
+	backup_file_path="./data/RnnWFWS2/RnnWFWS2.model.epoch60.n_hidden1400.ssl20.truncstep4.drTrue.embsize200.in_size4598.rtremb.c91.obj"
 )
 rnnws.initRnn()
 # rnnws.savemodel("./data/RnnWFWS2/RnnWFWS2.model.epoch60.n_hidden1400.ssl20.truncstep4.drTrue.embsize200.in_size4598.rtremb.c91.wb.obj")
