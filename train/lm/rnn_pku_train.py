@@ -8,6 +8,8 @@ Created on 2013-06-06 12:43
 from nlpdict import NlpDict
 from pylm import RnnEmbTrLM
 from pylm import MlpNgram
+from fileutil import readClearFile
+
 import numpy
 import time
 import theano.sandbox.cuda
@@ -17,22 +19,17 @@ import theano.sandbox.cuda
 # Trainging #
 #############
 # text
-f = file('./data/datasets/pku_train.ltxt')
-text = unicode(f.read(), 'utf-8').replace(" ", "")
-f.close()
+train_text = readClearFile("./data/datasets/pku_lm_train.ltxt")
+nlpdict = NlpDict(comb=False, combzh=False, text=train_text)
 
-nlpdict = NlpDict()
-nlpdict.buildfromtext(text)
+valid_text = readClearFile("./data/datasets/pku_ws_valid.ltxt")
 
-f = file('./data/datasets/pku_valid.ltxt')
-valid_text = unicode(f.read(), 'utf-8').replace(" ", "")
-f.close()
 
-train_text = text# + '\n' + valid_text
+
+# train_text = text# + '\n' + valid_text
 test_text = train_text[:5001]
 len_text = len(train_text)
 
-# nlpdict.transEmbedding('./data/pku_closed_word_embedding100.ltxt', "./data/pku_embedding_rnnembtr100_c1.obj")
 print "Dict size is: %s, Train size is: %s" % (nlpdict.size(), len_text)
 
 # training case 4

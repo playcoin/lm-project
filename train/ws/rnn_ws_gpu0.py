@@ -19,15 +19,15 @@ theano.sandbox.cuda.use('gpu0')
 #############
 # Data file #
 #############
-train_text = readClearFile("./data/datasets/pku_train_ws.ltxt")
-train_tags = readClearFile("./data/datasets/pku_train_ws_tag.ltxt")
+train_text = readClearFile("./data/datasets/pku_ws_train.ltxt")
+train_tags = readClearFile("./data/datasets/pku_ws_train_tag.ltxt")
 nlpdict = NlpDict(comb=True, combzh=False, text=train_text)
 
-valid_text = readClearFile("./data/datasets/pku_valid_ws.ltxt")
-valid_tags = readClearFile("./data/datasets/pku_valid_ws_tag.ltxt")
+valid_text = readClearFile("./data/datasets/pku_ws_valid.ltxt")
+valid_tags = readClearFile("./data/datasets/pku_ws_valid_tag.ltxt")
 
-test_text = readClearFile("./data/datasets/pku_test_ws.ltxt")
-test_tags = readClearFile("./data/datasets/pku_test_ws_tag.ltxt")
+test_text = readClearFile("./data/datasets/pku_ws_test.ltxt")
+test_tags = readClearFile("./data/datasets/pku_ws_test_tag.ltxt")
 
 rnnws = RnnWFWS2(nlpdict, n_emb=200, n_hidden=1200, lr=0.5, batch_size=158, 
 	l2_reg=0.000001, truncate_step=4, train_emb=True, dropout=True,
@@ -43,6 +43,7 @@ r_init = "ext2.dr30.c91"
 #############
 def main():
 	# 带验证集一起训练
+	global train_text, train_tags
 	train_text = train_text + "\n" + valid_text
 	train_tags = train_tags + "\n" + valid_tags
 
