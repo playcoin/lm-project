@@ -21,14 +21,14 @@ nlpdict = NlpDict(comb=True, combzh=True, text=nlpdict_text)
 train_text = readClearFile("./data/datasets/pku_pos_train.ltxt")
 train_tags = readFile("./data/datasets/pku_pos_train_tag.ltxt") # 不要清空格
 
-rnnpos = RnnPOS(nlpdict, n_emb=200, n_hidden=1400, lr=0.5, batch_size=10, 
-	l2_reg=0.000001, truncate_step=4, train_emb=True, dropout=True, #ext_emb=2,
-	backup_file_path="./data/model/RnnWFWS2.model.epoch60.n_hidden1400.ssl20.truncstep4.drTrue.embsize200.in_size4598.rtremb.c91.obj"
+rnnpos = RnnPOS(nlpdict, n_emb=200, n_hidden=300, lr=0.5, batch_size=10, 
+	l2_reg=0.000001, truncate_step=4, train_emb=True, dr_rate=0.5, emb_dr_rate=0.1,
+	emb_file_path="./data/RnnWFWS2.n_hidden1400.embsize200.in_size4598.embeddings.obj"
 )
-rnnpos.batch_size = 10
-rnnpos.rnnparams[2] = None # W_out
-rnnpos.rnnparams[4] = None # b_out
-rnnpos.rnnparams[5] = None # h_0, batch_size变了
+# rnnpos.batch_size = 10
+# rnnpos.rnnparams[2] = None # W_out
+# rnnpos.rnnparams[4] = None # b_out
+# rnnpos.rnnparams[5] = None # h_0, batch_size变了
 
 #############
 # Main Opr  #

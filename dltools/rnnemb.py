@@ -36,7 +36,7 @@ class RNNEMB(RNN):
 			n_out = n_out, 
 			batch_size = batch_size, 
 			lr = lr, 
-			dropout = (dropout > 0.01), 
+			dropout = (dr_rate > 0.01), 
 			params = params, 
 			activation = activation)
 
@@ -70,37 +70,24 @@ class RNNEMB(RNN):
 		@param u_tm: current input
 		@param h_tm: last output of hidden layer
 		'''
-		emb = self.C[u_tm]
 		if self.emb_dr:
-			lin_h = T.dot(emb, self.W_in / self.inv_emb_dr)
+			lin_h = T.dot(u_tm, self.W_in / self.inv_emb_dr)
 		else:
-			lin_h = T.dot(emb, self.W_in)
+			lin_h = T.dot(u_tm, self.W_in)
 
 		lin_h += T.dot(h_tm, self.W_h) + self.b_h
 		h_t = self.activation(lin_h)
 		return h_t
 
 	def rnn_step_noemb(self, u_tm, h_tm):
-		'''
-		@summary: iter function of scan op
-		
-		@param u_tm: current input
-		@param h_tm: last output of hidden layer
-		'''
+
 		lin_h = self.W_in[u_tm] + T.dot(h_tm, self.W_h) + self.b_h
 		h_t = self.activation(lin_h)
 		return h_t
 
 	def rnn_step_emb_dr(self, u_tm, h_tm):
-				'''
-		@summary: iter function of scan op
-		
-		@param u_tm: current input
-		@param h_tm: last output of hidden layer
-		'''
-		emb = self.corrupt(self.C[u_tm], self.emb_dr_rate)
 
-		lin_h = T.dot(emb, self.W_in) + T.dot(h_tm, self.W_h) + self.b_h
+		lin_h = T.dot(u_tm, self.W_in) + T.dot(h_tm, self.W_h) + self.b_h
 		h_t = self.activation(lin_h)
 		return h_t
 
@@ -114,7 +101,7 @@ class RNNEMB(RNN):
 		if not self.C:
 			h, _ = theano.scan(self.rnn_step_noemb, sequences=u, outputs_info=self.h_0[0])
 		else:
-			h, _ = theano.scan(self.rnn_step, sequences=u, outputs_info=self.h_0[0])
+			h, _ = theano.scan(self.rnn_step, sequences=self.C[u], outputs_info=self.h_0[0])
 
 		if self.dropout:
 			inv_dr = 1. / (1 - self.dr_rate)
@@ -142,13 +129,14 @@ class RNNEMB(RNN):
 
 		# output of hidden layer and output layer
 		if not self.C:
-			func = self.rnn_step_noemb
-		else if self.emb_dr:
-			func = self.rnn_step_emb_dr
+			part_h, _ = theano.scan(self.rnn_step_noemb, sequences=x, outputs_info=h_init)
+		elif self.emb_dr:
+			nx = self.corrupt(self.C[x], self.emb_dr_rate)
+			part_h, _ = theano.scan(self.rnn_step_emb_dr, sequences=nx, outputs_info=h_init)
 		else:
-			func = self.rnn_step
+			part_h, _ = theano.scan(self.rnn_step, sequences=self.C[x], outputs_info=h_init)
 			
-		part_h, _ = theano.scan(func, sequences=x, outputs_info=h_init)
+		
 
 		if self.dropout:
 			part_h = self.corrupt(part_h, self.dr_rate)
@@ -253,28 +241,26 @@ class RNNMULTIEMB(RNNEMB):
 	def rnn_step(self, u_tm, h_tm):
 		# 主要是为了在测试的时候也是对的...
 		if self.emb_dr:
-			lin_h = T.dot(self.C[u_tm[0]], self.W_in / self.inv_emb_dr) + T.dot(h_tm, self.W_h) + self.b_h
+			lin_h = T.dot(u_tm[0], self.W_in / self.inv_emb_dr) + T.dot(h_tm, self.W_h) + self.b_h
 			# 计算补充的embeddings
 			for i in range(1, self.ext_emb+1):
-				lin_h += T.dot(self.C[u_tm[i]], self.ext_W_ins[i-1] / self.inv_emb_dr)
+				lin_h += T.dot(u_tm[i], self.ext_W_ins[i-1] / self.inv_emb_dr)
 		else:
-			lin_h = T.dot(self.C[u_tm[0]], self.W_in) + T.dot(h_tm, self.W_h) + self.b_h
+			lin_h = T.dot(u_tm[0], self.W_in) + T.dot(h_tm, self.W_h) + self.b_h
 			# 计算补充的embeddings
 			for i in range(1, self.ext_emb+1):
-				lin_h += T.dot(self.C[u_tm[i]], self.ext_W_ins[i-1])
+				lin_h += T.dot(u_tm[i], self.ext_W_ins[i-1])
 
 
 		h_t = self.activation(lin_h)
 		return h_t
 
-	def rnn_step_emb_tr(self, u_tm, h_tm):
+	def rnn_step_emb_dr(self, u_tm, h_tm):
 
-		emb = self.corrupt(self.C[u_tm[0]], self.emb_dr_rate)
-		lin_h = T.dot(emb, self.W_in) + T.dot(h_tm, self.W_h) + self.b_h
+		lin_h = T.dot(u_tm[0], self.W_in) + T.dot(h_tm, self.W_h) + self.b_h
 		# 计算补充的embeddings
 		for i in range(1, self.ext_emb+1):
-			emb = self.corrupt(self.C[u_tm[i]], self.emb_dr_rate)
-			lin_h += T.dot(emb, self.ext_W_ins[i-1])
-
+			lin_h += T.dot(u_tm[i], self.ext_W_ins[i-1])
+		
 		h_t = self.activation(lin_h)
 		return h_t

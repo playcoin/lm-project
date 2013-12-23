@@ -57,7 +57,7 @@ class RnnWFWS(RnnWS):
 				self.lr,
 				dr_rate = self.dr_rate,
 				emb_dr_rate = self.emb_dr_rate,
-				ext_emb = self.ext_emb
+				ext_emb = self.ext_emb,
 				params = self.rnnparams,
 				embeddings = self.embvalues,
 			)
