@@ -269,3 +269,9 @@ class RnnWS(object):
 
 		backupfile.close()
 		print "Load model complete! Filepath:", filepath
+
+	def dumpembedding(self, filepath):
+		embfile = open(filepath, 'wb')
+		cPickle.dump(self.embvalues, embfile)
+		embfile.close()
+		print "Dump embeddings complete! Filepath:", filepath
