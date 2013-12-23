@@ -19,22 +19,22 @@ theano.sandbox.cuda.use('gpu0')
 #############
 # Data file #
 #############
-train_text = readClearFile("./data/datasets/pku_ws_train.ltxt")
-train_tags = readClearFile("./data/datasets/pku_ws_train_tag.ltxt")
-nlpdict = NlpDict(comb=True, combzh=False, text=train_text)
+train_text = readClearFile("./data/datasets/pku_ws_train_large.ltxt")
+train_tags = readClearFile("./data/datasets/pku_ws_train_large_tag.ltxt")
+nlpdict = NlpDict(comb=True, combzh=True, text=train_text)
 
-valid_text = readClearFile("./data/datasets/pku_ws_valid.ltxt")
-valid_tags = readClearFile("./data/datasets/pku_ws_valid_tag.ltxt")
+valid_text = readClearFile("./data/datasets/pku_ws_valid_small.ltxt")
+valid_tags = readClearFile("./data/datasets/pku_ws_valid_small_tag.ltxt")
 
 test_text = readClearFile("./data/datasets/pku_ws_test.ltxt")
 test_tags = readClearFile("./data/datasets/pku_ws_test_tag.ltxt")
 
 rnnws = RnnWFWS2(nlpdict, n_emb=200, n_hidden=1200, lr=0.5, batch_size=158, 
 	l2_reg=0.000001, truncate_step=4, train_emb=True, dr_rate=0.3,
-	emb_file_path="./data/RnnEmbTrLM.n_hidden1200.embsize200.in_size4566.embeddings.obj"
+	emb_file_path="./data/RnnEmbTrLM.n_hidden1200.embsize200.in_size4598.embeddings.obj"
 )
 lr_coef = 0.91
-r_init = "ext2.dr30.c91"
+r_init = "dr30.c91"
 
 
 #############
