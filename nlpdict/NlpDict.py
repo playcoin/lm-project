@@ -121,6 +121,7 @@ class NlpDict(object):
 		@param token: token 文本
 		'''
 		if self.comb: # 检查是否要合并
+			token = token == u"." and u"．" or token
 			token = self.__combdigit(token)
 
 		if token in self.ndict:
