@@ -11,10 +11,15 @@ def readClearFile(filepath):
 	f.close()
 	return text
 
+def readFile(filepath):
+	f = file(filepath, "rb")
+	text = unicode(f.read(), "utf-8").replace("\r", "")
+	f.close()
+	return text
+
+
 def writeFile(filepath, content):
 	# if is text, then should encode the text by utf-8
-	content = type(content) == str and content.encode("utf-8") or content
-	
 	f = file(filepath, "wb")
-	f.write(content)
+	f.write(content.encode("utf-8"))
 	f.close()
