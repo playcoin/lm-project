@@ -56,7 +56,7 @@ epoches = [1, 10, 20, 30, 40, 50, 60, 70, 80, 85, 90, 95, 100]
 epoches.reverse()
 ppls = []
 for i in epoches:
-	modelpath = "./data/RnnEmbTrLM/RnnEmbTrLM.model.epoch%d.n_hidden1200.ssl20.truncstep4.drTrue.embsize200.in_size4633.rdr50.bs150.c96.obj" % i
+	modelpath = "./data/RnnEmbTrLM/RnnEmbTrLM.model.epoch%d.n_hidden1200.ssl20.truncstep4.dr0.5.embsize200.in_size4633.rbs150.c96.obj" % i
 	rnnlm = RnnEmbTrLM(nlpdict, n_emb=200, n_hidden=1200, lr=0.5, batch_size=150, truncate_step=4, 
 			train_emb=True, dr_rate=0.5,
 			backup_file_path=modelpath

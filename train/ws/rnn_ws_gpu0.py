@@ -29,12 +29,12 @@ valid_tags = readClearFile("./data/datasets/pku_ws_valid_small_tag.ltxt")
 test_text = readClearFile("./data/datasets/pku_ws_test.ltxt")
 test_tags = readClearFile("./data/datasets/pku_ws_test_tag.ltxt")
 
-rnnws = RnnWFWS2(nlpdict, n_emb=200, n_hidden=1200, lr=0.5, batch_size=158, 
-	l2_reg=0.000001, truncate_step=4, train_emb=True, dr_rate=0.3,
+rnnws = RnnWFWS2(nlpdict, n_emb=200, n_hidden=1400, lr=0.5, batch_size=158, 
+	l2_reg=0.000001, truncate_step=4, train_emb=True, dr_rate=0.5,
 	emb_file_path="./data/RnnEmbTrLM.n_hidden1200.embsize200.in_size4598.embeddings.obj"
 )
 lr_coef = 0.91
-r_init = "dr30.c91"
+r_init = "c91"
 
 
 #############
@@ -51,6 +51,18 @@ def main():
 	rnnws.traintext(train_text, train_tags, test_text, test_tags, 
 		sen_slice_length=20, epoch=60, lr_coef=lr_coef, 
 		DEBUG=True, SAVE=True, SINDEX=1, r_init=r_init
+	)
+
+	###############
+	# test emb_dr #
+	###############
+	rnnws1 = RnnWFWS2(nlpdict, n_emb=200, n_hidden=1400, lr=0.5, batch_size=158, 
+		l2_reg=0.000001, truncate_step=4, train_emb=True, dr_rate=0.5, emb_dr_rate=0.1,
+		emb_file_path="./data/RnnEmbTrLM.n_hidden1200.embsize200.in_size4598.embeddings.obj"
+	)
+	rnnws1.traintext(train_text, train_tags, test_text, test_tags, 
+		sen_slice_length=20, epoch=60, lr_coef=0.91, 
+		DEBUG=True, SAVE=True, SINDEX=1, r_init="embdr0.1.c91"
 	)
 
 if __name__ == "__main__":

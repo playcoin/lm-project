@@ -150,7 +150,7 @@ class RNNEMB(RNN):
 		# add L2 norm
 		part_L2_sqr = 0.
 		for w in self.norm_params:
-			part_L2_sqr += (x ** 2).sum()
+			part_L2_sqr += (w ** 2).sum()
 
 		part_cost = part_cost + l2_reg * part_L2_sqr
 

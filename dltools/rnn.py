@@ -61,9 +61,10 @@ class RNN(object):
 			W_h = theano.shared(value = W_h_values, name='W_h', borrow=True)
 
 		if not W_out:
+			upbound = max(n_in, n_out)
 			W_out_values = numpy.asarray(rng.uniform(
-				low  = -numpy.sqrt(6.0 / (n_h + n_out)),
-				high  = numpy.sqrt(6.0 / (n_h + n_out)),
+				low  = -numpy.sqrt(6.0 / (n_h + upbound)),
+				high  = numpy.sqrt(6.0 / (n_h + upbound)),
 				size = (n_h, n_out)), dtype = theano.config.floatX
 			)
 			W_out = theano.shared(value = W_out_values, name='W_out', borrow=True)
