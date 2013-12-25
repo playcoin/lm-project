@@ -22,7 +22,7 @@ train_text = readClearFile("./data/datasets/pku_pos_train.ltxt")
 train_tags = readFile("./data/datasets/pku_pos_train_tag.ltxt") # 不要清空格
 
 rnnpos = RnnPOS(nlpdict, n_emb=200, n_hidden=300, lr=0.5, batch_size=10, 
-	l2_reg=0.000001, truncate_step=4, train_emb=True, dr_rate=0.5, emb_dr_rate=0.1,
+	l2_reg=0.000001, truncate_step=4, train_emb=True, dr_rate=0.5, emb_dr_rate=0.,
 	emb_file_path="./data/RnnWFWS2.n_hidden1400.embsize200.in_size4598.embeddings.obj"
 )
 # rnnpos.batch_size = 10

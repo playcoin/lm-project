@@ -138,3 +138,15 @@ class RnnWBWF2WS(RnnWFWS):
 		self.train_preffix = '\n'
 		self.train_suffix = '\n\n'
 
+class RnnRevWS2(RnnWFWS2):
+
+	def tokens2nndata(self, train_text, train_tags=None):
+		'''
+		@summary: 将输入文本转化为id序列 and reverse the input sequences.
+		'''
+		# reverse
+		train_text = train_text[::-1]
+		if train_tags:
+			train_tags = train_tags[::-1]
+
+		return super(RnnRevWS2, self).tokens2nndata(train_text, train_tags)
