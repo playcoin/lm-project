@@ -150,3 +150,9 @@ class RnnRevWS2(RnnWFWS2):
 			train_tags = train_tags[::-1]
 
 		return super(RnnRevWS2, self).tokens2nndata(train_text, train_tags)
+
+	def segment(self, text, decode=True, unform_text=None):
+
+		res = super(RnnRevWS2, self).segment(text, decode, rev=True)
+
+		return res

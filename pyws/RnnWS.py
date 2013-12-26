@@ -173,33 +173,33 @@ class RnnWS(object):
 		'''
 		self.initRnn()
 
-		t_in, t_l = self.tokens2nndata(test_text, test_tags)
-		err = self.test_model(t_in, t_l)[0]
-		if show_result:
-			print formtext(test_text, self.rnn_pred(t_in))
+		test_dataset = self.tokens2nndata(test_text, test_tags)
+		err = self.test_model(*test_dataset)
 		print "Error rate %.5f" % err
 
-	def segment(self, text, decode=True, unform_text=None):
+	def segment(self, text, decode=True, rev=False):
 		'''
 		@summary: 分词 BMES tag, S:0, B:1, M:2, E:3
 				先解码，在格式化
 		'''
 		self.initRnn()
 		data_input = self.tokens2nndata(text)
-		unform_text = unform_text or text
 
 		if not decode:
 			if type(data_input) == tuple:
-				tags = self.rnn_pred(*data_input)
+				tags = list(self.rnn_pred(*data_input))
 			else:
-				tags = self.rnn_pred(data_input)
-			return formtext(unform_text, tags)
+				tags = list(self.rnn_pred(data_input))
+
+			tags = rev and tags[::-1] or tags
+			return formtext(text, tags)
 
 		if type(data_input) == tuple:
-			prob_matrix = numpy.log(self.rnn_prob_matrix(*data_input))
+			prob_matrix = list(numpy.log(self.rnn_prob_matrix(*data_input)))
 		else:
-			prob_matrix = numpy.log(self.rnn_prob_matrix(data_input))
+			prob_matrix = list(numpy.log(self.rnn_prob_matrix(data_input)))
 
+		prob_matrix = rev and prob_matrix[::-1] or prob_matrix
 		# 解码
 		tags = []
 		# 第一个只可能是 S, B
@@ -230,7 +230,7 @@ class RnnWS(object):
 				c1 = 2
 
 		tags.reverse()
-		return formtext(unform_text, tags)
+		return formtext(text, tags)
 
 	def savemodel(self, filepath):
 		backupfile = open(filepath, 'wb')
