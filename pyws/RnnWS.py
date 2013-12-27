@@ -179,29 +179,34 @@ class RnnWS(object):
 
 	def segment(self, text, decode=True, rev=False):
 		'''
-		@summary: 分词 BMES tag, S:0, B:1, M:2, E:3
-				先解码，在格式化
+		@summary: 先解码，在格式化
 		'''
+		tags, prob_matrix = self.segdecode(text, decode, rev)
+
+		return formtext(text, tags)
+
+	def segdecode(self, text, decode=True, rev=False):
+		'''
+		@summary: 解码 BMES tag, S:0, B:1, M:2, E:3
+		'''
+
 		self.initRnn()
 		data_input = self.tokens2nndata(text)
 
-		if not decode:
-			if type(data_input) == tuple:
-				tags = list(self.rnn_pred(*data_input))
-			else:
-				tags = list(self.rnn_pred(data_input))
-
-			tags = rev and tags[::-1] or tags
-			return formtext(text, tags)
-
 		if type(data_input) == tuple:
-			prob_matrix = list(numpy.log(self.rnn_prob_matrix(*data_input)))
+			prob_matrix = numpy.log(self.rnn_prob_matrix(*data_input))
 		else:
-			prob_matrix = list(numpy.log(self.rnn_prob_matrix(data_input)))
+			prob_matrix = numpy.log(self.rnn_prob_matrix(data_input))
 
-		prob_matrix = rev and prob_matrix[::-1] or prob_matrix
+		if rev:
+			prob_matrix = numpy.flipud(prob_matrix)
+
+		if not decode:
+			return prob_matrix.argmax(1), prob_matrix
+
 		# 解码
 		tags = []
+		old_pb = prob_matrix.copy()
 		# 第一个只可能是 S, B
 		prob_matrix[0][2] = -999999.
 		prob_matrix[0][3] = -999999.
@@ -230,7 +235,8 @@ class RnnWS(object):
 				c1 = 2
 
 		tags.reverse()
-		return formtext(text, tags)
+
+		return tags, old_pb
 
 	def savemodel(self, filepath):
 		backupfile = open(filepath, 'wb')

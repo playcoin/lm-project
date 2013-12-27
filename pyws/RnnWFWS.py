@@ -151,8 +151,99 @@ class RnnRevWS2(RnnWFWS2):
 
 		return super(RnnRevWS2, self).tokens2nndata(train_text, train_tags)
 
-	def segment(self, text, decode=True, unform_text=None):
+	def segment(self, text, decode=True):
 
 		res = super(RnnRevWS2, self).segment(text, decode, rev=True)
 
 		return res
+
+class RnnFRWS(object):
+
+	def __init__(self, fws, rws):
+
+		self.fws = fws
+		self.rws = rws
+
+	def segment(self, text):
+
+		tags1, pm1 = self.fws.segdecode(text, decode=True)
+		tags2, pm2 = self.rws.segdecode(text, decode=True, rev=True)
+
+		gps = self.findDiff(tags1, tags2)
+
+		for pair in gps:
+			s = pair[0]
+			e = pair[1] + 1
+			a = tags1[s:e]
+			b = tags2[s:e]
+			s1, s2 = self.calDiff(pair, tags1, pm1, tags2, pm2)
+
+			if s1 >= s2:	# user the result of forward
+				for i in range(s, e):
+					tags2[i] = tags1[i]
+
+		return formtext(text, tags2)
+
+	# find the different
+	def findDiff(self, tags1, tags2):
+		last = -1
+		groups = []
+		pair = []
+		for i in range(len(tags1)):
+			if tags1[i] != tags2[i]:
+				if i != last+1:
+					if len(pair) == 1:
+						pair.append(last)
+						groups.append(pair)
+					pair = [i]
+				last = i
+
+		if len(pair) == 1:
+			pair.append(last)
+			groups.append(pair)
+
+		return groups
+
+	def calDiff(self, pair, tags1, pm1, tags2, pm2):
+		"find the surround probs"
+		# sum1 = 0.
+		# sum2 = 0.
+		sidx = min(self.findPre(tags1, pair[0]), self.findPre(tags2, pair[0]))
+		eidx = max(self.findSuf(tags1, pair[1]), self.findSuf(tags2, pair[1]))
+		# for i in range(sidx, eidx):
+			# sum1 += pm1[i][tags1[i]]
+			# sum2 += pm2[i][tags2[i]]
+
+		tsum1 = 0.
+		tsum2 = 0.
+		# sidx = max(findPre(tags1, sidx-1), findPre(tags2, sidx-1))
+		# sidx = max(findPre(tags1, sidx-1), findPre(tags2, sidx-1))
+		sidx = max(sidx - 2, 0)
+		eidx = min(eidx + 2, len(tags1))
+		for i in range(sidx, eidx):
+			tsum1 += pm1[i][tags1[i]]
+			tsum2 += pm2[i][tags2[i]]
+
+		return tsum1, tsum2
+
+	def findPre(self, tags, idx):
+		if idx < 0:
+			return 0
+
+		if tags[idx] == 2 or tags[idx] == 3:
+			while idx >= 0 and tags[idx] != 1:
+				idx -= 1
+
+		return max(idx, 0)
+
+	def findSuf(self, tags, idx):
+		# idx + 1
+		len_t = len(tags)
+		if idx >= len_t:
+			return len_t
+
+		if tags[idx] == 1 or tags[idx] == 2:
+			while idx < len_t and tags[idx] != 3:
+				idx += 1
+
+		return min(idx+1, len_t)

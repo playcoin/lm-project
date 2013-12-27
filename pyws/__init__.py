@@ -7,4 +7,4 @@ Created on 2013-12-18 20:58
 
 from MlpWS import MlpWS
 from RnnWS import RnnWS
-from RnnWFWS import RnnWFWS, RnnWFWS2, RnnWBWF2WS, RnnRevWS2
+from RnnWFWS import RnnWFWS, RnnWFWS2, RnnWBWF2WS, RnnRevWS2, RnnFRWS
