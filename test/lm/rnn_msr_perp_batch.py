@@ -8,33 +8,19 @@ Created on 2013-05-05 23:00
 from nlpdict import NlpDict
 from pylm import RnnLM
 from pylm import RnnEmbTrLM
+from fileutil import readClearFile
 import numpy
 import time
 import theano.sandbox.cuda
 
 
-train_file_path = './data/msr_train.ltxt'
-print "Training file path:", train_file_path
-# text
-f = file(train_file_path)
-text = unicode(f.read(), 'utf-8')
-text = text.replace(" ", "")
-f.close()
-
-train_text = text
-
-nlpdict = NlpDict()
-nlpdict.buildfromtext(train_text, freq_thres=0)
+train_text = readClearFile("./data/datasets/msr_ws_train.ltxt")
+nlpdict = NlpDict(comb=True, combzh=True, text=train_text)
 print "NlpDict size is:", nlpdict.size()
-print "Train size is: %s" % len(train_text)
 
 
-# f = file('./data/msr_valid.ltxt')
-f = file('./data/msr_test.ltxt')
-tt = unicode(f.read(), 'utf-8')
-f.close()
-
-theano.sandbox.cuda.use('gpu1')
+tt = readClearFile("./data/datasets/msr_ws_test.ltxt")
+theano.sandbox.cuda.use('gpu0')
 
 def test(lm):
 	s_time = time.clock()
@@ -50,14 +36,14 @@ def test(lm):
 
 # epoches = [1, 10, 20, 30, 40, 50, 60, 70, 80, 85, 90, 95, 100]
 # epoches = [5, 8, 11, 14, 17, 20]
-epoches = [47, 50]#[23, 26, 29, 32]
+epoches = [44, 40, 35]#[23, 26, 29, 32]
 # epoches = [90]
 
 ppls = []
 for i in epoches:
-	modelpath = "./data/RnnEmbTrLM/RnnEmbTrLM.model.epoch%s.n_hidden600.ssl20.truncstep4.drFalse.embsize200.in_size5127.r7ge200.MSR.obj" % i
-	rnnlm = RnnEmbTrLM(nlpdict, n_emb=200, n_hidden=600, lr=0.5, batch_size=150, truncate_step=4, 
-			train_emb=True, dr_rate=0.,
+	modelpath = "./data/RnnEmbTrLM/RnnEmbTrLM.model.epoch%d.n_hidden1200.ssl20.truncstep4.dr0.5.embsize200.in_size5086.r7ge200.c93.MSR.obj" % i
+	rnnlm = RnnEmbTrLM(nlpdict, n_emb=200, n_hidden=1200, lr=0.5, batch_size=150, truncate_step=4, 
+			train_emb=True, dr_rate=0.5,
 			backup_file_path=modelpath
 		)
 

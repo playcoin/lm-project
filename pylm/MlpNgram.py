@@ -225,7 +225,7 @@ class MlpNgram(LMBase):
 
 	def testtext(self, text):
 
-		self.__initMlp(no_train=True)
+		self.initMlp(no_train=True)
 		# get input data
 		mat_in, vec_out = self.tids2inputdata(self.tokens2ids(text))
 		error = self.test_model(mat_in.get_value(borrow=True), vec_out.get_value(borrow=True))
@@ -237,7 +237,7 @@ class MlpNgram(LMBase):
 		if(len(text) < 1):
 			return None
 
-		self.__initMlp(no_train=True)
+		self.initMlp(no_train=True)
 
 		# token to NN input and label
 		tidmat, _ = self.tids2inputdata(self.tokens2ids(text[-1]), truncate_input=False)
@@ -245,7 +245,7 @@ class MlpNgram(LMBase):
 
 	def likelihood(self, sentence, debug=False):
 
-		self.__initMlp(no_train=True)
+		self.initMlp(no_train=True)
 
 		# token to NN input and label
 		sentence = '\n' + sentence.strip() + '\n'
@@ -261,7 +261,7 @@ class MlpNgram(LMBase):
 
 	def ranks(self, sentence):
 
-		self.__initMlp(no_train=True)
+		self.initMlp(no_train=True)
 		sentence = '\n' + sentence.strip() + '\n'
 		mat_in, label = self.tids2inputdata(self.tokens2ids(sentence))
 
@@ -279,7 +279,7 @@ class MlpNgram(LMBase):
 		'''
 		@summary: Return the top N predict char of the history tids
 		'''
-		self.__initMlp(no_train=True)
+		self.initMlp(no_train=True)
 		tidmat, _ = self.tids2inputdata(self.tokens2ids(text), truncate_input=False)
 		probs = self.mlp_probs(tidmat.get_value(borrow=True))
 		

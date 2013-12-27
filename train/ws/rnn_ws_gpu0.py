@@ -19,22 +19,22 @@ theano.sandbox.cuda.use('gpu0')
 #############
 # Data file #
 #############
-train_text = readClearFile("./data/datasets/pku_ws_train_large.ltxt")
-train_tags = readClearFile("./data/datasets/pku_ws_train_large_tag.ltxt")
+train_text = readClearFile("./data/datasets/msr_ws_train.ltxt")
+train_tags = readClearFile("./data/datasets/msr_ws_train_tag.ltxt")
 nlpdict = NlpDict(comb=True, combzh=True, text=train_text)
 
-valid_text = readClearFile("./data/datasets/pku_ws_valid_small.ltxt")
-valid_tags = readClearFile("./data/datasets/pku_ws_valid_small_tag.ltxt")
+valid_text = readClearFile("./data/datasets/msr_ws_valid.ltxt")
+valid_tags = readClearFile("./data/datasets/msr_ws_valid_tag.ltxt")
 
-test_text = readClearFile("./data/datasets/pku_ws_test.ltxt")
-test_tags = readClearFile("./data/datasets/pku_ws_test_tag.ltxt")
+test_text = readClearFile("./data/datasets/msr_ws_test.ltxt")
+test_tags = readClearFile("./data/datasets/msr_ws_test_tag.ltxt")
 
-rnnws = RnnWFWS2(nlpdict, n_emb=200, n_hidden=1400, lr=0.5, batch_size=158, 
-	l2_reg=0.000001, truncate_step=4, train_emb=True, dr_rate=0.5,
-	emb_file_path="./data/RnnEmbTrLM.n_hidden1200.embsize200.in_size4598.embeddings.obj"
+rnnws = RnnWFWS2(nlpdict, n_emb=200, n_hidden=600, lr=0.1, batch_size=150, 
+	l2_reg=0.000000, truncate_step=4, train_emb=True, dr_rate=0.0,
+	emb_file_path="./data/RnnEmbTrLM.n_hidden1200.embsize200.in_size5086.embeddings.obj"
 )
-lr_coef = 0.91
-r_init = "c91"
+lr_coef = 0.94
+r_init = "c94.MSR"
 
 
 #############
@@ -43,26 +43,14 @@ r_init = "c91"
 def main():
 	# 带验证集一起训练
 	global train_text, train_tags
-	train_text = train_text + "\n" + valid_text
-	train_tags = train_tags + "\n" + valid_tags
+	train_text = train_text# + "\n" + valid_text
+	train_tags = train_tags# + "\n" + valid_tags
 
 	print "Dict size is: %s, Train size is: %s" % (nlpdict.size(), len(train_text))
 
-	rnnws.traintext(train_text, train_tags, test_text, test_tags, 
-		sen_slice_length=20, epoch=60, lr_coef=lr_coef, 
+	rnnws.traintext(train_text, train_tags, train_text[:5000], train_tags[:5000], 
+		sen_slice_length=20, epoch=30, lr_coef=lr_coef, 
 		DEBUG=True, SAVE=True, SINDEX=1, r_init=r_init
-	)
-
-	###############
-	# test emb_dr #
-	###############
-	rnnws1 = RnnWFWS2(nlpdict, n_emb=200, n_hidden=1400, lr=0.5, batch_size=158, 
-		l2_reg=0.000001, truncate_step=4, train_emb=True, dr_rate=0.5, emb_dr_rate=0.1,
-		emb_file_path="./data/RnnEmbTrLM.n_hidden1200.embsize200.in_size4598.embeddings.obj"
-	)
-	rnnws1.traintext(train_text, train_tags, test_text, test_tags, 
-		sen_slice_length=20, epoch=60, lr_coef=0.91, 
-		DEBUG=True, SAVE=True, SINDEX=1, r_init="embdr0.1.c91"
 	)
 
 if __name__ == "__main__":
