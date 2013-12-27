@@ -36,7 +36,7 @@ rws = RnnRevWS2(nlpdict, n_emb=200, n_hidden=1400, lr=0.5, batch_size=150,
 	backup_file_path="./data/model/RnnRevWS2.model.epoch56.n_hidden1400.ssl20.truncstep4.dr0.5.embsize200.in_size4598.rc91.obj"
 )
 
-result_file = "./data/result/4598_1400_dr50_fr.ltxt"
+result_file = "./data/result/4598_1400_dr50_rf.ltxt"
 
 frws = RnnFRWS(fws, rws)
 #############

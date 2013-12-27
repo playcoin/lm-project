@@ -1,35 +1,41 @@
 from nlpdict import NlpDict
-from pyws import RnnWS
-from pyws import RnnWFWS, RnnWFWS2, RnnWBWF2WS, RnnRevWS2
-from pylm import RnnEmbTrLM
+# from pyws import RnnWS
+# from pyws import RnnWFWS, RnnWFWS2, RnnWBWF2WS, RnnRevWS2
+# from pylm import RnnEmbTrLM
 from fileutil import readClearFile, writeFile
 
 import numpy
 import time
 import re
 import random
-import theano.sandbox.cuda
+# import theano.sandbox.cuda
+import cPickle
 
 
 #############
 # Datafiles #
 #############
 # PKU small valid set
-train_text = readClearFile("./data/datasets/pku_ws_train_large.ltxt")
-nlpdict = NlpDict(comb=True, combzh=True, text=train_text)
+# train_text = readClearFile("./data/datasets/pku_ws_train_large.ltxt")
+# nlpdict = NlpDict(comb=True, combzh=True, text=train_text)
 
 test_text = readClearFile("./data/datasets/pku_ws_test.ltxt")
 test_tags = readClearFile("./data/datasets/pku_ws_test_tag.ltxt")
 
-ws = RnnWFWS2(nlpdict, n_emb=200, n_hidden=1400, lr=0.5, batch_size=150, 
-	l2_reg=0.000001, truncate_step=4, train_emb=True, dr_rate=0.5,# emb_dr_rate=0.1,
-	backup_file_path="./data/model/RnnWFWS2.model.epoch60.n_hidden1400.ssl20.truncstep4.dr0.5.embsize200.in_size4598.rc91.obj"
-)
+# ws = RnnWFWS2(nlpdict, n_emb=200, n_hidden=1400, lr=0.5, batch_size=150, 
+# 	l2_reg=0.000001, truncate_step=4, train_emb=True, dr_rate=0.5,# emb_dr_rate=0.1,
+# 	backup_file_path="./data/model/RnnWFWS2.model.epoch60.n_hidden1400.ssl20.truncstep4.dr0.5.embsize200.in_size4598.rc91.obj"
+# )
 
-wsrev = RnnRevWS2(nlpdict, n_emb=200, n_hidden=1400, lr=0.5, batch_size=150, 
-	l2_reg=0.000001, truncate_step=4, train_emb=True, dr_rate=0.5,# emb_dr_rate=0.1,
-	backup_file_path="./data/model/RnnRevWS2.model.epoch56.n_hidden1400.ssl20.truncstep4.dr0.5.embsize200.in_size4598.rc91.obj"
-)
+# wsrev = RnnRevWS2(nlpdict, n_emb=200, n_hidden=1400, lr=0.5, batch_size=150, 
+# 	l2_reg=0.000001, truncate_step=4, train_emb=True, dr_rate=0.5,# emb_dr_rate=0.1,
+# 	backup_file_path="./data/model/RnnRevWS2.model.epoch56.n_hidden1400.ssl20.truncstep4.dr0.5.embsize200.in_size4598.rc91.obj"
+# )
+
+
+f = file("./data/test_records.obj", 'rb')
+records = cPickle.load(f)
+f.close()
 
 
 def main():
@@ -43,20 +49,27 @@ def main():
 	cfw = 0
 	crr = 0
 	crw = 0
-	# samples = random.sample(range(len(sents)), 1000)
+	# samples = random.sample(range(len(sents)), 500)
 	for i in range(len(sents)):
 		text = sents[i]
 		tags = [int(x) for x in taglines[i]]
-		tags1, pm1 = ws.segdecode(text, decode=True)
-		tags2, pm2 = wsrev.segdecode(text, decode=True, rev=True)
+		# tags1, pm1 = ws.segdecode(text, decode=True)
+		# tags2, pm2 = wsrev.segdecode(text, decode=True, rev=True)
 
-		gps = findDiff(tags1, tags2)
+		# gps = findDiff(tags1, tags2)
 
-		for pair in gps:
+		# records.append([])
+		tags1, pm1, tags2, pm2, gps = records[i]
+		text_len = len(text)
+		for j in range(len(gps)):
+			pair = gps[j]
 			a = tags1[pair[0]:pair[1]+1]
 			b = tags2[pair[0]:pair[1]+1]
 			c = tags[pair[0]:pair[1]+1]
-			s1, s2 = calDiff(pair, tags1, pm1, tags2, pm2, text)
+			s1, s2 = calDiff(pair, tags1, pm1, tags2, pm2)
+			d1, d2 = calDiff2(j, gps, text_len)
+			s1 += 0.005 * d1
+			s2 += 0.005 * d2
 			d = s1 >= s2 and 'f' or 'r'
 
 			if a == c:
@@ -72,10 +85,12 @@ def main():
 			else:
 				cw += 1
 
-			print text[pair[0]:pair[1]+1], a, b, c, d, s1, s2
+			print text[pair[0]:pair[1]+1], a, b, c, d, "%.5f %.5f %.5f %.5f" % (s1, s2, d1, d2)
 			ct += 1
 
-
+	# f = file("./data/test_records.obj", 'wb')
+	# cPickle.dump(records, f)
+	# f.close()
 	print "Total %d, TW %d, FR %d, FW %d, RR %d, RW %d" % (ct, cw, cfr, cfw, crr, crw)
 	print "Total time: %.1fm" % ((time.clock() - stime) / 60.)
 
@@ -100,7 +115,7 @@ def findDiff(tags1, tags2):
 
 	return groups
 
-def calDiff(pair, tags1, pm1, tags2, pm2, text):
+def calDiff(pair, tags1, pm1, tags2, pm2):
 	"find the surround probs"
 	# sum1 = 0.
 	# sum2 = 0.
@@ -121,6 +136,22 @@ def calDiff(pair, tags1, pm1, tags2, pm2, text):
 		tsum2 += pm2[i][tags2[i]]
 
 	return tsum1, tsum2
+
+def calDiff2(idx, groups, text_len):
+	"find the nearest different probs"
+
+	# d1 = idx > 0 and groups[idx-1][1] or 0
+	# d2 = (idx < len(groups) - 1) and groups[idx+1][0] or text_len
+	# d1 = groups[idx][0] - d1
+	# d2 = d2 - groups[idx][1] 
+
+	d1 = max(groups[idx][0] - 0, 80)
+	d2 = max(text_len - groups[idx][1], 80)
+	s = float(d1 + d2)
+	d1 = numpy.log(d1 / s)
+	d2 = numpy.log(d2 / s)
+
+	return d1, d2
 
 def findPre(tags, idx):
 	if idx < 0:

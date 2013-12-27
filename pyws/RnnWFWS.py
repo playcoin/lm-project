@@ -174,13 +174,13 @@ class RnnFRWS(object):
 		for pair in gps:
 			s = pair[0]
 			e = pair[1] + 1
-			a = tags1[s:e]
-			b = tags2[s:e]
 			s1, s2 = self.calDiff(pair, tags1, pm1, tags2, pm2)
 
 			if s1 >= s2:	# user the result of forward
+			# if s1 < s2:	# user the result of backward
 				for i in range(s, e):
 					tags2[i] = tags1[i]
+					# tags1[i] = tags2[i]
 
 		return formtext(text, tags2)
 
