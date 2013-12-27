@@ -130,6 +130,9 @@ class RnnWS(object):
 		half_sen_length = sentence_length / 2
 		data_slice_size = sentence_length * self.batch_size
 		data_size = seq_size / data_slice_size * data_slice_size
+		# total sentence length after reshape
+		total_sent_len = data_size / self.batch_size
+		print "Actural training data size: %s, with total sentence length: %s" % (data_size, total_sent_len)
 
 		dataset = self.tokens2nndata(train_text, train_tags)
 		tbptt_args = self.reshape(dataset, data_size)
@@ -140,9 +143,6 @@ class RnnWS(object):
 		# for test
 		test_dataset = self.tokens2nndata(test_text, test_tags)
 
-		# total sentence length after reshape
-		total_sent_len = data_size / self.batch_size
-		print "Actural training data size: %s, with total sentence length: %s" % (data_size, total_sent_len)
 		s_time = time.clock()
 		for i in xrange(epoch):
 

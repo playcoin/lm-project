@@ -13,20 +13,9 @@ import time
 import theano.sandbox.cuda
 
 
-train_file_path = './data/datasets/pku_lm_train.ltxt'
-print "Training file path:", train_file_path
-# text
-f = file(train_file_path)
-text = unicode(f.read(), 'utf-8')
-text = text.replace(" ", "")
-f.close()
-
-train_text = text
-
-nlpdict = NlpDict()
-nlpdict.buildfromtext(train_text, freq_thres=0)
+train_text = readClearFile("./data/datasets/msr_ws_train.ltxt")
+nlpdict = NlpDict(comb=True, combzh=True, text=train_text)
 print "NlpDict size is:", nlpdict.size()
-print "Train size is: %s" % len(train_text)
 
 
 theano.sandbox.cuda.use('gpu1')

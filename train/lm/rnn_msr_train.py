@@ -35,10 +35,12 @@ theano.sandbox.cuda.use('gpu0')
 
 rnnlm = RnnEmbTrLM(nlpdict, n_emb=200, n_hidden=1200, lr=0.5, batch_size=150, truncate_step=4, 
 	train_emb=True, dr_rate=0.5,
-	emb_file_path="./data/7gram.emb200.h1200.d5086.emb.obj"
+	backup_file_path="./data/RnnEmbTrLM/RnnEmbTrLM.model.epoch36.n_hidden1200.ssl20.truncstep4.dr0.5.embsize200.in_size5086.r7ge200.c93.MSR.obj"
 )
 
+rnnlm.lr = 0.5 * 0.93 ** 36
+
 rnnlm.traintext(train_text, test_text, 
-	add_se=False, sen_slice_length=20, epoch=50, lr_coef=0.93, 
-	DEBUG=True, SAVE=True, SINDEX=1, r_init="7ge200.c93.MSR"
+	add_se=False, sen_slice_length=20, epoch=8, lr_coef=0.93, 
+	DEBUG=True, SAVE=True, SINDEX=37, r_init="7ge200.c93.MSR"
 )

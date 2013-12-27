@@ -7,45 +7,24 @@ Created on 2013-06-12 14:28
 
 from nlpdict import NlpDict
 from pylm import MlpNgram
+from fileutil import readClearFile
 import numpy
 import time
 import theano.sandbox.cuda
-
-
-train_file_path = './data/msr_train.ltxt'
-print "Training file path:", train_file_path
-# text
-f = file(train_file_path)
-text = unicode(f.read(), 'utf-8')
-text = text.replace(" ", "")
-f.close()
-
-#############
-# Trainging #
-#############
-train_text = text
-
-nlpdict = NlpDict()
-nlpdict.buildfromtext(train_text, freq_thres=0)
-print "NlpDict size is:", nlpdict.size()
-print "Train size is: %s" % len(train_text)
-
 theano.sandbox.cuda.use('gpu1')
 
-# mlp_ngram = MlpNgram(nlpdict, N=5, n_emb=200, n_hidden=800, lr=0.5, batch_size=200, dropout=False,
-# 		backup_file_path='./data/MlpNgram/Mlp5gram.model.epoch100.n_hidden1600.drFalse.n_emb200.in_size4633.rTrue.obj')
+
+train_text = readClearFile("./data/datasets/msr_ws_train.ltxt")
+nlpdict = NlpDict(comb=True, combzh=True, text=train_text)
+print "NlpDict size is:", nlpdict.size()
+tt = readClearFile("./data/datasets/msr_ws_test.ltxt")
 
 mlp_ngram = MlpNgram(nlpdict, N=7, n_emb=200, n_hidden=1200, lr=0.5, batch_size=200, dropout=False,
-		backup_file_path='./data/MlpNgram/Mlp7gram.model.epoch90.n_hidden1200.drFalse.n_emb200.in_size5127.rTrue.MSR.obj')
+		backup_file_path='./data/MlpNgram/Mlp7gram.model.epoch50.n_hidden1200.drTrue.n_emb200.in_size5086.rTrue.MSR.obj')
 
 # mlp_ngram = MlpNgram(nlpdict, N=8, n_emb=50, n_hidden=200, lr=0.5, batch_size=200, dropout=False,
 # 		backup_file_path='./data/MlpNgram/Mlp8gram.model.epoch20.n_hidden200.obj',
 # 		emb_file_path="./data/pku_embedding.obj")
-
-# f = file('./data/msr_valid.ltxt')
-f = file('./data/msr_test.ltxt')
-tt = unicode(f.read(), 'utf-8')
-f.close()
 
 s_time = time.clock()
 ce = mlp_ngram.crossentropy(tt)
