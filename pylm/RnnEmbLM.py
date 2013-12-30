@@ -174,7 +174,7 @@ class RnnEmbTrLM(RnnLM):
 		print "RnnLM train over!! The total training time is %.2fm." % ((e_time - s_time) / 60.) 
 
 	def savemodel(self, filepath):
-		backupfile = open(filepath, 'w')
+		backupfile = open(filepath, 'wb')
 		dumpdata = [self.batch_size, self.n_hidden, self.lr, self.truncate_step, self.rnnparams]
 		if self.rnn.C:
 			dumpdata.append(self.rnn.C.get_value())
@@ -184,8 +184,13 @@ class RnnEmbTrLM(RnnLM):
 		print "Save model complete! Filepath:", filepath
 
 	def loadmodel(self, filepath):
-		backupfile = open(filepath)
-		dumpdata = cPickle.load(backupfile)
+		try:
+			backupfile = open(filepath, 'rb')
+			dumpdata = cPickle.load(backupfile)
+		except:
+			backupfile = open(filepath, 'r')
+			dumpdata = cPickle.load(backupfile)
+			
 		self.batch_size, self.n_hidden, self.lr, self.truncate_step, self.rnnparams = dumpdata[:5]
 		if len(dumpdata) > 5:
 			self.embvalues = dumpdata[5]
