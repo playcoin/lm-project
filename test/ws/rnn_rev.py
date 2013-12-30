@@ -129,8 +129,8 @@ def calDiff(pair, tags1, pm1, tags2, pm2):
 	tsum2 = 0.
 	# sidx = max(findPre(tags1, sidx-1), findPre(tags2, sidx-1))
 	# sidx = max(findPre(tags1, sidx-1), findPre(tags2, sidx-1))
-	sidx = max(sidx - 2, 0)
-	eidx = min(eidx + 2, len(tags1))
+	# sidx = max(sidx - 0, 0)
+	# eidx = min(eidx + 0, len(tags1))
 	for i in range(sidx, eidx):
 		tsum1 += pm1[i][tags1[i]]
 		tsum2 += pm2[i][tags2[i]]

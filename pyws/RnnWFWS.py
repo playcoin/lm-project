@@ -206,20 +206,11 @@ class RnnFRWS(object):
 
 	def calDiff(self, pair, tags1, pm1, tags2, pm2):
 		"find the surround probs"
-		# sum1 = 0.
-		# sum2 = 0.
-		sidx = min(self.findPre(tags1, pair[0]), self.findPre(tags2, pair[0]))
-		eidx = max(self.findSuf(tags1, pair[1]), self.findSuf(tags2, pair[1]))
-		# for i in range(sidx, eidx):
-			# sum1 += pm1[i][tags1[i]]
-			# sum2 += pm2[i][tags2[i]]
 
 		tsum1 = 0.
 		tsum2 = 0.
-		# sidx = max(findPre(tags1, sidx-1), findPre(tags2, sidx-1))
-		# sidx = max(findPre(tags1, sidx-1), findPre(tags2, sidx-1))
-		sidx = max(sidx - 2, 0)
-		eidx = min(eidx + 2, len(tags1))
+		sidx = min(self.findPre(tags1, pair[0]), self.findPre(tags2, pair[0]))
+		eidx = max(self.findSuf(tags1, pair[1]), self.findSuf(tags2, pair[1]))
 		for i in range(sidx, eidx):
 			tsum1 += pm1[i][tags1[i]]
 			tsum2 += pm2[i][tags2[i]]
