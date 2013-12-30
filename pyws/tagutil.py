@@ -4,15 +4,15 @@ Created on 2013-11-28 11:56
 @summary: For text to tag. Use BMES tag, S:0, B:1, M:2, E:3
 @author: egg
 '''
+import re
 
 def text2tags(srcFile, descFile):
 	'''
 	@summary: 将标记文本转化为标签ID输出
 	'''
-	fin = file(srcFile)
+	fin = file(srcFile, 'rb')
 	text = unicode(fin.read(), "utf-8")
 	fin.close()
-	text = text.replace("   ", "  ")
 
 	tout = ""
 
@@ -22,7 +22,7 @@ def text2tags(srcFile, descFile):
 	for line in lines:
 		line = line.strip()
 		# split to tokens
-		tokens = line.split('  ')
+		tokens = re.split(r'\s+', line)
 		# for out put tags
 		tagline = []
 		for token in tokens:
@@ -55,4 +55,4 @@ def formtext(text, tags):
 
 
 if __name__ == "__main__":
-	text2tags("data/pku_valid_ws.ltxt", "data/pku_valid_ws_tag.ltxt")
+	text2tags("data/datasets/msr_ws_train.ltxt", "data/datasets/msr_ws_train_tag.ltxt")

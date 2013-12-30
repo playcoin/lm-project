@@ -31,7 +31,7 @@ nlpdict = NlpDict(comb=True, combzh=True, text=train_text)
 
 rnnws = RnnRevWS2(nlpdict, n_emb=200, n_hidden=400, lr=0.1, batch_size=5, 
 	l2_reg=0.000001, truncate_step=4, train_emb=True, dr_rate=0.3,
-	emb_file_path="./data/RnnWFWS2.n_hidden1400.embsize200.in_size4598.embeddings.obj"
+	emb_file_path="./data/RnnEmbTrLM.n_hidden1200.embsize200.in_size4598.embeddings.obj"
 )
 lr_coef = 0.91
 r_init = "dr30.c91"
@@ -52,7 +52,7 @@ def main():
 
 	rnnws.traintext(train_text, train_tags, train_text[:1000], train_tags[:1000], 
 		sen_slice_length=20, epoch=60, lr_coef=lr_coef, 
-		DEBUG=True, SAVE=False, SINDEX=1, r_init=r_init
+		DEBUG=2, SAVE=False, SINDEX=1, r_init=r_init
 	)
 
 if __name__ == "__main__":

@@ -119,13 +119,16 @@ class RnnWS(object):
 
 	def traintext(self, train_text, train_tags, test_text, test_tags, 
 			sen_slice_length=4, epoch=200, lr_coef = -1., 
-			DEBUG = False, SAVE=False, SINDEX=1, r_init=False):
+			DEBUG=False, SAVE=False, SINDEX=1, r_init=False):
+
+		if type(DEBUG) == bool:
+			DEBUG = DEBUG and 1 or 0 
+		if type(SAVE) == bool:
+			SAVE = SAVE and 1 or 0 
 
 		self.initRnn()
-
-		seq_size = len(train_text)
-
 		# variables for slice sentence
+		seq_size = len(train_text)
 		sentence_length = sen_slice_length * self.truncate_step
 		half_sen_length = sentence_length / 2
 		data_slice_size = sentence_length * self.batch_size
@@ -150,12 +153,14 @@ class RnnWS(object):
 				# reshape to matrix: [SEQ][BATCH][FRAME]
 				self.rnn.train_tbptt(j, j+sentence_length)
 
-			if DEBUG:
-				err = self.test_model(*test_dataset)
-				e_time = time.clock()
-				print "Error rate in epoch %s, is %.5f. Training time so far is: %.2fm" % ( i+SINDEX, err, (e_time-s_time) / 60.)
+			if DEBUG > 0:
+				if (i+1) % DEBUG == 0:
+					err = self.test_model(*test_dataset)
+					print "Error rate in epoch %s, is %.5f. Training time so far is: %.2fm" % ( i+SINDEX, err, (time.clock()-s_time) / 60.)
+				else:
+					print "Epoch %s. Training time so far is: %.2fm" % ( i+SINDEX, (time.clock()-s_time) / 60.)
 
-			if SAVE:
+			if SAVE > 0 and ((i+1)%SAVE == 0):
 				class_name = self.__class__.__name__
 				self.savemodel("./data/%s/%s.model.epoch%s.n_hidden%s.ssl%s.truncstep%s.dr%.1f.embsize%s.in_size%s.r%s.obj" % (class_name, class_name, i+SINDEX, self.n_hidden, sen_slice_length, self.truncate_step, self.dr_rate, self.n_emb, self.in_size, r_init))
 

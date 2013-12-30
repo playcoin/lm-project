@@ -188,7 +188,15 @@ class MlpNgram(LMBase):
 
 		return mat_in, vec_out
 
-	def traintext(self, text, test_text, add_se=False, epoch=100, lr_coef = -1., DEBUG=False, SAVE=False, SINDEX=1, r_init=True):
+	def traintext(self, text, test_text, 
+		add_se=False, epoch=100, lr_coef = -1., 
+		DEBUG=False, SAVE=False, SINDEX=1, r_init=True):
+
+		if type(DEBUG) == bool:
+			DEBUG = DEBUG and 1 or 0 
+		if type(SAVE) == bool:
+			SAVE = SAVE and 1 or 0 
+
 		# token chars to token ids
 		tidseq = self.tokens2ids(text, add_se)
 		train_size = len(tidseq) - 1
@@ -205,11 +213,14 @@ class MlpNgram(LMBase):
 			for idx in xrange(n_batch):
 				self.train_batch(idx)
 
-			if DEBUG:
-				error = self.test_model(test_in.get_value(borrow=True), test_out.get_value(borrow=True))
-				print "Error rate: %0.5f. Epoch: %s. Training time so far: %0.1fm" % (error, i+SINDEX, (time.clock()-s_time)/60.)
+			if DEBUG > 0:
+				if (i+1) % DEBUG == 0:
+					error = self.test_model(test_in.get_value(borrow=True), test_out.get_value(borrow=True))
+					print "Error rate: %0.5f. Epoch: %s. Training time so far: %0.2fm" % (error, i+SINDEX, (time.clock()-s_time)/60.)
+				else:
+					print "Epoch %s. Training time so far is: %.2fm" % ( i+SINDEX, (time.clock()-s_time) / 60.)
 
-			if SAVE:
+			if SAVE > 0 and ((i+1)%SAVE == 0):
 				self.savemodel("./data/MlpNgram/Mlp%sgram.model.epoch%s.n_hidden%s.dr%s.n_emb%s.in_size%s.r%s.obj" % (self.N, i+SINDEX, self.n_hidden, self.dropout, self.n_emb, self.n_in, r_init))
 			
 			if lr_coef > 0:
