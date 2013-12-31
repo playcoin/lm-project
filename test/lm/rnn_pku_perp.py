@@ -13,14 +13,15 @@ from fileutil import readClearFile
 import numpy
 import time
 import theano.sandbox.cuda
+theano.sandbox.cuda.use('gpu1')
 
-train_text = readClearFile("./data/datasets/pku_ws_train.ltxt")
-nlpdict = NlpDict(comb=True, combzh=True, text=train_text)
+train_text = readClearFile("./data/datasets/pku_lm_train.ltxt")
+nlpdict = NlpDict(comb=True, combzh=False, text=train_text)
 print "NlpDict size is:", nlpdict.size()
 
-rnnlm = RnnEmbTrLM(nlpdict, n_emb=nlpdict.size(), n_hidden=1200, lr=0.5, batch_size=150, truncate_step=4, 
+rnnlm = RnnEmbTrLM(nlpdict, n_emb=200, n_hidden=1200, lr=0.5, batch_size=150, truncate_step=4, 
 		train_emb=True, dr_rate=0.5,
-		backup_file_path="./data/model/RnnEmbTrLM.model.epoch100.n_hidden1200.ssl20.truncstep4.drTrue.embsize200.in_size4566.r7g200.c94.obj"
+		backup_file_path="./data/RnnEmbTrLM/RnnEmbTrLM.model.epoch10.n_hidden1200.ssl20.truncstep4.dr0.5.embsize200.in_size4566.rc94.obj"
 	)
 
 # rnnlm = RnnEmbTrLM(nlpdict, 
@@ -40,7 +41,7 @@ rnnlm = RnnEmbTrLM(nlpdict, n_emb=nlpdict.size(), n_hidden=1200, lr=0.5, batch_s
 
 # f = file('./data/pku_valid.ltxt')
 # f = file('./data/pku_test.ltxt')
-tt = readClearFile("./data/datasets/pku_ws_test.ltxt")
+tt = readClearFile("./data/datasets/pku_lm_test.ltxt")
 
 s_time = time.clock()
 ce = rnnlm.crossentropy(tt)

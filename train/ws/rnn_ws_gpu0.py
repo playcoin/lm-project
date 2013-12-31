@@ -29,12 +29,13 @@ valid_tags = readClearFile("./data/datasets/msr_ws_valid_tag.ltxt")
 test_text = readClearFile("./data/datasets/msr_ws_test.ltxt")
 test_tags = readClearFile("./data/datasets/msr_ws_test_tag.ltxt")
 
-rnnws = RnnWFWS2(nlpdict, n_emb=200, n_hidden=600, lr=0.1, batch_size=150, 
-	l2_reg=0.000000, truncate_step=4, train_emb=True, dr_rate=0.0,
-	emb_file_path="./data/RnnEmbTrLM.n_hidden1200.embsize200.in_size5086.embeddings.obj"
+rnnws = RnnWFWS2(nlpdict, n_emb=200, n_hidden=1200, lr=0.5, batch_size=128, 
+	l2_reg=0.000000, truncate_step=4, train_emb=True, dr_rate=0.3,
+	backup_file_path="./data/RnnWFWS2/RnnWFWS2.model.epoch40.n_hidden1200.ssl20.truncstep4.dr0.3.embsize200.in_size5086.rc91.MSR.obj"
 )
-lr_coef = 0.94
-r_init = "c94.MSR"
+rnnws.lr = 0.5 * 0.91 ** 45
+lr_coef = 0.91
+r_init = "c91.MSR"
 
 
 #############
@@ -42,15 +43,16 @@ r_init = "c94.MSR"
 #############
 def main():
 	# 带验证集一起训练
-	global train_text, train_tags
-	train_text = train_text# + "\n" + valid_text
-	train_tags = train_tags# + "\n" + valid_tags
+	global train_text, train_tags, test_text, test_tags
+	train_text = train_text + "\n" + valid_text
+	train_tags = train_tags + "\n" + valid_tags
+	print len(train_text), len(test_text)
 
 	print "Dict size is: %s, Train size is: %s" % (nlpdict.size(), len(train_text))
 
-	rnnws.traintext(train_text, train_tags, train_text[:5000], train_tags[:5000], 
-		sen_slice_length=20, epoch=30, lr_coef=lr_coef, 
-		DEBUG=True, SAVE=True, SINDEX=1, r_init=r_init
+	rnnws.traintext(train_text, train_tags, test_text, test_tags, 
+		sen_slice_length=20, epoch=5, lr_coef=lr_coef, 
+		DEBUG=2, SAVE=5, SINDEX=46, r_init=r_init
 	)
 
 if __name__ == "__main__":

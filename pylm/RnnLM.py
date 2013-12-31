@@ -154,7 +154,6 @@ class RnnLM(LMBase):
 		self.initRnn(no_train=True)
 		sentence = '\n' + sentence.strip() + '\n'
 		mat_in, label = self.tids2nndata(self.tokens2ids(sentence), shared=False)
-
 		probs = self.rnn_prob(mat_in, label)
 
 		if debug:

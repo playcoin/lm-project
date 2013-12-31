@@ -8,13 +8,14 @@ Created on 2013-05-05 23:00
 from nlpdict import NlpDict
 from pylm import RnnLM
 from pylm import RnnEmbTrLM
+from fileutil import readClearFile
 import numpy
 import time
 import theano.sandbox.cuda
 
 
-train_text = readClearFile("./data/datasets/msr_ws_train.ltxt")
-nlpdict = NlpDict(comb=True, combzh=True, text=train_text)
+train_text = readClearFile("./data/datasets/pku_lm_train.ltxt")
+nlpdict = NlpDict(comb=False, combzh=False, text=train_text)
 print "NlpDict size is:", nlpdict.size()
 
 
