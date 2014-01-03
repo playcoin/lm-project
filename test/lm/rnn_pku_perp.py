@@ -13,15 +13,15 @@ from fileutil import readClearFile
 import numpy
 import time
 import theano.sandbox.cuda
-theano.sandbox.cuda.use('gpu1')
+# theano.sandbox.cuda.use('gpu1')
 
 train_text = readClearFile("./data/datasets/pku_lm_train.ltxt")
-nlpdict = NlpDict(comb=True, combzh=False, text=train_text)
+nlpdict = NlpDict(comb=False, combzh=False, text=train_text)
 print "NlpDict size is:", nlpdict.size()
 
-rnnlm = RnnEmbTrLM(nlpdict, n_emb=200, n_hidden=1200, lr=0.5, batch_size=150, truncate_step=4, 
-		train_emb=True, dr_rate=0.5,
-		backup_file_path="./data/RnnEmbTrLM/RnnEmbTrLM.model.epoch10.n_hidden1200.ssl20.truncstep4.dr0.5.embsize200.in_size4566.rc94.obj"
+rnnlm = RnnEmbTrLM(nlpdict, n_emb=nlpdict.size(), n_hidden=400, lr=0.5, batch_size=150, truncate_step=4, 
+		train_emb=False, dr_rate=0.0,
+		backup_file_path="./data/model/RnnEmbTrLM.model.epoch100.n_hidden400.ssl20.truncstep4.dr0.0.embsize4633.in_size4633.rc94.obj"
 	)
 
 # rnnlm = RnnEmbTrLM(nlpdict, 

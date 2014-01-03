@@ -220,13 +220,15 @@ class MlpNgram(LMBase):
 				else:
 					print "Epoch %s. Training time so far is: %.2fm" % ( i+SINDEX, (time.clock()-s_time) / 60.)
 
-			if SAVE > 0 and ((i+1)%SAVE == 0):
-				self.savemodel("./data/MlpNgram/Mlp%sgram.model.epoch%s.n_hidden%s.dr%s.n_emb%s.in_size%s.r%s.obj" % (self.N, i+SINDEX, self.n_hidden, self.dropout, self.n_emb, self.n_in, r_init))
-			
 			if lr_coef > 0:
 				# update learning_rate
 				lr = self.lr.get_value(borrow=True) * lr_coef
+				self.lr = lr
 				self.lr.set_value(numpy.array(lr, dtype=theano.config.floatX))
+				
+			if SAVE > 0 and ((i+1)%SAVE == 0):
+				self.savemodel("./data/MlpNgram/Mlp%sgram.model.epoch%s.n_hidden%s.dr%s.n_emb%s.in_size%s.r%s.obj" % (self.N, i+SINDEX, self.n_hidden, self.dropout, self.n_emb, self.n_in, r_init))
+			
 
 		e_time = time.clock()
 

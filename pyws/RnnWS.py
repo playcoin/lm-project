@@ -160,14 +160,15 @@ class RnnWS(object):
 				else:
 					print "Epoch %s. Training time so far is: %.2fm" % ( i+SINDEX, (time.clock()-s_time) / 60.)
 
-			if SAVE > 0 and ((i+1)%SAVE == 0):
-				class_name = self.__class__.__name__
-				self.savemodel("./data/%s/%s.model.epoch%s.n_hidden%s.ssl%s.truncstep%s.dr%.1f.embsize%s.in_size%s.r%s.obj" % (class_name, class_name, i+SINDEX, self.n_hidden, sen_slice_length, self.truncate_step, self.dr_rate, self.n_emb, self.in_size, r_init))
-
 			if lr_coef > 0:
 				# update learning_rate
 				lr = self.rnn.lr.get_value() * lr_coef
+				self.lr = lr
 				self.rnn.lr.set_value(numpy.array(lr, dtype=theano.config.floatX))
+
+			if SAVE > 0 and ((i+1)%SAVE == 0):
+				class_name = self.__class__.__name__
+				self.savemodel("./data/%s/%s.model.epoch%s.n_hidden%s.ssl%s.truncstep%s.dr%.1f.embsize%s.in_size%s.r%s.obj" % (class_name, class_name, i+SINDEX, self.n_hidden, sen_slice_length, self.truncate_step, self.dr_rate, self.n_emb, self.in_size, r_init))
 
 		e_time = time.clock()
 		print "%s train over!! The total training time is %.2fm." % (self.__class__.__name__, (e_time - s_time) / 60.) 

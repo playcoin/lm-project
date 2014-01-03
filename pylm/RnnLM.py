@@ -123,14 +123,15 @@ class RnnLM(LMBase):
 				print "Error rate in epoch %s, is %.3f. Training time so far is: %.2fm" % ( i+SINDEX, err, (e_time-s_time) / 60.)
 				# print ''.join([self.ndict.gettoken(x) for x in r_labels])
 
-			if SAVE:
-				class_name = self.__class__.__name__
-				self.savemodel("./data/%s/%s.model.epoch%s.n_hidden%s.ssl%s.truncstep%s.dr%s.obj" % (class_name, class_name, i+SINDEX, self.n_hidden, sen_slice_length, self.truncate_step, self.dropout))
-
 			if lr_coef > 0:
 				# update learning_rate
 				lr = self.rnn.lr.get_value() * lr_coef
+				self.lr = lr
 				self.rnn.lr.set_value(numpy.array(lr, dtype=theano.config.floatX))
+
+			if SAVE:
+				class_name = self.__class__.__name__
+				self.savemodel("./data/%s/%s.model.epoch%s.n_hidden%s.ssl%s.truncstep%s.dr%s.obj" % (class_name, class_name, i+SINDEX, self.n_hidden, sen_slice_length, self.truncate_step, self.dropout))
 
 		e_time = time.clock()
 		print "RnnLM train over!! The total training time is %.2fm." % ((e_time - s_time) / 60.) 
