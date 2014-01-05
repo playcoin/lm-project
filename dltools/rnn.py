@@ -41,8 +41,8 @@ class RNN(object):
 		# Weight initial
 		if not W_in:
 			W_in_values = numpy.asarray(rng.uniform(
-				low  = -numpy.sqrt(6.0 / (n_in + n_out)),
-				high  = numpy.sqrt(6.0 / (n_in + n_out)),
+				low  = -numpy.sqrt(6.0 / (n_in + n_h)),
+				high  = numpy.sqrt(6.0 / (n_in + n_h)),
 				size = (n_in, n_h)), dtype = theano.config.floatX
 			)
 			W_in = theano.shared(value = W_in_values, name='W_in', borrow=True)
@@ -54,8 +54,8 @@ class RNN(object):
 
 		if not W_h:
 			W_h_values = numpy.asarray(rng.uniform(
-				low  = -numpy.sqrt(6.0 / (n_in + n_out)),
-				high  = numpy.sqrt(6.0 / (n_in + n_out)),
+				low  = -numpy.sqrt(6.0 / (n_h + n_h)),
+				high  = numpy.sqrt(6.0 / (n_h + n_h)),
 				size = (n_h, n_h)), dtype = theano.config.floatX
 			)
 			W_h = theano.shared(value = W_h_values, name='W_h', borrow=True)
@@ -63,8 +63,8 @@ class RNN(object):
 		if not W_out:
 			upbound = max(n_in, n_out)
 			W_out_values = numpy.asarray(rng.uniform(
-				low  = -numpy.sqrt(6.0 / (n_in + n_out)),
-				high  = numpy.sqrt(6.0 / (n_in + n_out)),
+				low  = -numpy.sqrt(6.0 / (n_h + upbound)),
+				high  = numpy.sqrt(6.0 / (n_h + upbound)),
 				size = (n_h, n_out)), dtype = theano.config.floatX
 			)
 			W_out = theano.shared(value = W_out_values, name='W_out', borrow=True)
