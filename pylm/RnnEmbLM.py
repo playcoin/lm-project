@@ -86,17 +86,13 @@ class RnnEmbTrLM(RnnLM):
 
 		error = rnn.errors(u,y)
 		self.test_model = theano.function([u, y], error)
-		print "Compile Test function complete!"
 
 		probs = rnn.y_prob[T.arange(y.shape[0]), y]
 		self.rnn_prob = theano.function([u, y], probs)
-		print "Compile likelihood function complete!"
-
 		self.rnn_sort = theano.function([u, y], [rnn.y_sort_matrix, probs])
-		print "Compile argsort function complete!"
-
 		self.rnn_pred = theano.function([u], [rnn.y_pred[-1], rnn.y_prob[-1]])
-		print "Compile predict function complete!"
+		print "Compile test functions complete!"
+
 
 	def tids2nndata(self, tidseq, truncate_input = True, shared=True):
 		# print tidseq.shape

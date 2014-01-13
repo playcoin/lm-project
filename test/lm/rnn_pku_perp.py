@@ -21,7 +21,7 @@ print "NlpDict size is:", nlpdict.size()
 
 rnnlm = RnnEmbTrLM(nlpdict, n_emb=nlpdict.size(), n_hidden=200, lr=0.5, batch_size=150, truncate_step=4, 
 		train_emb=False, dr_rate=0.0,
-		backup_file_path="./data/model/RnnEmbTrLM.model.epoch50.n_hidden200.ssl20.truncstep4.dr0.0.embsize4633.in_size4633.rc94.obj"
+		backup_file_path="./data/model/RnnEmbTrLM.model.epoch100.n_hidden200.ssl20.truncstep4.dr0.0.embsize4633.in_size4633.rc94.obj"
 	)
 
 # rnnlm = RnnEmbTrLM(nlpdict, 

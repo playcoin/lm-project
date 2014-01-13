@@ -95,7 +95,7 @@ if __name__ == '__main__':
 
 	text = readFile("data/datasets/peoplenew_train.ltxt")
 	#plot_common_words(pca, dict, total_word_counts, ['v', 'r'])
-	plot_common_words(pca, nlpdict, text, ['r', 'v'], colors=['b', 'm'])
+	plot_common_words(pca, nlpdict, text, ['a', 'v'], colors=['b', 'm'])
 	# plot_common_words(pca, nlpdict, text, ['v', 'r', 'd', 'p', 'a', 'u'])
 	#plot_common_words(pca, dict, total_word_counts, ['n', 'v'])
 	#plot_common_words(pca, dict, total_word_counts, ['v', 'a'])

@@ -103,19 +103,16 @@ class MlpNgram(LMBase):
 		probs = classifier.logRegressionLayer.p_y_pred[T.arange(y.shape[0]), y]
 		self.mlp_prob = theano.function(inputs=[x, y], outputs=probs)
 		self.mlp_probs = theano.function(inputs=[x], outputs=classifier.logRegressionLayer.p_y_pred[-1])
-		print "Compile likelihood function complete!"
 
 		y_sort_matrix = T.sort(classifier.logRegressionLayer.p_y_pred, axis=1)
 		self.mlp_sort = theano.function(inputs=[x, y], outputs=[y_sort_matrix, probs])
-		print "Compile argsort function complete!"
 
 		y_pred = classifier.logRegressionLayer.y_pred
 		self.mlp_predict = theano.function(inputs=[x], outputs=y_pred[-1])
-		print "Compile predict function complete!"
 
 		# test model function
 		self.test_model = theano.function(inputs=[x, y], outputs=classifier.errors(y))
-		print "Compile test function complete!"
+		print "Compile test functions complete!"
 
 		if no_train:
 			return

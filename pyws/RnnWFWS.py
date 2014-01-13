@@ -67,11 +67,9 @@ class RnnWFWS(RnnWS):
 
 		error = rnn.errors(u,y)
 		self.test_model = theano.function([u, y], error)
-		print "Compile Test function complete!"
 		self.rnn_prob_matrix = theano.function([u], rnn.y_prob)
-		print "Compile probabilities matrix function complete!"
 		self.rnn_pred = theano.function([u], rnn.y_pred)
-		print "Compile predict function complete!"
+		print "Compile test functions complete!"
 
 	def tokens2nndata(self, train_text, train_tags=None):
 		'''
