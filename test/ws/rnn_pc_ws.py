@@ -26,17 +26,17 @@ nlpdict = NlpDict(comb=True, combzh=True, text=train_text)
 
 test_text = readClearFile("./data/datasets/msr_ws_test.ltxt")
 
-fws = RnnWFWS2(nlpdict, n_emb=200, n_hidden=600, lr=0.5, batch_size=150, 
-	l2_reg=0.000001, truncate_step=4, train_emb=True, dr_rate=0.0,# emb_dr_rate=0.1,
-	backup_file_path="./data/model/RnnWFWS2.model.epoch10.n_hidden600.ssl20.truncstep4.dr0.0.embsize200.in_size5086.rc91.MSR.obj"
-)
-
-# rws = RnnRevWS2(nlpdict, n_emb=200, n_hidden=1400, lr=0.5, batch_size=150, 
-# 	l2_reg=0.000001, truncate_step=4, train_emb=True, dr_rate=0.5,# emb_dr_rate=0.1,
-# 	backup_file_path="./data/model/RnnRevWS2.model.epoch56.n_hidden1400.ssl20.truncstep4.dr0.5.embsize200.in_size4598.rc91.obj"
+# fws = RnnWFWS2(nlpdict, n_emb=200, n_hidden=600, lr=0.5, batch_size=150, 
+# 	l2_reg=0.000001, truncate_step=4, train_emb=True, dr_rate=0.0,# emb_dr_rate=0.1,
+# 	backup_file_path="./data/model/RnnWFWS2.model.epoch10.n_hidden600.ssl20.truncstep4.dr0.0.embsize200.in_size5086.rc91.MSR.obj"
 # )
 
-result_file = "./data/result/5086_600_dr0_f.ltxt"
+rws = RnnRevWS2(nlpdict, n_emb=200, n_hidden=1400, lr=0.5, batch_size=150, 
+	l2_reg=0.000001, truncate_step=4, train_emb=True, dr_rate=0.5,# emb_dr_rate=0.1,
+	backup_file_path="./data/model/RnnRevWS2.model.epoch60.n_hidden1400.ssl20.truncstep4.dr0.5.embsize200.in_size5086.rc91.MSR.obj"
+)
+
+result_file = "./data/result/5086_1400_dr0_r.ltxt"
 
 # frws = RnnFRWS(fws, rws)
 #############
@@ -51,7 +51,7 @@ def main():
 	stime = time.clock()
 	odtext = []
 	for sent in sents:
-		odtext.append(fws.segment(sent))
+		odtext.append(rws.segment(sent))
 
 	writeFile(result_file, '\n'.join(odtext))
 
