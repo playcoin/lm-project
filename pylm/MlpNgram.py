@@ -80,8 +80,6 @@ class MlpNgram(LMBase):
 		if self.mlp is not None:
 			return
 
-		print "Init theano symbol expressions!"
-
 		index = T.lscalar()
 		x = T.imatrix('x')  
 		y = T.ivector('y')  # the labels are presented as 1D vector of [int] labels
@@ -220,7 +218,6 @@ class MlpNgram(LMBase):
 			if lr_coef > 0:
 				# update learning_rate
 				lr = self.lr.get_value(borrow=True) * lr_coef
-				self.lr = lr
 				self.lr.set_value(numpy.array(lr, dtype=theano.config.floatX))
 				
 			if SAVE > 0 and ((i+1)%SAVE == 0):

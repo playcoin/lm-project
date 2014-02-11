@@ -15,7 +15,7 @@ import theano.sandbox.cuda
 # Trainging #
 #############
 # text
-f = file('./data/datasets/pku_train_large_ws.ltxt')
+f = file('./data/datasets/pku_ws_train_large.ltxt')
 text = unicode(f.read(), 'utf-8').replace(" ", "")
 f.close()
 
@@ -40,7 +40,7 @@ theano.sandbox.cuda.use('gpu0')
 mlp_ngram = MlpNgram(nlpdict, N=7, n_emb=200, n_hidden=1200, lr=0.5, batch_size=200, 
 	dropout=False, emb_file_path=None)
 
-mlp_ngram.traintext(train_text, test_text, DEBUG=True, SAVE=True, SINDEX=1, epoch=100, lr_coef=0.95)
+mlp_ngram.traintext(train_text, test_text, DEBUG=True, SAVE=False, SINDEX=1, epoch=100, lr_coef=0.95)
 
 ###########
 # Dropout #
