@@ -19,13 +19,13 @@ nlpdict = NlpDict(comb=False, combzh=False, text=train_text)
 print "NlpDict size is:", nlpdict.size()
 
 rnnlm = RnnEmbTrLM(nlpdict, n_emb=nlpdict.size(), 
-	n_hidden=450, 
+	n_hidden=1400, 
 	lr=0.5, 
 	batch_size=150, 
 	truncate_step=4, 
-	train_emb=False, 
-	dr_rate=0.0,
-	backup_file_path="./data/model/RnnEmbTrLM.model.epoch100.n_hidden450.ssl20.truncstep4.dr0.0.embsize5127.in_size5127.rc94.MSR.obj"
+	train_emb=True, 
+	dr_rate=0.55,
+	backup_file_path="./data/model/RnnEmbTrLM.model.epoch60.n_hidden1400.ssl20.truncstep4.dr0.55.embsize200.in_size5127.rc94.MSR.obj"
 )
 
 

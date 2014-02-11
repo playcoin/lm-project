@@ -20,14 +20,14 @@ nlpdict = NlpDict(comb=False, combzh=False, text=train_text)
 print "NlpDict size is:", nlpdict.size()
 
 rnnlm = RnnEmbTrLM(nlpdict, 
-		n_emb=200, 
-		n_hidden=1000, 
+		n_emb=4633, 
+		n_hidden=300, 
 		lr=0.5, 
 		batch_size=150, 
 		truncate_step=4, 
 		train_emb=True, 
-		dr_rate=0.5,
-		backup_file_path="./data/model/RnnEmbTrLM.model.epoch100.n_hidden1000.ssl20.truncstep4.dr0.5.embsize200.in_size4633.rc96.obj"
+		dr_rate=0.0,
+		backup_file_path="./data/model/RnnEmbTrLM.model.epoch100.n_hidden300.ssl20.truncstep4.dr0.0.embsize4633.in_size4633.rc96.obj"
 )
 
 # tt = u"天津市首届检察官艺术节音乐会日前举行。图为天津市检察官大合唱《检察官之歌》。（新华社记者李昌元摄）"
