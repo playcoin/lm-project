@@ -24,10 +24,10 @@ rnnlm = RnnEmbTrLM(nlpdict,
 		n_hidden=300, 
 		lr=0.5, 
 		batch_size=150, 
-		truncate_step=4, 
+		truncate_step=3, 
 		train_emb=True, 
 		dr_rate=0.0,
-		backup_file_path="./data/model/RnnEmbTrLM.model.epoch100.n_hidden300.ssl20.truncstep4.dr0.0.embsize4633.in_size4633.rc96.obj"
+		backup_file_path="./data/model/RnnEmbTrLM.model.epoch100.n_hidden300.ssl20.truncstep3.dr0.0.embsize4633.in_size4633.rc96.obj"
 )
 
 # tt = u"天津市首届检察官艺术节音乐会日前举行。图为天津市检察官大合唱《检察官之歌》。（新华社记者李昌元摄）"

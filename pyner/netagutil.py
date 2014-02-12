@@ -23,8 +23,8 @@ print "Tag size is:", len(taglist)
 # Main opr #
 ############
 def main():
-	gold_text = readFile("data/datasets/peoplenew_train.ltxt")
-	lines = gold_text.split('\n')[:10]
+	gold_text = readFile("data/datasets/pku_pos_gold_s.ltxt")
+	lines = gold_text.split('\n')#[:10]
 
 	olines = []
 	otags = []
@@ -33,12 +33,13 @@ def main():
 		olines.append(fi)
 		otags.append(se)
 
+	# print '\n'.join(olines)
+	# print '\n'.join(otags)
+	otextfile = "data/datasets/pku_ner_train.ltxt"
+	otagfile = "data/datasets/pku_ner_train_tag.ltxt"
 
-	# otextfile = "data/datasets/pku_pos_train.ltxt"
-	# otagfile = "data/datasets/pku_pos_train_tag.ltxt"
-
-	# writeFile(otextfile, '\n'.join(olines))
-	# writeFile(otagfile, '\n'.join(otags))
+	writeFile(otextfile, '\n'.join(olines))
+	writeFile(otagfile, '\n'.join(otags))
 
 def nrreplfunc(matchobj):
 	return '[' + matchobj.group(0).replace('/nr', '').replace(' ', '') + ']nr'
@@ -53,29 +54,35 @@ def nzreplfunc(matchobj):
 	return '[' + matchobj.group(1) + ']nz'
 
 def ltreplfunc(matchobj):
-	return '[' + re.sub(r'[a-zA-z/ ]', '', matchobj.group(0)) + ']'
+	# return '[' + re.sub(r'[a-zA-z/ ]', '', matchobj.group(0)) + ']'
+	return '[' + re.sub(r'(/[a-zA-z]+)| ', '', matchobj.group(1)) + ']'
+
+def ilreplfunc(matchobj):
+	# return '[' + re.sub(r'[a-zA-z/ ]', '', matchobj.group(0)) + ']'
+	return matchobj.group(1)
 
 def combinetoken(text):
 	'''
 	@summary: combine continuous 'nr' token and tokens in '[,]' pair
 	'''
-	text = re.sub(r'\[[^\]]+\]', ltreplfunc, text)
+	text = re.sub(r'\[([^\]]+)\](?:i|l)', ilreplfunc, text)
+
+	text = re.sub(r'\[([^\]]+)\]', ltreplfunc, text)
 
 	text = re.sub(r'\S+/nr(?:\s+\S+/nr)*', nrreplfunc, text)
 	text = re.sub(r'(\S+)/ns', nsreplfunc, text)
 	text = re.sub(r'(\S+)/nt', ntreplfunc, text)
 	text = re.sub(r'(\S+)/nz', nzreplfunc, text)
 
-	return re.sub(r'\[([\]]+)\](?:i|l)', '\1', text)
-
+	return text
 
 def procline(text):
 	'''
 	@summary: 将标注数据转为文本串和标签串
 	'''
-
+	# print text
 	text = combinetoken(text)
-	print text
+	# print text
 	tokens = re.split(r"\s+", text)
 
 	ostr = []	# 输出的文本串
@@ -86,9 +93,12 @@ def procline(text):
 	for token in tokens:
 		if token == "":
 			continue
-
-		# 用反斜杠分开
-		fi, se = re.split(r"/|\]", token)
+		try:
+			# 用反斜杠分开
+			fi, se = re.split(r"/|\]", token)
+		except:
+			print token
+			print text
 
 		if '[' not in fi:
 			tags = [out for x in range(len(fi))]

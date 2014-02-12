@@ -52,3 +52,70 @@ class RnnPOS(RnnWFWS):
 			return mat_in.get_value(borrow=True), vec_out.get_value(borrow=True)
 		else:
 			return mat_in.get_value(borrow=True)
+
+	def acumPrior(self, train_tags):
+		'''
+		@summary: Acumulate the prior probabilities of tag sequences
+		'''
+		priorMatrix = numpy.zeros((tagsize, tagsize), dtype=theano.config.floatX)
+		pi = numpy.zeros((tagsize, 0), dtype=theano.config.floatX)
+		num_total = 0
+		# process line
+		taglines = train_tags.split('\n')
+		for line in taglines:
+			assert line.strip() != "":
+			tags = [int(x) for x in re.split(r'\s+', line.strip())]
+			pi[tags[0]] += 1
+			for i in range(1, len(tags)):
+				priorMatrix[tags[i-1][i]] += 1
+			num_total += len(tags) - 1
+
+		self.pm = priorMatrix / num_total
+		self.logpm = numpy.log(self.pm)
+		self.pi = pi / len(taglines)
+
+	def decode(self, text, rev=False):
+		'''
+		@summary: 解码 BMES tag, S:0, B:1, M:2, E:3
+		'''
+
+		self.initRnn()
+		data_input = self.tokens2nndata(text)
+
+		if type(data_input) == tuple:
+			prob_matrix = numpy.log(self.rnn_prob_matrix(*data_input))
+		else:
+			prob_matrix = numpy.log(self.rnn_prob_matrix(data_input))
+
+		if rev:
+			prob_matrix = numpy.flipud(prob_matrix)
+
+		# 解码
+		old_pb = prob_matrix.copy()
+		tm = numpy.zeros((tagsize, tagsize), dtype="int32")
+
+		for i in range(0, tagsize):
+			prob_matrix[0][i] += self.pi[i]
+
+		for i in xrange(1, len(prob_matrix)):
+			for k in range(0, tagsize):
+				max_idx = 0
+				max_pb = -999999.
+				for j in range(0, tagsize):
+					pb = prob_matrix[i-1][k] + self.logpm[j][k]
+					if pb > max_pb:
+						max_pb = pb
+						max_idx = j
+
+				prob_matrix[i][k] = max_pb
+				tm[i][k] = max_idx
+
+		last = prob_matrix[-1].argmax()
+		tags = [last]
+		for i in xrange(len(prob_matrix) - 1, -1, 0):
+			last = tm[i][last]
+			tags.append(last)
+		# reverse
+		tags.reverse()
+
+		return tags, old_pb
