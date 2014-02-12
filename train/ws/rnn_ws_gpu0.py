@@ -40,9 +40,9 @@ def main():
 
 	print "Dict size is: %s, Train size is: %s" % (nlpdict.size(), len(train_text))
 
-	rnnws = RnnWFWS2(nlpdict, n_emb=200, n_hidden=1600, lr=0.5, batch_size=158, 
-		l2_reg=0.000000, truncate_step=4, train_emb=True, dr_rate=0.55,
-		emb_file_path="./data/RnnEmbTrLM.n_hidden1200.embsize200.in_size4598.embeddings.obj"
+	rnnws = RnnWFWS2(nlpdict, n_emb=200, n_hidden=600, lr=0.3, batch_size=158, 
+		l2_reg=0.000000, truncate_step=4, train_emb=True, dr_rate=0.0,
+		emb_file_path=None
 	)
 
 	rnnws.traintext(train_text, train_tags, test_text[:1000], test_tags[:1000], 
@@ -50,15 +50,15 @@ def main():
 		DEBUG=5, SAVE=5, SINDEX=1, r_init="c91"
 	)
 
-	rnnws = RnnRevWS2(nlpdict, n_emb=200, n_hidden=1600, lr=0.5, batch_size=158, 
-		l2_reg=0.000000, truncate_step=4, train_emb=True, dr_rate=0.55,
-		emb_file_path="./data/RnnEmbTrLM.n_hidden1200.embsize200.in_size4598.embeddings.obj"
-	)
+	# rnnws = RnnWFWS2(nlpdict, n_emb=100, n_hidden=300, lr=0.5, batch_size=158, 
+	# 	l2_reg=0.000000, truncate_step=4, train_emb=True, dr_rate=0.0,
+	# 	emb_file_path=None
+	# )
 
-	rnnws.traintext(train_text, train_tags, test_text[:1000], test_tags[:1000], 
-		sen_slice_length=20, epoch=70, lr_coef=0.91, 
-		DEBUG=5, SAVE=5, SINDEX=1, r_init="c91"
-	)
+	# rnnws.traintext(train_text, train_tags, test_text[:1000], test_tags[:1000], 
+	# 	sen_slice_length=20, epoch=70, lr_coef=0.91, 
+	# 	DEBUG=5, SAVE=5, SINDEX=1, r_init="c91"
+	# )
 
 if __name__ == "__main__":
 	main()

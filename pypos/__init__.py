@@ -1,2 +1,2 @@
 
-from RnnPOS import RnnPOS
+from RnnPOS import RnnPOS, RnnRevPOS

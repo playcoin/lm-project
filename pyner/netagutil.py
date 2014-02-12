@@ -8,16 +8,16 @@ from fileutil import readFile, writeFile
 import re
 
 # 标签列表
-taglist = ["nr_b","nr_i","nr_e","nt_b","nt_i","nt_e","ns_b","ns_i","ns_e","nz_b","nz_i","nz_e","o"]
+netaglist = ["nr_b","nr_i","nr_e","nt_b","nt_i","nt_e","ns_b","ns_i","ns_e","nz_b","nz_i","nz_e","o"]
 
-tagsize = len(taglist)
+netagsize = len(netaglist)
 
-tagmap = {}
+netagmap = {}
 count = 0
-for tag in taglist:
-	tagmap[tag.lower()] = count
+for tag in netaglist:
+	netagmap[tag.lower()] = count
 	count += 1
-print "Tag size is:", len(taglist)
+print "NER tag size is:", len(netaglist)
 
 ############
 # Main opr #
@@ -88,7 +88,7 @@ def procline(text):
 	ostr = []	# 输出的文本串
 	otag = []	# 输出的标签串
 
-	out = str(tagmap['o'])
+	out = str(netagmap['o'])
 
 	for token in tokens:
 		if token == "":
@@ -105,9 +105,9 @@ def procline(text):
 		else:
 			fi = fi[1:]
 			se = se.lower()
-			se_b = str(tagmap[se + "_b"])
-			se_i = str(tagmap[se + "_i"])
-			se_e = str(tagmap[se + "_e"])
+			se_b = str(netagmap[se + "_b"])
+			se_i = str(netagmap[se + "_i"])
+			se_e = str(netagmap[se + "_e"])
 			tags = [se_b]
 			if len(fi) > 1:
 				slen = len(fi) - 2
