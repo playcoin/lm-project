@@ -23,6 +23,8 @@ class RnnPOS(RnnWFWS):
 		super(RnnPOS, self).__init__(*args, **kwargs)
 
 		self.out_size = tagsize
+		self.septag = tagmap["w_b"]
+		self.tagsize = tagsize
 
 	def tokens2nndata(self, train_text, train_tags=None):
 		'''
@@ -41,7 +43,7 @@ class RnnPOS(RnnWFWS):
 
 		if train_tags:
 			# 词性标注的tag编号是大于10的，所以文本中用空格隔开
-			repstr = "  %d  %d  " % (tagmap["w_b"], tagmap["w_b"])	# 将回车符转变一下
+			repstr = "  %d  %d  " % (self.septag, self.septag)	# 将回车符转变一下
 			train_tags = train_tags.strip().replace("\n", repstr)
 			# 切分并变为数字
 			train_tag_nums = re.split(r"\s+", train_tags)
@@ -57,13 +59,13 @@ class RnnPOS(RnnWFWS):
 		'''
 		@summary: Acumulate the prior probabilities of tag sequences
 		'''
-		priorMatrix = numpy.zeros((tagsize, tagsize), dtype=theano.config.floatX)
-		pi = numpy.zeros((tagsize, 0), dtype=theano.config.floatX)
+		priorMatrix = numpy.zeros((self.tagsize, self.tagsize), dtype=theano.config.floatX)
+		pi = numpy.zeros((self.tagsize, 0), dtype=theano.config.floatX)
 		num_total = 0
 		# process line
 		taglines = train_tags.split('\n')
 		for line in taglines:
-			assert line.strip() != "":
+			assert line.strip() != ""
 			tags = [int(x) for x in re.split(r'\s+', line.strip())]
 			pi[tags[0]] += 1
 			for i in range(1, len(tags)):
@@ -92,16 +94,16 @@ class RnnPOS(RnnWFWS):
 
 		# 解码
 		old_pb = prob_matrix.copy()
-		tm = numpy.zeros((tagsize, tagsize), dtype="int32")
+		tm = numpy.zeros((self.tagsize, self.tagsize), dtype="int32")
 
-		for i in range(0, tagsize):
+		for i in range(0, self.tagsize):
 			prob_matrix[0][i] += self.pi[i]
 
 		for i in xrange(1, len(prob_matrix)):
-			for k in range(0, tagsize):
+			for k in range(0, self.tagsize):
 				max_idx = 0
 				max_pb = -999999.
-				for j in range(0, tagsize):
+				for j in range(0, self.tagsize):
 					pb = prob_matrix[i-1][k] + self.logpm[j][k]
 					if pb > max_pb:
 						max_pb = pb
