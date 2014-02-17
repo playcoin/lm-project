@@ -180,6 +180,8 @@ class RnnWS(object):
 		test_dataset = self.tokens2nndata(test_text, test_tags)
 		err = self.test_model(*test_dataset)
 		print "Error rate %.5f" % err
+		return err
+		# print self.rnn_pred(test_dataset[0])
 
 	def segment(self, text, decode=True, rev=False):
 		'''
