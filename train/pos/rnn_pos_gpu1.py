@@ -26,21 +26,32 @@ train_tags = readFile("./data/datasets/pku_pos_train_tag.ltxt") # 不要清空�
 test_text = readClearFile("./data/datasets/pku_pos_test.ltxt")
 test_tags = readFile("./data/datasets/pku_pos_test_tag.ltxt") # 不要清空格
 
+rnnpos = RnnRevPOS(nlpdict, n_emb=200, n_hidden=1400, lr=0.5, batch_size=156, 
+	l2_reg=0.000001, truncate_step=4, train_emb=True, dr_rate=0.5, emb_dr_rate=0.,
+	emb_file_path="./data/RnnWFWS2.n_hidden1400.embsize200.in_size4598.embeddings.obj"
+)
+
+
 #############
 # Main Opr  #
 #############
 def main():
 	print "Dict size is: %s, Train size is: %s" % (nlpdict.size(), len(train_text))
+	tlines= test_tags.split('\n')[:500]
+	lines = test_text.split('\n')[:500]
 
-	rnnpos = RnnRevPOS(nlpdict, n_emb=200, n_hidden=1400, lr=0.5, batch_size=156, 
-		l2_reg=0.000001, truncate_step=4, train_emb=True, dr_rate=0.5, emb_dr_rate=0.,
-		emb_file_path="./data/RnnWFWS2.n_hidden1400.embsize200.in_size4598.embeddings.obj"
-	)
-
-	rnnpos.traintext(train_text, train_tags, test_text, test_tags, 
+	rnnpos.traintext(train_text, train_tags, '\n'.join(lines), '\n'.join(tlines), 
 		sen_slice_length=20, epoch=60, lr_coef=0.92, 
 		DEBUG=1, SAVE=5, SINDEX=1, r_init="c92"
 	)
+	# for (line, tline) in zip(lines, tlines):
+	# 	err = rnnpos.testtext(line, tline)
+	# 	if err > 0.9:
+	# 		print line
+	# 		print tline
+
+	# rnnpos.testtext('\n'.join(lines), '\n'.join(tlines))
+
 
 
 if __name__ == "__main__":

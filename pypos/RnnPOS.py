@@ -47,7 +47,8 @@ class RnnPOS(RnnWFWS):
 			train_tags = train_tags.strip().replace("\n", repstr)
 			# 切分并变为数字
 			train_tag_nums = re.split(r"\s+", train_tags)
-			tags = [int(tag) for tag in train_tag_nums[:mat_size]]
+			assert mat_size == len(train_tag_nums)
+			tags = [int(tag) for tag in train_tag_nums]
 
 			vec_out = theano.shared(numpy.asarray(tags, dtype="int32"), borrow=True)
 	
@@ -148,7 +149,8 @@ class RnnRevPOS(RnnPOS):
 			# 切分并变为数字
 			train_tag_nums = re.split(r"\s+", train_tags)
 			tags = [int(tag) for tag in train_tag_nums]
-			tags = tags[::-1][:mat_size]
+			assert mat_size == len(tags)
+			tags = tags[::-1]
 
 			vec_out = theano.shared(numpy.asarray(tags, dtype="int32"), borrow=True)
 	
