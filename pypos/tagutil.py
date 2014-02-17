@@ -7,6 +7,7 @@ Created on 2013-12-23 12:19
 
 from fileutil import readFile, writeFile
 import re
+import os
 
 # 标签列表
 taglist = ["Ag_b","Ag_i","Ag_e","a_b","a_i","a_e","ad_b","ad_i","ad_e","an_b","an_i","an_e",\
@@ -34,23 +35,40 @@ print "Tag size is:", len(taglist)
 # Main opr #
 ############
 def main():
-	gold_text = readFile("data/datasets/pku_pos_gold_s.ltxt")
+	gold_text = readFile("data/datasets/pku_pos_gold_test.ltxt")
 	lines = gold_text.split('\n')
 
-	print tagmap["w_b"]
-	# olines = []
+	olines = []
 	# otags = []
-	# for line in lines:
+	for line in lines:
 	# 	fi, se = procline(line)
 	# 	olines.append(fi)
 	# 	otags.append(se)
+		olines.append(clearner(line))
 
 	# otextfile = "data/datasets/pku_pos_train.ltxt"
 	# otagfile = "data/datasets/pku_pos_train_tag.ltxt"
 
 	# writeFile(otextfile, '\n'.join(olines))
 	# writeFile(otagfile, '\n'.join(otags))
+	writeFile("data/datasets/pku_pos_gold_test1.ltxt", '\n'.join(olines))
 
+def clearner(text):
+	tokens = re.split(r"\s+", text)
+
+	ostr = []	# 输出的文本串
+	for token in tokens:
+		if token == "":
+			continue
+
+		# 用反斜杠分开
+		fi, se = token.split("/")
+		fi = fi[0] == '[' and fi[1:] or fi
+		se = "]" in se and se.split(']')[0] or se
+
+		ostr.append("%s/%s" % (fi, se))
+
+	return '  '.join(ostr)
 
 def procline(text):
 	'''
@@ -87,6 +105,67 @@ def procline(text):
 
 	return ''.join(ostr), ' '.join(otag)
 
+def formtext(text, tags):
+	'''
+	@summary: 按标签将文本按分词格式输出
+	'''
+	tokens = []
+	wtags = []
+
+	token = text[0]
+	wtag = taglist[tags[0]].lower()
+
+	for i in range(1, len(text)):
+		if tags[i] % 3 == 0:
+			tokens.append(token)
+			wtags.append(wtag.split('_')[0])
+			token = ""
+			wtag = taglist[tags[i]].lower()
+		token = token + text[i]
+
+	if token != "":
+		tokens.append(token)
+		wtags.append(wtag.split('_')[0])
+
+	otokens = []
+	for (token, wtag) in zip(tokens, wtags):
+		otokens.append("%s/%s" % (token, wtag))
+
+	return "  ".join(otokens)
+
+def score(text1, text2):
+
+	lines1 = text1.strip().split('\n')
+	lines2 = text2.strip().split('\n')
+
+	assert len(lines1) == len(lines2)
+	err = 0
+	good = 0
+
+	for line1, line2 in zip(lines1, lines2):
+		ot1 = '\n'.join(re.split(r'\s+', line1))
+		ot2 = '\n'.join(re.split(r'\s+', line2))
+		writeFile('pypos/tmp1', ot1)
+		writeFile('pypos/tmp2', ot2)
+		os.system("diff -y -i pypos/tmp1 pypos/tmp2 > pypos/tmpo")
+		lines = readFile("pypos/tmpo").strip().split('\n')
+		for line in lines:
+			if len(re.findall(r'\s\|\s', line)) > 0:
+				err += 1
+			elif len(re.findall(r'\s\>\s', line)) > 0:
+				err += 1
+			elif len(re.findall(r'\s\<\s', line)) > 0:
+				err += 1
+			else:
+				good += 1
+
+	os.remove("pypos/tmp1")
+	os.remove("pypos/tmp2")
+	os.remove("pypos/tmpo")
+	print err, good, float(good) / (good + err)
 
 if __name__ == "__main__":
-	main()
+	# main()
+	t1 = readFile('data/datasets/pku_pos_gold_test.ltxt')
+	t2 = readFile('pypos/o1.ltxt')
+	score(t1, t2)
