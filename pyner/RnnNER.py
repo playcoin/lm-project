@@ -11,7 +11,7 @@ import time
 import re
 
 import theano
-from pypos import RnnPOS
+from pypos import RnnPOS, RnnRevPOS
 from netagutil import netagmap, netagsize
 
 class RnnNER(RnnPOS):
@@ -21,6 +21,18 @@ class RnnNER(RnnPOS):
 
 	def __init__(self, *args, **kwargs):
 		super(RnnNER, self).__init__(*args, **kwargs)
+
+		self.out_size = netagsize
+		self.septag = netagmap["o"]
+		self.tagsize = netagsize
+
+class RnnRevNER(RnnRevPOS):
+	'''
+	@summary: 词性标注器
+	'''
+
+	def __init__(self, *args, **kwargs):
+		super(RnnRevNER, self).__init__(*args, **kwargs)
 
 		self.out_size = netagsize
 		self.septag = netagmap["o"]

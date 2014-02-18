@@ -167,5 +167,5 @@ def score(text1, text2):
 if __name__ == "__main__":
 	# main()
 	t1 = readFile('data/datasets/pku_pos_gold_test.ltxt')
-	t2 = readFile('pypos/o1.ltxt')
+	t2 = readFile('pypos/o1400_rev.ltxt')
 	score(t1, t2)

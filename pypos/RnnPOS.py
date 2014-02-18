@@ -74,7 +74,7 @@ class RnnPOS(RnnWFWS):
 			num_total += len(tags) - 1
 
 		self.pm = priorMatrix / num_total
-		self.logpm = numpy.log(self.pm)
+		# self.logpm = numpy.log(self.pm)
 		self.pi = pi / len(taglines)
 		self.logpi = numpy.log(self.pi)
 
