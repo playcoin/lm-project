@@ -21,11 +21,11 @@ import theano.sandbox.cuda
 # Datafiles #
 #############
 # PKU small valid set
-# train_text = readClearFile("./data/datasets/pku_ws_train_large.ltxt")
-train_text = readClearFile("./data/datasets/msr_ws_train.ltxt")
+train_text = readClearFile("./data/datasets/pku_ws_train_large.ltxt")
+# train_text = readClearFile("./data/datasets/msr_ws_train.ltxt")
 nlpdict = NlpDict(comb=True, combzh=True, text=train_text)
 
-test_text = readClearFile("./data/datasets/msr_ws_test.ltxt")
+test_text = readClearFile("./data/datasets/pku_ws_test.ltxt")
 
 # fws = RnnWFWS2(nlpdict, n_emb=200, n_hidden=600, lr=0.5, batch_size=150, 
 # 	l2_reg=0.000001, truncate_step=4, train_emb=True, dr_rate=0.0,# emb_dr_rate=0.1,
@@ -34,10 +34,10 @@ test_text = readClearFile("./data/datasets/msr_ws_test.ltxt")
 
 rws = RnnWFWS2(nlpdict, n_emb=200, n_hidden=1400, lr=0.5, batch_size=150, 
 	l2_reg=0.000001, truncate_step=4, train_emb=True, dr_rate=0.5,# emb_dr_rate=0.1,
-	backup_file_path="./data/model/RnnWFWS2.model.epoch60.n_hidden1400.ssl20.truncstep4.dr0.5.embsize200.in_size5086.rc90.MSR.obj"
+	backup_file_path="./data/model/RnnRevWS2.model.epoch56.n_hidden1400.ssl20.truncstep4.dr0.5.embsize200.in_size4598.rc91.obj"
 )
 
-result_file = "./data/result/msr_5086_1400_dr50_f.ltxt"
+result_file = "./data/result/pku_4598_600_dr0_f_ext2.ltxt"
 
 # frws = RnnFRWS(fws, rws)
 #############
@@ -45,7 +45,7 @@ result_file = "./data/result/msr_5086_1400_dr50_f.ltxt"
 #############
 def main():
 
-	sents = test_text.split('\n')
+	sents = test_text.split('\n')[:100]
 	print "Dict size is: %d, and sentences size is %d" % (nlpdict.size(), len(sents))
 	# print rnnws.segment(sents[100], True)
 

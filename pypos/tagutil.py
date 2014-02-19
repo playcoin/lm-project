@@ -30,12 +30,11 @@ for tag in taglist:
 	tagmap[tag.lower()] = count
 	count += 1
 print "Tag size is:", len(taglist)
-
 ############
 # Main opr #
 ############
 def main():
-	gold_text = readFile("data/datasets/pku_pos_gold_test.ltxt")
+	gold_text = readFile("data/datasets/pku_pos_gold_s.ltxt")
 	lines = gold_text.split('\n')
 
 	olines = []
@@ -51,7 +50,7 @@ def main():
 
 	# writeFile(otextfile, '\n'.join(olines))
 	# writeFile(otagfile, '\n'.join(otags))
-	writeFile("data/datasets/pku_pos_gold_test1.ltxt", '\n'.join(olines))
+	writeFile("data/datasets/pku_pos_gold_train.ltxt", '\n'.join(olines))
 
 def clearner(text):
 	tokens = re.split(r"\s+", text)
@@ -133,39 +132,73 @@ def formtext(text, tags):
 
 	return "  ".join(otokens)
 
-def score(text1, text2):
+
+def score(train_text, text1, text2):
+
+	d = set(re.split(r'\s+', train_text))
 
 	lines1 = text1.strip().split('\n')
 	lines2 = text2.strip().split('\n')
 
 	assert len(lines1) == len(lines2)
 	err = 0
+	iv = 0
+	oov = 0
+	oovmiss = 0
+	ivmiss = 0
+	truewords = 0
+	testwords = 0
 	good = 0
 
 	for line1, line2 in zip(lines1, lines2):
-		ot1 = '\n'.join(re.split(r'\s+', line1))
-		ot2 = '\n'.join(re.split(r'\s+', line2))
+		words1 = re.split(r'\s+', line1)
+		words2 = re.split(r'\s+', line2)
+		truewords += len(words1)
+		testwords += len(words2)
+		ot1 = '\n'.join(words1)
+		ot2 = '\n'.join(words2)
 		writeFile('pypos/tmp1', ot1)
 		writeFile('pypos/tmp2', ot2)
 		os.system("diff -y -i pypos/tmp1 pypos/tmp2 > pypos/tmpo")
 		lines = readFile("pypos/tmpo").strip().split('\n')
 		for line in lines:
-			if len(re.findall(r'\s\|\s', line)) > 0:
-				err += 1
-			elif len(re.findall(r'\s\>\s', line)) > 0:
-				err += 1
-			elif len(re.findall(r'\s\<\s', line)) > 0:
+			# total
+			if re.search(r'\s[\|\>\<]\s', line):
 				err += 1
 			else:
 				good += 1
 
+			# check oov
+			m = re.search(r'^([^\s]+)\s', line) 
+			if m:
+				word = m.group(1)
+				if word in d:
+					iv += 1
+				else:
+					oov += 1
+				# not 'insert' line
+				if re.search(r'^[^\s]+\s+[\|\>\<]\s', line):
+					if word in d:
+						ivmiss += 1
+					else:
+						oovmiss += 1
+
 	os.remove("pypos/tmp1")
 	os.remove("pypos/tmp2")
 	os.remove("pypos/tmpo")
-	print err, good, float(good) / (good + err)
+	p = float(good) / testwords
+	r = float(good) / truewords
+	print "OOV Rate:", float(oov) / truewords
+	if oov > 0:
+		print "OOV Recall:", 1 - float(oovmiss) / oov
+	print "IV Recall:", 1 - float(ivmiss) / iv
+	print "Precision:", p
+	print "Recall:", r
+	print "Total F1:", (2*p*r) / (p+r) 
 
 if __name__ == "__main__":
 	# main()
+	t = readFile('data/datasets/pku_pos_gold_train.ltxt')
 	t1 = readFile('data/datasets/pku_pos_gold_test.ltxt')
 	t2 = readFile('pypos/o1400_rev.ltxt')
-	score(t1, t2)
+	score(t, t1, t2)

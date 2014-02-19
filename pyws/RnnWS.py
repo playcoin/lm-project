@@ -91,12 +91,12 @@ class RnnWS(object):
 		@summary: 将输入文本转化为id序列
 		'''
 		# 将训练文本再预处理一下, 单个回车符编程两个，回车符的标签为0
-		train_text = train_text.replace("\n", "\n\n") + "\n"
+		train_text = train_text.strip().replace("\n", "\n\n")
 		tids = [self.ndict[token] for token in train_text]
 		vec_in = theano.shared(numpy.asarray(tids, dtype="int32"), borrow=True)
 
 		if train_tags:
-			train_tags = "0" + train_tags.replace("\n", "00")
+			train_tags = train_tags.strip().replace("\n", "00")
 			tags = [int(tag) for tag in train_tags]
 			vec_out = theano.shared(numpy.asarray(tags, dtype="int32"), borrow=True)
 
