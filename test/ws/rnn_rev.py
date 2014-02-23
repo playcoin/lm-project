@@ -86,6 +86,7 @@ def main():
 				cw += 1
 
 			print text[pair[0]:pair[1]+1], a, b, c, d, "%.5f %.5f %.5f %.5f" % (s1, s2, d1, d2)
+			print text[pair[0]-5:pair[1]+1+5]
 			ct += 1
 
 	# f = file("./data/test_records.obj", 'wb')

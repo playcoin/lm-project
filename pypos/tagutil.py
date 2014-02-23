@@ -5,7 +5,7 @@ Created on 2013-12-23 12:19
 @author: Playcoin
 '''
 
-from fileutil import readFile, writeFile
+from fileutil import readFile, writeFile, loadObj
 import re
 import os
 
@@ -133,9 +133,14 @@ def formtext(text, tags):
 	return "  ".join(otokens)
 
 
-def score(train_text, text1, text2):
+def score(train_gold, test_gold, result):
 
-	d = set(re.split(r'\s+', train_text))
+	train_text = readFile(train_gold)
+	text1 = readFile(test_gold)
+	text2 = readFile(result)
+
+	trainwords = re.split(r'\s+', train_text)
+	d = set(trainwords)
 
 	lines1 = text1.strip().split('\n')
 	lines2 = text2.strip().split('\n')
@@ -176,6 +181,7 @@ def score(train_text, text1, text2):
 					iv += 1
 				else:
 					oov += 1
+					# print line
 				# not 'insert' line
 				if re.search(r'^[^\s]+\s+[\|\>\<]\s', line):
 					if word in d:
@@ -188,6 +194,8 @@ def score(train_text, text1, text2):
 	os.remove("pypos/tmpo")
 	p = float(good) / testwords
 	r = float(good) / truewords
+	print "Training set words:", len(trainwords)
+	print "Test set words:", testwords
 	print "OOV Rate:", float(oov) / truewords
 	if oov > 0:
 		print "OOV Recall:", 1 - float(oovmiss) / oov
@@ -196,9 +204,85 @@ def score(train_text, text1, text2):
 	print "Recall:", r
 	print "Total F1:", (2*p*r) / (p+r) 
 
+def tagobj2file(objpath, ofilepath):
+
+	testobj = loadObj(objpath)
+
+	testtext = readFile("data/datasets/pku_pos_test.ltxt")
+	lines = testtext.split('\n')
+
+	olines = []
+	for (tpm, line) in zip(testobj, lines):
+		olines.append(formtext(line, tpm[0]))
+
+	writeFile(ofilepath, '\n'.join(olines))
+
+# find the different
+def findDiff(tags1, tags2):
+	last = -1
+	groups = []
+	pair = []
+	for i in range(len(tags1)):
+		if tags1[i] != tags2[i]:
+			if i != last+1:
+				if len(pair) == 1:
+					pair.append(last)
+					groups.append(pair)
+				pair = [i]
+			last = i
+
+	if len(pair) == 1:
+		pair.append(last)
+		groups.append(pair)
+
+	return groups
+
+def calDiff(pair, tags1, pm1, tags2, pm2):
+	"find the surround probs"
+
+	tsum1 = 0.
+	tsum2 = 0.
+	for i in range(pair[0], pair[1]):
+		tsum1 += pm1[i][tags1[i]]
+		tsum2 += pm2[i][tags2[i]]
+
+	return tsum1, tsum2
+
+
+def combineRes(tobjpath1, tobjpath2, ofilepath):
+
+	tobj1s = loadObj(tobjpath1)
+	tobj2s = loadObj(tobjpath2)
+	lines = readFile("data/datasets/pku_pos_test.ltxt").split("\n")
+
+
+	olines =[]
+	for (tobj1, tobj2, line) in zip(tobj1s, tobj2s, lines):
+
+		tags1, pm1 = tobj1
+		tags2, pm2 = tobj2
+
+		gps = findDiff(tags1, tags2)
+
+		for pair in gps:
+			s = pair[0]
+			e = pair[1] + 1
+			s1, s2 = calDiff(pair, tags1, pm1, tags2, pm2)
+
+			if s1 < s2:	# use the result of backward
+				for i in range(s, e):
+					tags1[i] = tags2[i]
+
+		olines.append(formtext(line, tags1))
+
+	writeFile(ofilepath, '\n'.join(olines))
+
+
 if __name__ == "__main__":
 	# main()
-	t = readFile('data/datasets/pku_pos_gold_train.ltxt')
-	t1 = readFile('data/datasets/pku_pos_gold_test.ltxt')
-	t2 = readFile('pypos/o1400_rev.ltxt')
-	score(t, t1, t2)
+
+	score('data/datasets/pku_pos_gold_train.ltxt', 'data/datasets/pku_pos_gold_test.ltxt', 'pypos/o1200_fr_ep85.ltxt')
+	
+	# tagobj2file('pypos/1200_rev_tpm_ep85.obj', "pypos/o1200_rev_ep85.ltxt")
+
+	# combineRes('pypos/1200_tpm.obj', 'pypos/1200_rev_tpm_ep85.obj', 'pypos/o1200_fr_ep85.ltxt')

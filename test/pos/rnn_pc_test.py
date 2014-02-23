@@ -37,14 +37,15 @@ def main():
 	lines = test_text.split('\n')
 	print "Dict size is: %s. Test sentences is: %s" % (nlpdict.size(), len(lines))
 
-	rnnpos.acumPrior(train_tags)
-	olines = []
+	# rnnpos.acumPrior(train_tags)
+	# olines = []
 
-	for line in lines:
-		olines.append(rnnpos.decode(line, True)) # for reverse
+	# for line in lines:
+	# 	olines.append(rnnpos.decode(line, True)) # for reverse
 
-	# writeFile('pypos/o1400_rev.ltxt', '\n'.join(olines))
-	dumpObj('pypos/1400_rev_c90_tpm.obj', olines)
+	# # writeFile('pypos/o1400_rev.ltxt', '\n'.join(olines))
+	# dumpObj('pypos/1400_rev_c90_tpm.obj', olines)
+	rnnpos.dumpembedding("data/RnnRevPOS.n_hidden1400.embsize200.in_size4598.embeddings.obj")
 
 
 if __name__ == "__main__":
