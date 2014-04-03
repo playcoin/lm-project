@@ -90,12 +90,12 @@ if __name__ == '__main__':
 	nlpdict_text = readClearFile("./data/datasets/pku_ws_train_large.ltxt")
 	nlpdict = NlpDict(comb=True, combzh=True, text=nlpdict_text)
 
-	model = load_embedding('data/RnnWFWS2.n_hidden1400.embsize200.in_size4598.embeddings.obj')
+	model = load_embedding('data/RnnRevPOS.n_hidden1400.embsize200.in_size4598.embeddings.obj')
 	pca = pca_word_embedding(model)
 
 	text = readFile("data/datasets/peoplenew_train.ltxt")
 	#plot_common_words(pca, dict, total_word_counts, ['v', 'r'])
-	plot_common_words(pca, nlpdict, text, ['a', 'v'], colors=['b', 'm'])
+	plot_common_words(pca, nlpdict, text, ['a', 'd'], colors=['b', 'm'])
 	# plot_common_words(pca, nlpdict, text, ['v', 'r', 'd', 'p', 'a', 'u'])
 	#plot_common_words(pca, dict, total_word_counts, ['n', 'v'])
 	#plot_common_words(pca, dict, total_word_counts, ['v', 'a'])

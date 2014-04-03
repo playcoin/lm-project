@@ -23,23 +23,23 @@ print "NER tag size is:", len(netaglist)
 # Main opr #
 ############
 def main():
-	gold_text = readFile("data/datasets/pku_pos_gold_s.ltxt")
-	lines = gold_text.split('\n')#[:10]
+	lines = readFile("data/datasets/pku_ner_test.ltxt").split('\n')
+	tlines = readFile("data/datasets/pku_ner_test_tag.ltxt").split('\n')
 
 	olines = []
-	otags = []
-	for line in lines:
-		fi, se = procline(line)
-		olines.append(fi)
-		otags.append(se)
+	for line, tags in zip(lines, tlines):
+		tags = [int(x) for x in re.split(r'\s+', tags)]
+		olines.append(formnetext(line, tags))
+
+	writeFile("data/datasets/pku_ner_test_gold.ltxt", '\n'.join(olines))
 
 	# print '\n'.join(olines)
 	# print '\n'.join(otags)
-	otextfile = "data/datasets/pku_ner_train.ltxt"
-	otagfile = "data/datasets/pku_ner_train_tag.ltxt"
+	# otextfile = "data/datasets/pku_ner_train.ltxt"
+	# otagfile = "data/datasets/pku_ner_train_tag.ltxt"
 
-	writeFile(otextfile, '\n'.join(olines))
-	writeFile(otagfile, '\n'.join(otags))
+	# writeFile(otextfile, '\n'.join(olines))
+	# writeFile(otagfile, '\n'.join(otags))
 
 def nrreplfunc(matchobj):
 	return '[' + matchobj.group(0).replace('/nr', '').replace(' ', '') + ']nr'
@@ -121,6 +121,38 @@ def procline(text):
 
 	return ''.join(ostr), ' '.join(otag)
 
+def formnetext(text, tags):
+	'''
+	@summary: 按标签将文本按分词格式输出
+	'''
+	tokens = []
+	wtags = []
+
+	token = text[0]
+	wtag = netaglist[tags[0]].lower()
+
+	for i in range(1, len(text)):
+		if (tags[i] % 3 == 0) or (tags[i] > 8):
+			tokens.append(token)
+			wtags.append(wtag.split('_')[0])
+			token = ""
+			wtag = netaglist[tags[i]].lower()
+		token = token + text[i]
+
+	if token != "":
+		tokens.append(token)
+		wtags.append(wtag.split('_')[0])
+
+	otokens = []
+	for (token, wtag) in zip(tokens, wtags):
+		if wtag == 'nz' or wtag == 'o':
+			otokens.append(token)
+		else:
+			otokens.append("[%s]%s" % (token, wtag))
+
+	return "  ".join(otokens)
 
 if __name__ == "__main__":
 	main()
+
+	# print formnetext(u"●京山线进出关客车改走京秦线可节省一个半小时", [12,9,10,11,12,12,12,12,12,12,12,9,10,11,12,12,12,12,12,12,12,12])

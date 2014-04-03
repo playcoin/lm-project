@@ -5,8 +5,9 @@ Created on 2013-12-23 12:19
 @author: Playcoin
 '''
 
-from fileutil import readFile, writeFile
+from fileutil import readFile, writeFile, loadObj
 import re
+import os
 
 # 标签列表
 taglist = ["Ag_b","Ag_i","Ag_e","a_b","a_i","a_e","ad_b","ad_i","ad_e","an_b","an_i","an_e",\
@@ -29,7 +30,6 @@ for tag in taglist:
 	tagmap[tag.lower()] = count
 	count += 1
 print "Tag size is:", len(taglist)
-
 ############
 # Main opr #
 ############
@@ -37,20 +37,37 @@ def main():
 	gold_text = readFile("data/datasets/pku_pos_gold_s.ltxt")
 	lines = gold_text.split('\n')
 
-	print tagmap["w_b"]
-	# olines = []
+	olines = []
 	# otags = []
-	# for line in lines:
+	for line in lines:
 	# 	fi, se = procline(line)
 	# 	olines.append(fi)
 	# 	otags.append(se)
+		olines.append(clearner(line))
 
 	# otextfile = "data/datasets/pku_pos_train.ltxt"
 	# otagfile = "data/datasets/pku_pos_train_tag.ltxt"
 
 	# writeFile(otextfile, '\n'.join(olines))
 	# writeFile(otagfile, '\n'.join(otags))
+	writeFile("data/datasets/pku_pos_gold_train.ltxt", '\n'.join(olines))
 
+def clearner(text):
+	tokens = re.split(r"\s+", text)
+
+	ostr = []	# 输出的文本串
+	for token in tokens:
+		if token == "":
+			continue
+
+		# 用反斜杠分开
+		fi, se = token.split("/")
+		fi = fi[0] == '[' and fi[1:] or fi
+		se = "]" in se and se.split(']')[0] or se
+
+		ostr.append("%s/%s" % (fi, se))
+
+	return '  '.join(ostr)
 
 def procline(text):
 	'''
@@ -87,6 +104,185 @@ def procline(text):
 
 	return ''.join(ostr), ' '.join(otag)
 
+def formtext(text, tags):
+	'''
+	@summary: 按标签将文本按分词格式输出
+	'''
+	tokens = []
+	wtags = []
+
+	token = text[0]
+	wtag = taglist[tags[0]].lower()
+
+	for i in range(1, len(text)):
+		if tags[i] % 3 == 0:
+			tokens.append(token)
+			wtags.append(wtag.split('_')[0])
+			token = ""
+			wtag = taglist[tags[i]].lower()
+		token = token + text[i]
+
+	if token != "":
+		tokens.append(token)
+		wtags.append(wtag.split('_')[0])
+
+	otokens = []
+	for (token, wtag) in zip(tokens, wtags):
+		otokens.append("%s/%s" % (token, wtag))
+
+	return "  ".join(otokens)
+
+
+def score(train_gold, test_gold, result):
+
+	train_text = readFile(train_gold)
+	text1 = readFile(test_gold)
+	text2 = readFile(result)
+
+	trainwords = re.split(r'\s+', train_text)
+	d = set(trainwords)
+
+	lines1 = text1.strip().split('\n')
+	lines2 = text2.strip().split('\n')
+
+	assert len(lines1) == len(lines2)
+	err = 0
+	iv = 0
+	oov = 0
+	oovmiss = 0
+	ivmiss = 0
+	truewords = 0
+	testwords = 0
+	good = 0
+
+	for line1, line2 in zip(lines1, lines2):
+		words1 = re.split(r'\s+', line1)
+		words2 = re.split(r'\s+', line2)
+		truewords += len(words1)
+		testwords += len(words2)
+		ot1 = '\n'.join(words1)
+		ot2 = '\n'.join(words2)
+		writeFile('pypos/tmp1', ot1)
+		writeFile('pypos/tmp2', ot2)
+		os.system("diff -y -i pypos/tmp1 pypos/tmp2 > pypos/tmpo")
+		lines = readFile("pypos/tmpo").strip().split('\n')
+		for line in lines:
+			# total
+			if re.search(r'\s[\|\>\<]\s', line):
+				err += 1
+			else:
+				good += 1
+
+			# check oov
+			m = re.search(r'^([^\s]+)\s', line) 
+			if m:
+				word = m.group(1)
+				if word in d:
+					iv += 1
+				else:
+					oov += 1
+					# print line
+				# not 'insert' line
+				if re.search(r'^[^\s]+\s+[\|\>\<]\s', line):
+					if word in d:
+						ivmiss += 1
+					else:
+						oovmiss += 1
+
+	os.remove("pypos/tmp1")
+	os.remove("pypos/tmp2")
+	os.remove("pypos/tmpo")
+	p = float(good) / testwords
+	r = float(good) / truewords
+	print "Training set words:", len(trainwords)
+	print "Test set words:", testwords
+	print "OOV Rate:", float(oov) / truewords
+	if oov > 0:
+		print "OOV Recall:", 1 - float(oovmiss) / oov
+	print "IV Recall:", 1 - float(ivmiss) / iv
+	print "Precision:", p
+	print "Recall:", r
+	print "Total F1:", (2*p*r) / (p+r) 
+
+def tagobj2file(objpath, ofilepath):
+
+	testobj = loadObj(objpath)
+
+	testtext = readFile("data/datasets/pku_pos_test.ltxt")
+	lines = testtext.split('\n')
+
+	olines = []
+	for (tpm, line) in zip(testobj, lines):
+		olines.append(formtext(line, tpm[0]))
+
+	writeFile(ofilepath, '\n'.join(olines))
+
+# find the different
+def findDiff(tags1, tags2):
+	last = -1
+	groups = []
+	pair = []
+	for i in range(len(tags1)):
+		if tags1[i] != tags2[i]:
+			if i != last+1:
+				if len(pair) == 1:
+					pair.append(last)
+					groups.append(pair)
+				pair = [i]
+			last = i
+
+	if len(pair) == 1:
+		pair.append(last)
+		groups.append(pair)
+
+	return groups
+
+def calDiff(pair, tags1, pm1, tags2, pm2):
+	"find the surround probs"
+
+	tsum1 = 0.
+	tsum2 = 0.
+	for i in range(pair[0], pair[1]):
+		tsum1 += pm1[i][tags1[i]]
+		tsum2 += pm2[i][tags2[i]]
+
+	return tsum1, tsum2
+
+
+def combineRes(tobjpath1, tobjpath2, ofilepath):
+
+	tobj1s = loadObj(tobjpath1)
+	tobj2s = loadObj(tobjpath2)
+	lines = readFile("data/datasets/pku_pos_test.ltxt").split("\n")
+
+
+	olines =[]
+	for (tobj1, tobj2, line) in zip(tobj1s, tobj2s, lines):
+
+		tags1, pm1 = tobj1
+		tags2, pm2 = tobj2
+
+		gps = findDiff(tags1, tags2)
+
+		for pair in gps:
+			s = pair[0]
+			e = pair[1] + 1
+			s1, s2 = calDiff(pair, tags1, pm1, tags2, pm2)
+
+			if s1 < s2:	# use the result of backward
+				for i in range(s, e):
+					tags1[i] = tags2[i]
+
+		olines.append(formtext(line, tags1))
+
+	writeFile(ofilepath, '\n'.join(olines))
+
 
 if __name__ == "__main__":
-	main()
+	# main()
+
+	score('data/datasets/pku_pos_gold_train.ltxt', 'data/datasets/pku_pos_gold_test.ltxt', 'pypos/o1200_fr_ep85.ltxt')
+	
+	# tagobj2file('pypos/1200_rev_tpm_ep85.obj', "pypos/o1200_rev_ep85.ltxt")
+
+	# combineRes('pypos/1200_tpm.obj', 'pypos/1200_rev_tpm_ep85.obj', 'pypos/o1200_fr_ep85.ltxt')

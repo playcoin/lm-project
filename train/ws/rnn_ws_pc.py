@@ -23,19 +23,16 @@ train_text = readClearFile("./data/datasets/pku_ws_train_large.ltxt")
 train_tags = readClearFile("./data/datasets/pku_ws_train_large_tag.ltxt")
 nlpdict = NlpDict(comb=True, combzh=True, text=train_text)
 
-# valid_text = readClearFile("./data/datasets/pku_ws_valid_small.ltxt")
-# valid_tags = readClearFile("./data/datasets/pku_ws_valid_small_tag.ltxt")
+valid_text = readClearFile("./data/datasets/pku_ws_valid_small.ltxt")
+valid_tags = readClearFile("./data/datasets/pku_ws_valid_small_tag.ltxt")
 
-# test_text = readClearFile("./data/datasets/pku_ws_test.ltxt")
-# test_tags = readClearFile("./data/datasets/pku_ws_test_tag.ltxt")
+test_text = readClearFile("./data/datasets/pku_ws_test.ltxt")
+test_tags = readClearFile("./data/datasets/pku_ws_test_tag.ltxt")
 
-rnnws = RnnRevWS2(nlpdict, n_emb=200, n_hidden=400, lr=0.1, batch_size=5, 
+rnnws = RnnWS(nlpdict, n_emb=200, n_hidden=400, lr=0.5, batch_size=32, 
 	l2_reg=0.000001, truncate_step=4, train_emb=True, dr_rate=0.3,
-	emb_file_path="./data/RnnEmbTrLM.n_hidden1200.embsize200.in_size4598.embeddings.obj"
+	emb_file_path=None
 )
-lr_coef = 0.91
-r_init = "dr30.c91"
-
 
 #############
 # Main Opr  #
@@ -43,16 +40,14 @@ r_init = "dr30.c91"
 def main():
 	# 带验证集一起训练
 	global train_text, train_tags
-	# train_text = train_text[::-1]
-	# train_tags = train_tags[::-1]
-	train_text = train_text[:2100]# + "\n" + valid_text
-	train_tags = train_tags[:2100]# + "\n" + valid_tags
+	train_text = train_text + "\n" + valid_text
+	train_tags = train_tags + "\n" + valid_tags
 
 	print "Dict size is: %s, Train size is: %s" % (nlpdict.size(), len(train_text))
 
 	rnnws.traintext(train_text, train_tags, train_text[:1000], train_tags[:1000], 
-		sen_slice_length=20, epoch=60, lr_coef=lr_coef, 
-		DEBUG=2, SAVE=False, SINDEX=1, r_init=r_init
+		sen_slice_length=20, epoch=60, lr_coef=0.91, 
+		DEBUG=1, SAVE=5, SINDEX=1, r_init="c91"
 	)
 
 if __name__ == "__main__":

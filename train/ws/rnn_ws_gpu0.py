@@ -47,7 +47,7 @@ def main():
 
 	rnnws.traintext(train_text, train_tags, test_text[:1000], test_tags[:1000], 
 		sen_slice_length=20, epoch=70, lr_coef=0.91, 
-		DEBUG=5, SAVE=5, SINDEX=1, r_init="c91"
+		DEBUG=1, SAVE=5, SINDEX=1, r_init="c91"
 	)
 
 	# rnnws = RnnWFWS2(nlpdict, n_emb=100, n_hidden=300, lr=0.5, batch_size=158, 
